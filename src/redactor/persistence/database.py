@@ -5,12 +5,12 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
-from redactor.persistence.files import private_directory, sync_directory
 from redactor.utils.constants import (
     DATABASE_FILENAME,
     ERROR_NESTED_TRANSACTION,
     ERROR_UNSUPPORTED_SCHEMA,
     ERROR_WAL_UNAVAILABLE,
+    INITIAL_SCHEMA_VERSION,
     PRIVATE_FILE_MODE,
     SCHEMA_VERSION,
     SQLITE_CACHE_KIB,
@@ -27,6 +27,7 @@ from redactor.utils.constants import (
     TRANSACTION_COMMIT,
     TRANSACTION_ROLLBACK,
 )
+from redactor.utils.filesystem import private_directory, sync_directory
 
 
 @contextmanager
@@ -64,7 +65,7 @@ def open_database(state_directory: Path) -> sqlite3.Connection:
     try:
         database_path.chmod(PRIVATE_FILE_MODE)
         version = connection.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (0, SCHEMA_VERSION):
+        if version not in (0, INITIAL_SCHEMA_VERSION, SCHEMA_VERSION):
             raise ValueError(ERROR_UNSUPPORTED_SCHEMA)
 
         mode = connection.execute(
@@ -78,8 +79,8 @@ def open_database(state_directory: Path) -> sqlite3.Connection:
         connection.execute(f"PRAGMA cache_size = {-SQLITE_CACHE_KIB}")
         connection.execute(f"PRAGMA temp_store = {SQLITE_TEMP_STORE}")
 
-        if version == 0:
-            _create_schema(connection)
+        if version != SCHEMA_VERSION:
+            _initialize_schema(connection)
         sync_directory(state_directory)
     except BaseException:
         connection.close()
@@ -92,11 +93,16 @@ def state_directory(connection: sqlite3.Connection) -> Path:
     return Path(connection.execute("PRAGMA database_list").fetchone()[2]).parent
 
 
-def _create_schema(connection: sqlite3.Connection) -> None:
-    """Schema creation and its version marker commit together."""
+def _initialize_schema(connection: sqlite3.Connection) -> None:
+    """Schema creation or migration and its version marker commit together."""
     with transaction(connection):
         version = connection.execute("PRAGMA user_version").fetchone()[0]
         if version == SCHEMA_VERSION:
+            return
+        if version == INITIAL_SCHEMA_VERSION:
+            connection.execute("ALTER TABLE tasks ADD COLUMN temporary_directory TEXT")
+            connection.execute("ALTER TABLE tasks ADD COLUMN output_path TEXT")
+            connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
             return
         if version != 0:
             raise ValueError(ERROR_UNSUPPORTED_SCHEMA)
@@ -110,6 +116,8 @@ def _create_schema(connection: sqlite3.Connection) -> None:
                 input_size INTEGER NOT NULL CHECK (input_size >= 0),
                 step TEXT NOT NULL,
                 processing_version TEXT NOT NULL,
+                temporary_directory TEXT,
+                output_path TEXT,
                 status TEXT NOT NULL CHECK (status IN (
                     '{STATUS_PENDING}', '{STATUS_RUNNING}',
                     '{STATUS_SUCCEEDED}', '{STATUS_FAILED}'

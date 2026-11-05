@@ -16,6 +16,8 @@ class TaskSpec(BaseModel, frozen=True, extra="forbid"):
     input_size: NonNegativeInt
     step: str = Field(min_length=1)
     processing_version: str = Field(min_length=1)
+    temporary_directory: Path | None = None
+    output_path: Path | None = None
 
 
 class Task(TaskSpec, frozen=True):

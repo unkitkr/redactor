@@ -5,12 +5,16 @@ from pathlib import Path
 import pytest
 
 from redactor.persistence.database import open_database, state_directory, transaction
+from redactor.persistence.files import prepare_task
+from redactor.persistence.queue import enqueue_task, get_task
 from redactor.utils.constants import (
     DATABASE_FILENAME,
     ERROR_NESTED_TRANSACTION,
     ERROR_UNSUPPORTED_SCHEMA,
+    INITIAL_SCHEMA_VERSION,
     PRIVATE_DIRECTORY_MODE,
     PRIVATE_FILE_MODE,
+    SCHEMA_VERSION,
     STATE_DIRECTORY,
 )
 
@@ -58,3 +62,18 @@ def test_future_schema_is_rejected_without_rewriting_it(tmp_path: Path) -> None:
             pytest.fail("Unknown schema was accepted")
     with closing(sqlite3.connect(state / DATABASE_FILENAME)) as connection:
         assert connection.execute("PRAGMA user_version").fetchone()[0] == 999
+
+
+def test_previous_schema_is_migrated_without_losing_tasks(
+    tmp_path: Path, source_file: Path
+) -> None:
+    state = tmp_path / STATE_DIRECTORY
+    with closing(open_database(state)) as connection:
+        task = enqueue_task(connection, prepare_task(source_file, "inspect", "v1"))
+        connection.execute("ALTER TABLE tasks DROP COLUMN temporary_directory")
+        connection.execute("ALTER TABLE tasks DROP COLUMN output_path")
+        connection.execute(f"PRAGMA user_version = {INITIAL_SCHEMA_VERSION}")
+
+    with closing(open_database(state)) as connection:
+        assert get_task(connection, task.task_id) == task
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION

@@ -9,6 +9,8 @@ define Redactor's product, dependencies, milestones, or architecture.
 Build only the current agreed milestone. The initial milestone is a local SQLite
 queue and checkpoint-state persistence. Do not implement the runtime, coordinator,
 worker scheduling, file processing, or automatic recovery in this bootstrap.
+The current file-storage chunk adds registration and explicit artifact helpers;
+checkpoint save/resume and coordinator execution remain separate milestones.
 
 ## Code
 

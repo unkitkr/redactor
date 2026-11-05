@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from redactor.persistence.database import open_database
+from redactor.persistence.files import prepare_task
 from redactor.persistence.queue import (
     claim_task,
     complete_task,
@@ -13,7 +14,6 @@ from redactor.persistence.queue import (
     get_task,
     iter_attempts,
     iter_tasks,
-    prepare_task,
     recover_interrupted,
     require_attempt,
     retry_task,

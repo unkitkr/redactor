@@ -29,16 +29,14 @@ from contextlib import closing
 from pathlib import Path
 
 from redactor.persistence.database import open_database
+from redactor.persistence.files import register_file
 from redactor.persistence.queue import (
     claim_task,
     complete_task,
-    enqueue_task,
-    prepare_task,
 )
 
 with closing(open_database(Path(".redactor"))) as connection:
-    spec = prepare_task(Path("input/encounters.csv"), "inspect", "policy-v1")
-    enqueue_task(connection, spec)
+    register_file(connection, Path("input/encounters.csv"), "inspect", "policy-v1")
     claimed = claim_task(connection)
 
     if claimed is not None:
@@ -47,7 +45,14 @@ with closing(open_database(Path(".redactor"))) as connection:
         complete_task(connection, claimed)
 ```
 
-`prepare_task` hashes the input in bounded buffers outside any write transaction.
+`register_file` hashes the input in bounded buffers outside any write transaction,
+then stores the task and its temporary/output locations in one commit. Locations
+come from `utils/constants.py`: temporary artifacts live under
+`<state>/tmp/<task_id>/`, and outputs target the workspace's
+`output/published/<original_name>`. Registration creates no output files.
+
+`prepare_task`, also in `persistence/files.py`, prepares metadata for callers that
+need to enqueue successors atomically through `complete_task`.
 Its identity includes the input path and content, operation, and processing
 version. The caller must include relevant policy, identity-map, and key versions
 in the processing version, never the secret itself.
@@ -84,7 +89,8 @@ contain sensitive paths and intermediate data; it is private and gitignored.
 - `src/redactor/schemas/persistence.py`: task, attempt, checkpoint, and artifact models.
 - `src/redactor/persistence/database.py`: schema and transaction boundaries.
 - `src/redactor/persistence/queue.py`: task transitions and attempt history.
-- `src/redactor/persistence/files.py`: bounded hashing and filesystem syncing.
+- `src/redactor/persistence/files.py`: file registration and artifact persistence.
+- `src/redactor/utils/filesystem.py`: shared private-directory and sync operations.
 - `src/redactor/coordinator/`: reserved for the later coordinator implementation.
 - `tests/`: real temporary SQLite databases and files.
 

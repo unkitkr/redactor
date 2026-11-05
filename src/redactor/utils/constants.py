@@ -13,8 +13,14 @@ STATUS_INTERRUPTED: Final = "interrupted"
 
 STATE_DIRECTORY: Final = ".redactor"
 DATABASE_FILENAME: Final = "state.sqlite3"
+OUTPUT_DIRECTORY: Final = "output"
+PUBLISHED_DIRECTORY: Final = "published"
+TEMPORARY_DIRECTORY: Final = "tmp"
+TEMPORARY_FILE_TEMPLATE: Final = "{attempt_token}.part"
+FILE_LOCATION_FIELDS: Final = ("temporary_directory", "output_path")
 
-SCHEMA_VERSION: Final = 1
+INITIAL_SCHEMA_VERSION: Final = 1
+SCHEMA_VERSION: Final = 2
 SQLITE_TIMEOUT_SECONDS: Final = 5.0
 SQLITE_CACHE_KIB: Final = 8192
 SQLITE_JOURNAL_MODE: Final = "wal"
@@ -43,6 +49,7 @@ ERROR_COMPLETION_CHANGED: Final = "accepted_result_changed"
 ERROR_INTERRUPTED: Final = "execution_interrupted"
 ERROR_INVALID_FAILURE_CODE: Final = "invalid_failure_code"
 ERROR_INPUT_CHANGED: Final = "input_fingerprint_changed"
+ERROR_FILE_NOT_REGISTERED: Final = "file_not_registered"
 ERROR_INVALID_CHECKPOINT: Final = "invalid_checkpoint_progress"
 ERROR_ARTIFACT_MISSING: Final = "checkpoint_artifact_missing"
 ERROR_ARTIFACT_CORRUPT: Final = "checkpoint_artifact_corrupt"

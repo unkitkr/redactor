@@ -1,15 +1,11 @@
 """Durable task transitions; callers own the connection and coordinator lock."""
 
-import hashlib
-import json
 import sqlite3
 from collections.abc import Iterator, Sequence
 from datetime import UTC, datetime
-from pathlib import Path
 from uuid import uuid4
 
 from redactor.persistence.database import transaction
-from redactor.persistence.files import hash_file
 from redactor.schemas.persistence import Artifact, Attempt, Task, TaskSpec
 from redactor.utils.constants import (
     ERROR_COMPLETION_CHANGED,
@@ -22,33 +18,13 @@ from redactor.utils.constants import (
     ERROR_TASK_NOT_FOUND,
     ERROR_UNKNOWN_DEPENDENCY,
     FAILURE_CODES,
-    JSON_SEPARATORS,
+    FILE_LOCATION_FIELDS,
     STATUS_FAILED,
     STATUS_INTERRUPTED,
     STATUS_PENDING,
     STATUS_RUNNING,
     STATUS_SUCCEEDED,
-    TEXT_ENCODING,
 )
-
-
-def prepare_task(input_path: Path, step: str, processing_version: str) -> TaskSpec:
-    """Fingerprint the immutable input before entering a database transaction."""
-    resolved_path = input_path.resolve(strict=True)
-    input_sha256 = hash_file(resolved_path)
-    identity = json.dumps(
-        (str(resolved_path), input_sha256, step, processing_version),
-        separators=JSON_SEPARATORS,
-    ).encode(TEXT_ENCODING)
-
-    return TaskSpec(
-        task_id=hashlib.sha256(identity).hexdigest(),
-        input_path=resolved_path,
-        input_sha256=input_sha256,
-        input_size=resolved_path.stat().st_size,
-        step=step,
-        processing_version=processing_version,
-    )
 
 
 def enqueue_task(
@@ -72,11 +48,15 @@ def _insert_task(
     ).fetchone()
     if existing is not None:
         stored_task = Task.model_validate(dict(existing))
-        if any(
-            getattr(stored_task, field) != getattr(spec, field)
-            for field in TaskSpec.model_fields
-        ):
-            raise ValueError(ERROR_TASK_ID_CONFLICT)
+        for field in TaskSpec.model_fields:
+            stored_value = getattr(stored_task, field)
+            incoming_value = getattr(spec, field)
+            if field in FILE_LOCATION_FIELDS and (
+                stored_value is None or incoming_value is None
+            ):
+                continue
+            if stored_value != incoming_value:
+                raise ValueError(ERROR_TASK_ID_CONFLICT)
         stored = {
             row[0]
             for row in connection.execute(
@@ -85,6 +65,19 @@ def _insert_task(
         }
         if stored != required:
             raise ValueError(ERROR_DEPENDENCIES_CHANGED)
+        connection.execute(
+            """
+            UPDATE tasks SET
+                temporary_directory = COALESCE(temporary_directory, ?),
+                output_path = COALESCE(output_path, ?)
+            WHERE task_id = ?
+            """,
+            (
+                str(spec.temporary_directory) if spec.temporary_directory else None,
+                str(spec.output_path) if spec.output_path else None,
+                spec.task_id,
+            ),
+        )
         return
 
     for dependency in required:
@@ -101,8 +94,9 @@ def _insert_task(
         """
         INSERT INTO tasks (
             task_id, input_path, input_sha256, input_size, step,
-            processing_version, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            processing_version, temporary_directory, output_path,
+            status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             spec.task_id,
@@ -111,6 +105,8 @@ def _insert_task(
             spec.input_size,
             spec.step,
             spec.processing_version,
+            str(spec.temporary_directory) if spec.temporary_directory else None,
+            str(spec.output_path) if spec.output_path else None,
             STATUS_PENDING,
             now,
             now,
