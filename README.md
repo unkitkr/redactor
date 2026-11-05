@@ -108,12 +108,25 @@ SQLite task completion are separate operations: pass the returned artifact to
 `complete_task` after successful finalization. Actual verifier execution, startup
 reconciliation, and checkpoint save/resume will be implemented separately.
 
+## Schema migrations
+
+Numbered SQL files live in `src/redactor/migrations/`. Their ordered filenames are
+listed in `utils/constants.py`; the current schema version is derived from that
+list. Add a new migration when changing the schema rather than editing an existing
+migration. SQL files are packaged with the application.
+
+Database startup applies pending migrations and updates SQLite's `user_version`
+inside one transaction. A failed migration leaves the prior schema and version
+intact. Databases with a newer, unsupported schema are rejected. Each SQL statement
+in a migration must end with a semicolon on its own statement's final line.
+
 ## Layout
 
 - `src/redactor/utils/constants.py`: named defaults, file locations, and states.
 - `src/redactor/utils/errors.py`: failure codes and allowed failure-code lists.
 - `src/redactor/schemas/persistence.py`: task, attempt, checkpoint, and artifact models.
-- `src/redactor/persistence/database.py`: schema and transaction boundaries.
+- `src/redactor/migrations/`: numbered SQL schema changes.
+- `src/redactor/persistence/database.py`: connection setup, migrations, and transactions.
 - `src/redactor/persistence/queue.py`: task transitions and attempt history.
 - `src/redactor/persistence/files.py`: file registration and artifact persistence.
 - `src/redactor/utils/filesystem.py`: shared private-directory and sync operations.

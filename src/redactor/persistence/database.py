@@ -3,11 +3,13 @@
 import sqlite3
 from collections.abc import Generator
 from contextlib import contextmanager
+from importlib.resources import files
 from pathlib import Path
 
 from redactor.utils.constants import (
     DATABASE_FILENAME,
-    INITIAL_SCHEMA_VERSION,
+    MIGRATION_FILENAMES,
+    MIGRATIONS_PACKAGE,
     PRIVATE_FILE_MODE,
     SCHEMA_VERSION,
     SQLITE_CACHE_KIB,
@@ -15,16 +17,13 @@ from redactor.utils.constants import (
     SQLITE_SYNCHRONOUS,
     SQLITE_TEMP_STORE,
     SQLITE_TIMEOUT_SECONDS,
-    STATUS_FAILED,
-    STATUS_INTERRUPTED,
-    STATUS_PENDING,
-    STATUS_RUNNING,
-    STATUS_SUCCEEDED,
+    TEXT_ENCODING,
     TRANSACTION_BEGIN,
     TRANSACTION_COMMIT,
     TRANSACTION_ROLLBACK,
 )
 from redactor.utils.errors import (
+    ERROR_INCOMPLETE_MIGRATION,
     ERROR_NESTED_TRANSACTION,
     ERROR_UNSUPPORTED_SCHEMA,
     ERROR_WAL_UNAVAILABLE,
@@ -67,7 +66,7 @@ def open_database(state_directory: Path) -> sqlite3.Connection:
     try:
         database_path.chmod(PRIVATE_FILE_MODE)
         version = connection.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (0, INITIAL_SCHEMA_VERSION, SCHEMA_VERSION):
+        if not 0 <= version <= SCHEMA_VERSION:
             raise ValueError(ERROR_UNSUPPORTED_SCHEMA)
 
         mode = connection.execute(
@@ -96,93 +95,28 @@ def state_directory(connection: sqlite3.Connection) -> Path:
 
 
 def _initialize_schema(connection: sqlite3.Connection) -> None:
-    """Schema creation or migration and its version marker commit together."""
+    """Apply pending migrations and advance the schema version atomically."""
     with transaction(connection):
         version = connection.execute("PRAGMA user_version").fetchone()[0]
-        if version == SCHEMA_VERSION:
-            return
-        if version == INITIAL_SCHEMA_VERSION:
-            connection.execute("ALTER TABLE tasks ADD COLUMN temporary_directory TEXT")
-            connection.execute("ALTER TABLE tasks ADD COLUMN output_path TEXT")
-            connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
-            return
-        if version != 0:
+        if not 0 <= version <= SCHEMA_VERSION:
             raise ValueError(ERROR_UNSUPPORTED_SCHEMA)
 
-        connection.execute(
-            f"""
-            CREATE TABLE tasks (
-                task_id TEXT PRIMARY KEY,
-                input_path TEXT NOT NULL,
-                input_sha256 TEXT NOT NULL,
-                input_size INTEGER NOT NULL CHECK (input_size >= 0),
-                step TEXT NOT NULL,
-                processing_version TEXT NOT NULL,
-                temporary_directory TEXT,
-                output_path TEXT,
-                status TEXT NOT NULL CHECK (status IN (
-                    '{STATUS_PENDING}', '{STATUS_RUNNING}',
-                    '{STATUS_SUCCEEDED}', '{STATUS_FAILED}'
-                )),
-                attempt_token TEXT,
-                attempt_count INTEGER NOT NULL DEFAULT 0,
-                failure_code TEXT,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                result_path TEXT,
-                result_sha256 TEXT,
-                result_size INTEGER CHECK (result_size >= 0)
+        directory = files(MIGRATIONS_PACKAGE)
+        for index in range(version, SCHEMA_VERSION):
+            script = directory.joinpath(MIGRATION_FILENAMES[index]).read_text(
+                encoding=TEXT_ENCODING
             )
-            """
-        )
-        connection.execute(
-            """
-            CREATE INDEX tasks_ready ON tasks (status, created_at, task_id)
-            """
-        )
-        connection.execute(
-            """
-            CREATE TABLE dependencies (
-                task_id TEXT NOT NULL REFERENCES tasks(task_id),
-                depends_on TEXT NOT NULL REFERENCES tasks(task_id),
-                PRIMARY KEY (task_id, depends_on),
-                CHECK (task_id != depends_on)
-            )
-            """
-        )
-        connection.execute(
-            f"""
-            CREATE TABLE attempts (
-                task_id TEXT NOT NULL REFERENCES tasks(task_id),
-                attempt_token TEXT PRIMARY KEY,
-                status TEXT NOT NULL CHECK (status IN (
-                    '{STATUS_RUNNING}', '{STATUS_SUCCEEDED}',
-                    '{STATUS_FAILED}', '{STATUS_INTERRUPTED}'
-                )),
-                started_at TEXT NOT NULL,
-                finished_at TEXT,
-                failure_code TEXT
-            )
-            """
-        )
-        connection.execute(
-            """
-            CREATE INDEX attempts_by_task ON attempts (task_id, started_at)
-            """
-        )
-        connection.execute(
-            """
-            CREATE TABLE checkpoints (
-                task_id TEXT NOT NULL REFERENCES tasks(task_id),
-                sequence INTEGER NOT NULL CHECK (sequence > 0),
-                artifact_path TEXT NOT NULL,
-                input_offset INTEGER NOT NULL CHECK (input_offset >= 0),
-                output_offset INTEGER NOT NULL CHECK (output_offset >= 0),
-                record_count INTEGER NOT NULL CHECK (record_count >= 0),
-                output_prefix_sha256 TEXT NOT NULL,
-                counts_json TEXT NOT NULL,
-                PRIMARY KEY (task_id, sequence)
-            )
-            """
-        )
-        connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+            _execute_migration(connection, script)
+            connection.execute(f"PRAGMA user_version = {index + 1}")
+
+
+def _execute_migration(connection: sqlite3.Connection, script: str) -> None:
+    """Execute complete statements without executescript's implicit commit."""
+    statement = ""
+    for line in script.splitlines(keepends=True):
+        statement += line
+        if sqlite3.complete_statement(statement):
+            connection.execute(statement)
+            statement = ""
+    if statement.strip():
+        raise ValueError(ERROR_INCOMPLETE_MIGRATION)

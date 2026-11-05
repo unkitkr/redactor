@@ -42,6 +42,9 @@ checkpoint save/resume and coordinator execution remain separate milestones.
 
 - SQLite is the authoritative queue and execution ledger. Local worker messages
   are disposable delivery, not the durable source of truth.
+- Keep schema changes in numbered SQL files under `src/redactor/migrations/`.
+  Append migrations instead of rewriting applied files. Migration SQL preserves
+  historical values; it must not interpolate today's application constants.
 - Coordinator-related code belongs in `src/redactor/coordinator/`. The planned
   coordinator will own database writes and the state-directory lock. That runtime
   will be implemented separately. Keep write transactions short; do not hold them

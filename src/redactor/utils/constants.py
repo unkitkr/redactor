@@ -19,8 +19,9 @@ TEMPORARY_DIRECTORY: Final = "tmp"
 TEMPORARY_FILE_TEMPLATE: Final = "{attempt_token}.part"
 FILE_LOCATION_FIELDS: Final = ("temporary_directory", "output_path")
 
-INITIAL_SCHEMA_VERSION: Final = 1
-SCHEMA_VERSION: Final = 2
+MIGRATIONS_PACKAGE: Final = "redactor.migrations"
+MIGRATION_FILENAMES: Final = ("001_initial.sql", "002_file_locations.sql")
+SCHEMA_VERSION: Final = len(MIGRATION_FILENAMES)
 SQLITE_TIMEOUT_SECONDS: Final = 5.0
 SQLITE_CACHE_KIB: Final = 8192
 SQLITE_JOURNAL_MODE: Final = "wal"
