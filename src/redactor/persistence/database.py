@@ -47,7 +47,7 @@ def open_database(state_directory: Path) -> sqlite3.Connection:
     """Open durable state without claiming, scheduling, or recovering any work.
 
     Each process/thread owns its connection. The caller must close it explicitly.
-    Runtime ownership and worker lifecycle will be implemented separately.
+    Runtime ownership and worker lifecycle belong to the coordinator package.
     """
     migration_files = discover_migrations()
     latest_version = len(migration_files)

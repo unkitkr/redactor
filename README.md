@@ -1,14 +1,49 @@
 # Redactor
 
-Local building blocks for the PHI pseudonymization assignment. The current
-implementation is the durable queue and state foundation. The coordinator,
-orchestration, workers, and clinical processing will be implemented separately.
+Local building blocks for the PHI pseudonymization assignment. The implementation
+includes durable queue state, artifact helpers, a startup coordinator, and
+placeholder workers. Clinical processing and workflow orchestration come later.
+
+## Coordinator bootstrap
+
+```bash
+uv run redactor --input input --state .redactor --workers 2
+```
+
+`uv run python -m redactor` provides the same entry point and defaults. The
+coordinator validates directory locations, acquires exclusive run ownership,
+initializes SQLite, recovers interrupted tasks, and registers input files before
+starting workers. Inventory walks nested directories without filtering by file
+extension or loading entire files into memory. Symlinks and nonregular entries
+fail startup; workers do not start after an incomplete inventory.
+
+Each worker opens its own queue connection, claims a `print_task` step, prints a
+JSON summary containing only its task ID, step, attempt count, and worker PID,
+and records completion. No clinical transformation or publication occurs. The
+placeholder consumes only its own step and processing version, leaving other
+pipeline work untouched. Repeating a successful run produces no new task prints.
+
+The coordinator waits for its workers and stops the group if any worker fails.
+SIGINT and SIGTERM trigger bounded cleanup. A persistent lock file under the state
+directory prevents two runs from sharing recovery ownership. Workers inherit its
+descriptor, so SIGKILL of the coordinator cannot allow recovery to reset work
+while a surviving worker still runs. Workers stop taking tasks when their parent
+exits; restart after they exit. Never delete the lock file to bypass ownership.
+This uses local POSIX filesystem semantics on Linux and macOS.
+
+The console print and SQLite completion are separate operations. A crash between
+them can repeat a diagnostic line on restart; console output is not an exactly-once
+result artifact. Durable attempt history records the retry. Checkpoints inside a
+step, clinical output, and scheduling multiple pipeline stages are later work.
+
+Coordinator responsibilities are split between `run.py`, `inventory.py`,
+`ownership.py`, `processes.py`, `signals.py`, and `cli.py`.
 
 ## Development
 
 Use `uv sync` to install the locked dependencies. `.python-version` selects Python
 3.14 for development; the package supports Python 3.11 and later. Ordinary Python
-3.14 still has a GIL. Planned CPU workers use separate spawned processes, so they
+3.14 still has a GIL. Workers use separate spawned processes, so they
 do not share one GIL; a free-threaded interpreter is not required.
 
 Pyrefly uses the project interpreter at `.venv/bin/python`, configured in
@@ -25,25 +60,25 @@ uv run pytest -q
 ## Durable queue
 
 ```python
-from contextlib import closing
 from pathlib import Path
 
-from redactor.persistence.database import open_database
+from redactor.persistence.client import claim_task, complete_task, open_queue
 from redactor.persistence.files import register_file
-from redactor.persistence.queue import (
-    claim_task,
-    complete_task,
-)
 
-with closing(open_database(Path(".redactor"))) as connection:
-    register_file(connection, Path("input/encounters.csv"), "inspect", "policy-v1")
-    claimed = claim_task(connection)
+with open_queue(Path(".redactor")) as queue:
+    register_file(queue, Path("input/encounters.csv"), "inspect", "policy-v1")
+    claimed = claim_task(queue, step="inspect", processing_version="policy-v1")
 
     if claimed is not None:
         # Perform the metadata-only inspection before accepting its completion.
         # Persist and validate an output artifact before accepting a file result.
-        complete_task(connection, claimed)
+        complete_task(queue, claimed)
 ```
+
+`persistence/client.py` exposes a functional worker API: `open_queue`, `claim_task`,
+`complete_task`, and `fail_task`. The context owns connection cleanup; each queue
+operation owns its short transaction. No transaction stays open while doing work,
+and leaving the context never automatically accepts an unfinished task.
 
 `register_file` hashes the input in bounded buffers outside any write transaction,
 then stores the task and its temporary/output locations in one commit. Locations
@@ -62,8 +97,11 @@ dependencies cannot change on rediscovery. `claim_task` only selects pending wor
 whose prerequisites succeeded. An empty ready queue does not mean the entire run
 is finished: tasks can still be running or blocked on failed prerequisites.
 
-`complete_task(..., successors=[...])` records completion and inserts dependent
-tasks in one transaction. `fail_task` accepts registered failure codes, not raw
+Each task identifies one step for one input. `complete_task(..., result=artifact,
+successors=[...])` records that step's result and inserts dependent tasks in one
+transaction. The caller must persist artifact bytes before recording their
+metadata. A committed step is preserved on recovery; only interrupted running
+steps return to pending. `fail_task` accepts registered failure codes, not raw
 exception messages. Failed work requires an explicit `retry_task`; it is not
 silently retried by rediscovery.
 
@@ -73,8 +111,8 @@ time. Connections use explicit short transactions,
 
 Opening a database does not claim tasks or recover anything automatically.
 `recover_interrupted` is an explicit state transition: it marks running attempts
-interrupted and makes their tasks pending again. The future runtime must establish
-exclusive ownership and stop old workers before invoking it. Old attempt tokens
+interrupted and makes their tasks pending again. Coordinator startup establishes
+exclusive ownership before invoking it. Old attempt tokens
 cannot update current work. This layer accepts one logical result; the future
 processing layer must make actual execution repeatable. It cannot guarantee
 exactly-once remote API billing.

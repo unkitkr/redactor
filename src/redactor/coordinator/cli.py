@@ -1,0 +1,46 @@
+"""Command-line arguments and PHI-safe startup failures."""
+
+import argparse
+import sys
+from pathlib import Path
+
+from redactor.coordinator.run import run_coordinator
+from redactor.coordinator.signals import handle_shutdown_signals
+from redactor.schemas.coordinator import CoordinatorConfig
+from redactor.utils.constants import (
+    DEFAULT_WORKER_COUNT,
+    EXIT_FAILURE,
+    EXIT_SUCCESS,
+    INPUT_DIRECTORY,
+    STATE_DIRECTORY,
+)
+from redactor.utils.errors import COORDINATOR_FAILURE_CODES, ERROR_COORDINATOR_FAILED
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Register input files and run placeholder queue workers."
+    )
+    parser.add_argument(
+        "--input", dest="input_directory", type=Path, default=INPUT_DIRECTORY
+    )
+    parser.add_argument(
+        "--state", dest="state_directory", type=Path, default=STATE_DIRECTORY
+    )
+    parser.add_argument(
+        "--workers", dest="worker_count", type=int, default=DEFAULT_WORKER_COUNT
+    )
+    arguments = parser.parse_args()
+
+    try:
+        config = CoordinatorConfig.model_validate(vars(arguments))
+        with handle_shutdown_signals():
+            run_coordinator(config)
+    except Exception as error:
+        code = next(
+            (code for code in COORDINATOR_FAILURE_CODES if error.args == (code,)),
+            ERROR_COORDINATOR_FAILED,
+        )
+        print(code, file=sys.stderr)
+        return EXIT_FAILURE
+    return EXIT_SUCCESS

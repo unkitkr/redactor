@@ -29,8 +29,12 @@ BOOTSTRAP_PROCESSING_VERSION: Final = "bootstrap-v1"
 
 # Worker processes and exit status
 WORKER_MODULE: Final = "redactor.workers"
+DEFAULT_WORKER_COUNT: Final = 2
+WORKER_POLL_SECONDS: Final = 0.05
+WORKER_SHUTDOWN_SECONDS: Final = 2.0
 EXIT_SUCCESS: Final = 0
 EXIT_FAILURE: Final = 1
+SIGNAL_EXIT_BASE: Final = 128
 
 # Migration filenames
 SQL_SUFFIX: Final = ".sql"
