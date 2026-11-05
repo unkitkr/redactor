@@ -7,7 +7,8 @@ Project-specific instructions for other applications in parent directories do no
 define Redactor's product, dependencies, milestones, or architecture.
 
 Build only the current agreed milestone. The initial milestone is a local SQLite
-queue and durable, resumable file checkpoints, not a distributed workflow engine.
+queue and checkpoint-state persistence. Do not implement the runtime, coordinator,
+worker scheduling, file processing, or automatic recovery in this bootstrap.
 
 ## Code
 
@@ -20,7 +21,8 @@ queue and durable, resumable file checkpoints, not a distributed workflow engine
   behavior without creating a framework or splitting cohesive code unnecessarily.
 - Keep mutable state local and pass dependencies explicitly. No mutable global
   variables, global connections, clients, registries, or import-time I/O.
-- Put named constants in `constants.py`; import them where needed. Do not scatter
+- Put named constants in `src/redactor/utils/constants.py`; import them where
+  needed. Do not scatter
   magic status strings, error codes, filenames, timeouts, limits, or configuration
   defaults through implementation code. SQL syntax, docstrings, and illustrative
   test data may remain literal where that improves readability.
@@ -28,6 +30,8 @@ queue and durable, resumable file checkpoints, not a distributed workflow engine
   complexity. Support Python 3.11 and later on Linux; development also uses macOS.
 - Use `pathlib.Path`, small modules with clear responsibilities, and immutable
   inputs. Never modify the supplied input files.
+- Keep shared data schemas in `src/redactor/schemas/`, grouped by responsibility
+  (for example, `persistence.py` for queue and checkpoint records).
 - Do not hide errors. Preserve structured, PHI-free failure codes. Do not place
   raw clinical content, identifiers, model prompts, or secrets in logs or reports.
 
@@ -35,9 +39,11 @@ queue and durable, resumable file checkpoints, not a distributed workflow engine
 
 - SQLite is the authoritative queue and execution ledger. Local worker messages
   are disposable delivery, not the durable source of truth.
-- One coordinator owns database writes and the state-directory lock. Keep write
-  transactions short; do not hold them while parsing, hashing files, or calling a
-  model. Use process-local connections and spawn workers rather than inheriting
+- Coordinator-related code belongs in `src/redactor/coordinator/`. The planned
+  coordinator will own database writes and the state-directory lock. That runtime
+  will be implemented separately. Keep write transactions short; do not hold them
+  while parsing, hashing files, or calling a model. Use process-local connections
+  and spawn workers rather than inheriting
   the coordinator's connection or lock.
 - Keep large artifacts on the private filesystem and references in SQLite.
 - Persist artifact bytes before committing their checkpoint. Recover explicitly
@@ -75,7 +81,9 @@ queue and durable, resumable file checkpoints, not a distributed workflow engine
   every implementation milestone commit. Check formatting, linting, and types.
 - Prefer real temporary files and SQLite databases over mocks of internal logic.
   Use controlled substitutes only at external boundaries.
-- Commit each significant milestone with a semantic message such as
+- Commit each completed file or cohesive, tested chunk of related work so it can
+  be rolled back independently. Do not accumulate unrelated changes into a large
+  milestone commit. Use semantic messages such as
   `feat(queue): persist task claims and recovery` or
   `fix(durability): reject truncated checkpoint artifacts`.
 - Never commit secrets, private runtime state, virtual environments, or generated
