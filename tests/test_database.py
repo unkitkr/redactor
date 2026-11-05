@@ -1,5 +1,6 @@
 import sqlite3
 from contextlib import closing
+from pathlib import Path
 
 import pytest
 
@@ -14,7 +15,9 @@ from redactor.utils.constants import (
 )
 
 
-def test_state_is_private_and_uses_durable_settings(connection):
+def test_state_is_private_and_uses_durable_settings(
+    connection: sqlite3.Connection,
+) -> None:
     directory = state_directory(connection)
     assert directory.stat().st_mode & 0o777 == PRIVATE_DIRECTORY_MODE
     assert (directory / DATABASE_FILENAME).stat().st_mode & 0o777 == PRIVATE_FILE_MODE
@@ -23,7 +26,9 @@ def test_state_is_private_and_uses_durable_settings(connection):
     assert connection.execute("PRAGMA foreign_keys").fetchone()[0] == 1
 
 
-def test_transactions_rollback_on_base_exception(connection):
+def test_transactions_rollback_on_base_exception(
+    connection: sqlite3.Connection,
+) -> None:
     with pytest.raises(KeyboardInterrupt):
         with transaction(connection):
             connection.execute("CREATE TABLE interrupted (value INTEGER)")
@@ -37,14 +42,14 @@ def test_transactions_rollback_on_base_exception(connection):
     )
 
 
-def test_transactions_do_not_nest(connection):
+def test_transactions_do_not_nest(connection: sqlite3.Connection) -> None:
     with transaction(connection):
         with pytest.raises(RuntimeError, match=ERROR_NESTED_TRANSACTION):
             with transaction(connection):
                 pytest.fail("Nested transaction succeeded")
 
 
-def test_future_schema_is_rejected_without_rewriting_it(tmp_path):
+def test_future_schema_is_rejected_without_rewriting_it(tmp_path: Path) -> None:
     state = tmp_path / STATE_DIRECTORY
     with closing(open_database(state)) as connection:
         connection.execute("PRAGMA user_version = 999")

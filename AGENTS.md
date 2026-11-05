@@ -22,8 +22,8 @@ worker scheduling, file processing, or automatic recovery in this bootstrap.
 - Keep mutable state local and pass dependencies explicitly. No mutable global
   variables, global connections, clients, registries, or import-time I/O.
 - Put named constants in `src/redactor/utils/constants.py`; import them where
-  needed. Do not scatter
-  magic status strings, error codes, filenames, timeouts, limits, or configuration
+  needed. Do not scatter magic status strings, error codes, filenames, timeouts,
+  limits, or configuration
   defaults through implementation code. SQL syntax, docstrings, and illustrative
   test data may remain literal where that improves readability.
 - Prefer standard-library implementations unless a dependency removes meaningful
@@ -43,8 +43,7 @@ worker scheduling, file processing, or automatic recovery in this bootstrap.
   coordinator will own database writes and the state-directory lock. That runtime
   will be implemented separately. Keep write transactions short; do not hold them
   while parsing, hashing files, or calling a model. Use process-local connections
-  and spawn workers rather than inheriting
-  the coordinator's connection or lock.
+  and spawn workers rather than inheriting the coordinator's connection or lock.
 - Keep large artifacts on the private filesystem and references in SQLite.
 - Persist artifact bytes before committing their checkpoint. Recover explicitly
   across the filesystem/database boundary; do not assume one atomic transaction
@@ -77,6 +76,8 @@ worker scheduling, file processing, or automatic recovery in this bootstrap.
 - Add meaningful tests with each significant behavior and discovered regression.
   Test failures, invalid state transitions, stale attempts, and actual subprocess
   interruption, not just the happy path.
+- Annotate test parameters and return types as well as production functions.
+  Ruff enforces annotation presence; a type checker validates their use.
 - Run focused tests during implementation and the full applicable suite before
   every implementation milestone commit. Check formatting, linting, and types.
 - Prefer real temporary files and SQLite databases over mocks of internal logic.
@@ -97,7 +98,7 @@ worker scheduling, file processing, or automatic recovery in this bootstrap.
 ```bash
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy src
+uv run mypy src tests
 uv run pytest -q
 uv run pytest --cov=redactor --cov-report=term-missing
 ```

@@ -18,7 +18,7 @@ still show packages from a standalone interpreter, restart the language server.
 ```bash
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy src
+uv run mypy src tests
 uv run pytest -q
 ```
 
