@@ -9,13 +9,15 @@ from redactor.persistence.files import prepare_task
 from redactor.persistence.queue import enqueue_task, get_task
 from redactor.utils.constants import (
     DATABASE_FILENAME,
-    ERROR_NESTED_TRANSACTION,
-    ERROR_UNSUPPORTED_SCHEMA,
     INITIAL_SCHEMA_VERSION,
     PRIVATE_DIRECTORY_MODE,
     PRIVATE_FILE_MODE,
     SCHEMA_VERSION,
     STATE_DIRECTORY,
+)
+from redactor.utils.errors import (
+    ERROR_NESTED_TRANSACTION,
+    ERROR_UNSUPPORTED_SCHEMA,
 )
 
 

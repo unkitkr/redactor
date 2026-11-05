@@ -110,7 +110,8 @@ reconciliation, and checkpoint save/resume will be implemented separately.
 
 ## Layout
 
-- `src/redactor/utils/constants.py`: named defaults, states, and failure codes.
+- `src/redactor/utils/constants.py`: named defaults, file locations, and states.
+- `src/redactor/utils/errors.py`: failure codes and allowed failure-code lists.
 - `src/redactor/schemas/persistence.py`: task, attempt, checkpoint, and artifact models.
 - `src/redactor/persistence/database.py`: schema and transaction boundaries.
 - `src/redactor/persistence/queue.py`: task transitions and attempt history.

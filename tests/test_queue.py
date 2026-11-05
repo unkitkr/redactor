@@ -20,6 +20,14 @@ from redactor.persistence.queue import (
 )
 from redactor.schemas.persistence import Artifact
 from redactor.utils.constants import (
+    STATE_DIRECTORY,
+    STATUS_FAILED,
+    STATUS_INTERRUPTED,
+    STATUS_PENDING,
+    STATUS_RUNNING,
+    STATUS_SUCCEEDED,
+)
+from redactor.utils.errors import (
     ERROR_COMPLETION_CHANGED,
     ERROR_DEPENDENCIES_CHANGED,
     ERROR_INVALID_FAILURE_CODE,
@@ -29,12 +37,6 @@ from redactor.utils.constants import (
     ERROR_TASK_ID_CONFLICT,
     ERROR_TASK_NOT_FOUND,
     ERROR_UNKNOWN_DEPENDENCY,
-    STATE_DIRECTORY,
-    STATUS_FAILED,
-    STATUS_INTERRUPTED,
-    STATUS_PENDING,
-    STATUS_RUNNING,
-    STATUS_SUCCEEDED,
 )
 
 

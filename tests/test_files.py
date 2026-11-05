@@ -33,6 +33,14 @@ from redactor.persistence.queue import (
 )
 from redactor.schemas.persistence import Artifact, Task
 from redactor.utils.constants import (
+    OUTPUT_DIRECTORY,
+    PRIVATE_DIRECTORY_MODE,
+    PRIVATE_FILE_MODE,
+    PUBLISHED_DIRECTORY,
+    STATE_DIRECTORY,
+    TEMPORARY_DIRECTORY,
+)
+from redactor.utils.errors import (
     ERROR_ARTIFACT_CORRUPT,
     ERROR_ARTIFACT_MISSING,
     ERROR_FILE_NOT_REGISTERED,
@@ -42,12 +50,6 @@ from redactor.utils.constants import (
     ERROR_STALE_ATTEMPT,
     ERROR_TASK_ID_CONFLICT,
     ERROR_UNKNOWN_DEPENDENCY,
-    OUTPUT_DIRECTORY,
-    PRIVATE_DIRECTORY_MODE,
-    PRIVATE_FILE_MODE,
-    PUBLISHED_DIRECTORY,
-    STATE_DIRECTORY,
-    TEMPORARY_DIRECTORY,
 )
 
 

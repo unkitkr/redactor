@@ -13,12 +13,6 @@ from redactor.persistence.database import state_directory
 from redactor.persistence.queue import enqueue_task, require_attempt
 from redactor.schemas.persistence import Artifact, Task, TaskSpec
 from redactor.utils.constants import (
-    ERROR_ARTIFACT_CORRUPT,
-    ERROR_ARTIFACT_MISSING,
-    ERROR_FILE_NOT_REGISTERED,
-    ERROR_INPUT_CHANGED,
-    ERROR_OUTPUT_CONFLICT,
-    ERROR_OUTPUT_FILESYSTEM,
     HASH_CHUNK_BYTES,
     JSON_SEPARATORS,
     OUTPUT_DIRECTORY,
@@ -28,6 +22,14 @@ from redactor.utils.constants import (
     TEMPORARY_DIRECTORY,
     TEMPORARY_FILE_TEMPLATE,
     TEXT_ENCODING,
+)
+from redactor.utils.errors import (
+    ERROR_ARTIFACT_CORRUPT,
+    ERROR_ARTIFACT_MISSING,
+    ERROR_FILE_NOT_REGISTERED,
+    ERROR_INPUT_CHANGED,
+    ERROR_OUTPUT_CONFLICT,
+    ERROR_OUTPUT_FILESYSTEM,
 )
 from redactor.utils.filesystem import private_directory, sync_directory
 

@@ -24,7 +24,8 @@ checkpoint save/resume and coordinator execution remain separate milestones.
 - Keep mutable state local and pass dependencies explicitly. No mutable global
   variables, global connections, clients, registries, or import-time I/O.
 - Put named constants in `src/redactor/utils/constants.py`; import them where
-  needed. Do not scatter magic status strings, error codes, filenames, timeouts,
+  needed. Keep error codes and their allowed-value lists in `utils/errors.py`.
+  Do not scatter magic status strings, error codes, filenames, timeouts,
   limits, or configuration
   defaults through implementation code. SQL syntax, docstrings, and illustrative
   test data may remain literal where that improves readability.

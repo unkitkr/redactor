@@ -8,6 +8,14 @@ from uuid import uuid4
 from redactor.persistence.database import transaction
 from redactor.schemas.persistence import Artifact, Attempt, Task, TaskSpec
 from redactor.utils.constants import (
+    FILE_LOCATION_FIELDS,
+    STATUS_FAILED,
+    STATUS_INTERRUPTED,
+    STATUS_PENDING,
+    STATUS_RUNNING,
+    STATUS_SUCCEEDED,
+)
+from redactor.utils.errors import (
     ERROR_COMPLETION_CHANGED,
     ERROR_DEPENDENCIES_CHANGED,
     ERROR_INTERRUPTED,
@@ -18,12 +26,6 @@ from redactor.utils.constants import (
     ERROR_TASK_NOT_FOUND,
     ERROR_UNKNOWN_DEPENDENCY,
     FAILURE_CODES,
-    FILE_LOCATION_FIELDS,
-    STATUS_FAILED,
-    STATUS_INTERRUPTED,
-    STATUS_PENDING,
-    STATUS_RUNNING,
-    STATUS_SUCCEEDED,
 )
 
 

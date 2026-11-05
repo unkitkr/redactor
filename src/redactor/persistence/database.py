@@ -7,9 +7,6 @@ from pathlib import Path
 
 from redactor.utils.constants import (
     DATABASE_FILENAME,
-    ERROR_NESTED_TRANSACTION,
-    ERROR_UNSUPPORTED_SCHEMA,
-    ERROR_WAL_UNAVAILABLE,
     INITIAL_SCHEMA_VERSION,
     PRIVATE_FILE_MODE,
     SCHEMA_VERSION,
@@ -26,6 +23,11 @@ from redactor.utils.constants import (
     TRANSACTION_BEGIN,
     TRANSACTION_COMMIT,
     TRANSACTION_ROLLBACK,
+)
+from redactor.utils.errors import (
+    ERROR_NESTED_TRANSACTION,
+    ERROR_UNSUPPORTED_SCHEMA,
+    ERROR_WAL_UNAVAILABLE,
 )
 from redactor.utils.filesystem import private_directory, sync_directory
 
