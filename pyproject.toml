@@ -32,6 +32,10 @@ python_version = "3.11"
 strict = true
 plugins = ["pydantic.mypy"]
 
+[tool.pyrefly]
+project-includes = ["src"]
+python-interpreter-path = ".venv/bin/python"
+
 [tool.coverage.run]
 source = ["redactor"]
 

@@ -11,6 +11,10 @@ Use `uv sync` to install the locked dependencies. `.python-version` selects Pyth
 3.14 still has a GIL. Planned CPU workers use separate spawned processes, so they
 do not share one GIL; a free-threaded interpreter is not required.
 
+Pyrefly uses the project interpreter at `.venv/bin/python`, configured in
+`pyproject.toml`. Select that interpreter in the editor as well. If diagnostics
+still show packages from a standalone interpreter, restart the language server.
+
 ```bash
 uv run ruff check .
 uv run ruff format --check .
