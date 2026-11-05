@@ -1,0 +1,95 @@
+# Redactor engineering conventions
+
+## Scope
+
+This repository implements the PHI pseudonymization assignment in `ASSIGNMENT.pdf`.
+Project-specific instructions for other applications in parent directories do not
+define Redactor's product, dependencies, milestones, or architecture.
+
+Build only the current agreed milestone. The initial milestone is a local SQLite
+queue and durable, resumable file checkpoints, not a distributed workflow engine.
+
+## Code
+
+- Write functional, composable, reusable, readable Python with explicit inputs and
+  outputs, descriptive names, type annotations, and proper spacing.
+- Keep business logic in functions. Use declarative, frozen Pydantic models for
+  structured data. Do not introduce manager, service, repository, or factory
+  classes when ordinary functions suffice.
+- Introduce an abstraction only when it solves a concrete problem. Reuse shared
+  behavior without creating a framework or splitting cohesive code unnecessarily.
+- Keep mutable state local and pass dependencies explicitly. No mutable global
+  variables, global connections, clients, registries, or import-time I/O.
+- Put named constants in `constants.py`; import them where needed. Do not scatter
+  magic status strings, error codes, filenames, timeouts, limits, or configuration
+  defaults through implementation code. SQL syntax, docstrings, and illustrative
+  test data may remain literal where that improves readability.
+- Prefer standard-library implementations unless a dependency removes meaningful
+  complexity. Support Python 3.11 and later on Linux; development also uses macOS.
+- Use `pathlib.Path`, small modules with clear responsibilities, and immutable
+  inputs. Never modify the supplied input files.
+- Do not hide errors. Preserve structured, PHI-free failure codes. Do not place
+  raw clinical content, identifiers, model prompts, or secrets in logs or reports.
+
+## Persistence and execution
+
+- SQLite is the authoritative queue and execution ledger. Local worker messages
+  are disposable delivery, not the durable source of truth.
+- One coordinator owns database writes and the state-directory lock. Keep write
+  transactions short; do not hold them while parsing, hashing files, or calling a
+  model. Use process-local connections and spawn workers rather than inheriting
+  the coordinator's connection or lock.
+- Keep large artifacts on the private filesystem and references in SQLite.
+- Persist artifact bytes before committing their checkpoint. Recover explicitly
+  across the filesystem/database boundary; do not assume one atomic transaction
+  covers both resources.
+- Fence stale attempts, keep input/configuration identities stable, and make
+  retries repeatable. Accept one logical result even when execution is repeated.
+- Stream large files with bounded memory. Parser adapters must provide actual
+  complete-record boundaries; buffered stream positions are not automatically
+  safe CSV or JSON resume positions.
+- A completed staged artifact is not a verified or published clinical file.
+  Publication requires the independent verifier in a later milestone.
+- Do not promise exactly-once model billing without an endpoint contract that
+  supports it. Persist completed responses and account for uncertain requests.
+
+## Agent code, when introduced
+
+- Keep agent-specific implementations under `src/redactor/agents/<agent_name>/`.
+- Separate prompts, structured output schemas, runtime/transport, and the agent's
+  orchestration logic. Name modules plainly, for example `prompts.py`,
+  `schemas.py`, and `run.py`.
+- Share runtime, validation, caching, and accounting only where there are actual
+  common call sites. Keep provider details out of prompt and domain logic.
+- Version prompts and validate structured outputs. Keep secrets in environment
+  variables. Never call a paid model endpoint in tests.
+- Add directories and abstractions when implemented; do not create empty research,
+  chat, or other agents to anticipate future requirements.
+
+## Tests and milestones
+
+- Add meaningful tests with each significant behavior and discovered regression.
+  Test failures, invalid state transitions, stale attempts, and actual subprocess
+  interruption, not just the happy path.
+- Run focused tests during implementation and the full applicable suite before
+  every implementation milestone commit. Check formatting, linting, and types.
+- Prefer real temporary files and SQLite databases over mocks of internal logic.
+  Use controlled substitutes only at external boundaries.
+- Commit each significant milestone with a semantic message such as
+  `feat(queue): persist task claims and recovery` or
+  `fix(durability): reject truncated checkpoint artifacts`.
+- Never commit secrets, private runtime state, virtual environments, or generated
+  benchmark files. The supplied synthetic inputs are assignment fixtures.
+- Preserve user changes. Do not rewrite commit history for presentation.
+- If a decision cannot be made pragmatically from the assignment and conversation,
+  stop implementation and ask the user. Explain the concrete unresolved choice.
+
+## Standard checks
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy src
+uv run pytest -q
+uv run pytest --cov=redactor --cov-report=term-missing
+```
