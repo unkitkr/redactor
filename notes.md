@@ -1,23 +1,28 @@
-- SQLite holds the durable queue and state, avoiding extra services within the 2 vCPU and 1 GB limit.
-- WAL and short transactions allow concurrent workers while accepting SQLite's single-writer limit.
-- Tasks represent file-processing steps; large files are handled in bounded chunks rather than queued row by row.
-- Stable task identities prevent duplicate registration and preserve completed work across restarts.
-- Step completion and creation of dependent tasks happen in one transaction.
-- Retries accept one logical result, although execution and remote model billing can repeat after a crash.
-- The coordinator handles startup, recovery, and worker supervision; workers pull tasks directly from SQLite.
+## Architecture
+
+- The coordinator handles startup, recovery, and worker supervision; workers pull tasks from the queue.
 - A shared run lock prevents recovery while workers from an earlier run are still alive.
-- Large intermediate artifacts stay in private files, with references in SQLite; recovery requires retaining this local state.
-- Atomic publication requires staging and output on the same filesystem, avoiding partially copied outputs.
-- Numbered SQL migrations manage schema changes without an ORM.
-- Long-step recovery uses checkpoints at valid record boundaries; checkpoint save/resume is not implemented yet.
-- Files are routed by validated content, so valid mislabeled files use the appropriate format adapter.
-- Native formats are preserved, with text locations, metadata, embedded content, and pixels included in processing.
-- Typed fields and known patterns use deterministic handling; free text receives contextual inspection.
-- Interchangeable NER and OCR adapters allow model comparison without changing the rest of the pipeline.
-- Entity resolution is separate from detection, using scoped identifiers and supporting evidence rather than names alone.
-- Replacements are deterministic, date offsets are consistent per patient, and secrets come from the environment.
-- The structured-data path must stream every row and work with hosted models disabled.
-- The OpenAI SDK is selected for the optional hosted-model helper using the supplied endpoint.
-- Independent verification gates publication; unsafe or unverifiable results go to quarantine.
-- Reports derive counts from durable accepted state so retries do not inflate results.
-- Clinical processing, verification, and reporting remain unimplemented; no end-to-end benchmark results are available yet.
+- Each task represents one processing step for one file; large files are processed in chunks rather than queued row by row.
+- Stable task identities prevent duplicate registration and preserve completed work across restarts.
+- Completing a step and creating its dependent tasks happen in one transaction.
+- A retry may repeat execution, but only one result is accepted; remote calls can still be billed again.
+- Long steps are designed to resume from record checkpoints; checkpoint recovery is not implemented yet.
+- Files are validated and handled according to their actual format, even when the extension is wrong.
+- Processing preserves native formats and covers text, metadata, embedded content, and pixels.
+- Typed fields and known patterns use deterministic detection; free text needs contextual inspection.
+- NER and OCR models sit behind interchangeable adapters so they can be compared or replaced independently.
+- Person matching is separate from detection and uses scoped identifiers and supporting evidence, not names alone.
+- Replacements are deterministic, date offsets stay consistent per patient, and secrets come from the environment.
+- Structured files are streamed without skipping rows and must work with hosted models disabled.
+- Outputs are verified before publishing; unsafe or unverifiable results go to quarantine.
+- Reports use committed state so retries do not duplicate counts.
+- Clinical processing, verification, and reporting are not implemented yet; end-to-end benchmark results are not available.
+
+## Technology choices
+
+- SQLite for the queue and state, avoiding extra services within the 2 vCPU and 1 GB limit.
+- WAL and short transactions for concurrent workers, accepting that SQLite serializes database writes.
+- Local files for large artifacts and SQLite for their references; recovery requires retaining both.
+- Atomic publication on the same filesystem to prevent partial outputs; cross-filesystem publication is unsupported.
+- Numbered SQL migrations without an ORM, keeping the persistence layer small.
+- OpenAI SDK for optional hosted-model calls through the supplied endpoint.

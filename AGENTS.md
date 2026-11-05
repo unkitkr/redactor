@@ -15,8 +15,10 @@ save/resume remain separate milestones.
 
 - Keep `notes.md` as a short, evaluator-facing architecture and decision log.
   Read it before making architectural choices or selecting models and dependencies.
-- Use only concise, one-line bullets in natural, neutral language. No first-person
-  wording, introductory prose, section headings, or em dashes in the notes.
+- Group concise, one-line bullets under `Architecture` and `Technology choices`.
+  Put high-level system design in the first section and selected databases, models,
+  runtimes, and other technologies in the second. Use natural, neutral language
+  without first-person wording, introductory prose, or em dashes.
 - Record high-level decisions already made, with a brief reason where useful.
   Keep coding principles, style rules, module layouts, development procedures,
   task lists, undecided proposals, and model shortlists out of `notes.md`.
