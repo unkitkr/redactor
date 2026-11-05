@@ -6,11 +6,32 @@ This repository implements the PHI pseudonymization assignment in `ASSIGNMENT.pd
 Project-specific instructions for other applications in parent directories do not
 define Redactor's product, dependencies, milestones, or architecture.
 
-Build only the current agreed milestone. The queue and artifact foundation is in
-place. The current milestone adds coordinator startup, exclusive run ownership,
-input registration, and placeholder workers that claim and print task summaries.
-Clinical processing, workflow orchestration, and checkpoint save/resume remain
-separate milestones.
+Build only the current agreed milestone. The queue and artifact foundation,
+coordinator startup, exclusive run ownership, input registration, and placeholder
+workers are in place. Clinical processing, workflow orchestration, and checkpoint
+save/resume remain separate milestones.
+
+## Decision record
+
+- Treat `notes.md` as the ongoing project decision record. Read it before making
+  architectural choices or selecting models, dependencies, and runtime behavior.
+- Record decisions made by the user and decisions reached together, including
+  architecture, queue/durability behavior, code organization, model selection,
+  and validation strategy. Update the notes in the same cohesive change when a
+  decision is made, revised, or implemented.
+- Distinguish implemented behavior, agreed future direction, and open proposals.
+  Do not present an assistant suggestion or an unmeasured model claim as a final
+  decision or a working capability. Keep reasons and relevant evidence concise.
+- Record a tradeoff only when we deliberately accept a cost or constraint. Do not
+  manufacture a tradeoff for every decision. Keep known limitations, missing
+  capabilities, and unresolved questions separate from intentional tradeoffs.
+- When a decision changes, identify the replacement and briefly retain the reason
+  where useful. Keep current statuses accurate as implementation progresses.
+- Use plain language and no em dashes in `notes.md` or this file. Never include
+  secrets, raw PHI, model prompts containing input data, or raw research dumps.
+- Keep exploratory research artifacts out of commits. Before any push, inspect
+  outgoing history as well as the current tree so unwanted research artifacts are
+  not published. Record useful agreed conclusions in `notes.md` instead.
 
 ## Code
 
