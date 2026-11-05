@@ -13,6 +13,7 @@ STATUS_FAILED: Final = "failed"
 STATUS_INTERRUPTED: Final = "interrupted"
 
 # File locations and metadata
+INPUT_DIRECTORY: Final = "input"
 STATE_DIRECTORY: Final = ".redactor"
 DATABASE_FILENAME: Final = "state.sqlite3"
 OUTPUT_DIRECTORY: Final = "output"
@@ -20,6 +21,11 @@ PUBLISHED_DIRECTORY: Final = "published"
 TEMPORARY_DIRECTORY: Final = "tmp"
 TEMPORARY_FILE_TEMPLATE: Final = "{attempt_token}.part"
 FILE_LOCATION_FIELDS: Final = ("temporary_directory", "output_path")
+
+# Coordinator ownership and placeholder work
+RUN_LOCK_FILENAME: Final = "coordinator.lock"
+PRINT_TASK_STEP: Final = "print_task"
+BOOTSTRAP_PROCESSING_VERSION: Final = "bootstrap-v1"
 
 # Migration filenames
 SQL_SUFFIX: Final = ".sql"

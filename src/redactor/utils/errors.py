@@ -28,6 +28,12 @@ ERROR_INCOMPLETE_INPUT: Final = "input_not_fully_consumed"
 ERROR_PROCESSING: Final = "processing_error"
 ERROR_TIMEOUT: Final = "processing_timeout"
 
+# Coordinator startup and input discovery
+ERROR_RUN_ACTIVE: Final = "state_directory_in_use"
+ERROR_INPUT_DIRECTORY: Final = "invalid_input_directory"
+ERROR_DIRECTORY_OVERLAP: Final = "input_and_runtime_directories_overlap"
+ERROR_INPUT_ENTRY: Final = "unsupported_input_entry"
+
 FAILURE_CODES: Final = (
     ERROR_PROCESSING,
     ERROR_TIMEOUT,

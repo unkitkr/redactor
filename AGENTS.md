@@ -6,11 +6,11 @@ This repository implements the PHI pseudonymization assignment in `ASSIGNMENT.pd
 Project-specific instructions for other applications in parent directories do not
 define Redactor's product, dependencies, milestones, or architecture.
 
-Build only the current agreed milestone. The initial milestone is a local SQLite
-queue and checkpoint-state persistence. Do not implement the runtime, coordinator,
-worker scheduling, file processing, or automatic recovery in this bootstrap.
-The current file-storage chunk adds registration and explicit artifact helpers;
-checkpoint save/resume and coordinator execution remain separate milestones.
+Build only the current agreed milestone. The queue and artifact foundation is in
+place. The current milestone adds coordinator startup, exclusive run ownership,
+input registration, and placeholder workers that claim and print task summaries.
+Clinical processing, workflow orchestration, and checkpoint save/resume remain
+separate milestones.
 
 ## Code
 
@@ -54,11 +54,16 @@ checkpoint save/resume and coordinator execution remain separate milestones.
   in `utils/constants.py`. Do not maintain a shared migration registry.
   Append migrations instead of rewriting applied files. Migration SQL preserves
   historical values; it must not interpolate today's application constants.
-- Coordinator-related code belongs in `src/redactor/coordinator/`. The planned
-  coordinator will own database writes and the state-directory lock. That runtime
-  will be implemented separately. Keep write transactions short; do not hold them
-  while parsing, hashing files, or calling a model. Use process-local connections
-  and spawn workers rather than inheriting the coordinator's connection or lock.
+- Coordinator-related code belongs in `src/redactor/coordinator/`. Keep its files
+  small and split startup, inventory, ownership, and worker supervision by their
+  responsibilities. Worker execution belongs in `src/redactor/workers/`.
+- The coordinator owns startup and recovery. Workers claim and complete tasks
+  through their own SQLite connections. Keep write transactions short; do not
+  hold them while parsing, hashing files, or calling a model.
+- Start workers in fresh interpreters; never inherit a database connection.
+  Explicitly inherit only the run-lock descriptor so recovery remains blocked
+  while any worker from the previous run survives. Release that lock by closing
+  descriptors, never by explicitly unlocking or unlinking the lock file.
 - Keep large artifacts on the private filesystem and references in SQLite.
 - Persist artifact bytes before committing their checkpoint. Recover explicitly
   across the filesystem/database boundary; do not assume one atomic transaction
