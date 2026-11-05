@@ -9,3 +9,17 @@ wheels/
 # Virtual environments
 .venv
 
+input/
+
+# Private runtime state and local checks
+.redactor/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+htmlcov/
+tmp/
+.DS_Store
+.env
+.env.*
+!.env.example

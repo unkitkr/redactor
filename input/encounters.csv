@@ -1,8 +1,0 @@
-﻿encounter_id,mrn,patient,birth_date,sex,admit_ts,discharge_ts,attending,attending_npi,dx_codes,cpt_codes,lot_no,contact,comments
-ENC31000,0087482,Oliver Lindgren,10/16/1965,M,2026-05-24 10:40,2026-05-27 18:40,Dr. Anjali Achterberg,2272524218,E11.9;I10,99223,8179063,4155550152,"Pt states ""much better, thanks"".
-Daughter Léa Lindgren (415-555-0104) to drive home; A1c 8.4%, metformin 1000 mg BID resumed."
-ENC31007,0080736,"Pritchard, Priya",03/04/1935,F,2026-05-27 13:40,2026-06-01 14:40,Dr. Anjali Achterberg,2272524218,J18.9;N18.3;I10,99223;71046,6594515,307-555-0150,"Age 91. Lives with husband Leonard at 912 Lantern Hill Road, Pine Ridge.
-No Bell's palsy. GCS 15."
-ENC31014,0093177,Gregory Oyelaran,08/03/1981,M,2026-04-30 10:40,2026-04-30 13:40,Dr. Marcus Iyer,1085431322,J45.909,99213,3639805,215-555-0133,"Albuterol MDI refilled, 90 mcg 2 puffs PRN."
-ENC31021,0019541,Gregory Oyelaran,04/01/1953,M,2026-05-12 10:40,2026-05-12 12:40,Dr. Marcus Iyer,1085431322,I25.10,99214,7998302,617-555-0130,"Atorvastatin 40 mg daily, LDL 92 mg/dL."
-ENC31028,0090574,Bernard Kowalczyk,06/04/1936,M,2026-05-24 10:40,2026-05-24 15:40,Dr. Patrick Desai,1840002327,G20,99204,9015178,617-555-0132,"Parkinson's disease, carbidopa-levodopa 25/100 TID. Neuro f/u w/ Dr. Desai on 06/23/2026."
