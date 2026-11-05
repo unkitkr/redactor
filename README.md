@@ -83,6 +83,31 @@ Keep the state directory and SQLite's journal files together across restarts on
 a local filesystem. Do not delete a WAL file manually. The state directory may
 contain sensitive paths and intermediate data; it is private and gitignored.
 
+## Temporary files and outputs
+
+`create_temporary_file(connection, claimed)` creates a private file named by the
+attempt token under its registered temporary directory. Repeated calls preserve
+existing bytes, and a new attempt gets a separate file. This does not implement
+checkpoint recovery or decide where appending is safe.
+
+Close the writer, then call `seal_temporary_file` to sync and fingerprint its
+bytes. The future independent verifier must approve that exact artifact before
+the caller passes it to `finalize_output`. Finalization rechecks the bytes and
+installs the complete file at its registered output path. These helpers do not
+perform PHI verification themselves.
+
+An atomic hard link installs the output without overwriting a conflicting file;
+the output directory is synced before the temporary link is removed. Replaying
+finalization accepts an identical existing output, including after a crash between
+installation and cleanup. The temporary and output paths must share a local
+filesystem. Cross-filesystem publication fails without creating a partial file.
+
+The caller owns exclusive coordination, closes writers before verification, and
+keeps artifacts unchanged until finalization finishes. Filesystem finalization and
+SQLite task completion are separate operations: pass the returned artifact to
+`complete_task` after successful finalization. Actual verifier execution, startup
+reconciliation, and checkpoint save/resume will be implemented separately.
+
 ## Layout
 
 - `src/redactor/utils/constants.py`: named defaults, states, and failure codes.
