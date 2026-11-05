@@ -27,6 +27,11 @@ RUN_LOCK_FILENAME: Final = "coordinator.lock"
 PRINT_TASK_STEP: Final = "print_task"
 BOOTSTRAP_PROCESSING_VERSION: Final = "bootstrap-v1"
 
+# Worker processes and exit status
+WORKER_MODULE: Final = "redactor.workers"
+EXIT_SUCCESS: Final = 0
+EXIT_FAILURE: Final = 1
+
 # Migration filenames
 SQL_SUFFIX: Final = ".sql"
 MIGRATION_FILENAME_PATTERN: Final = r"([0-9]+)_.+\.sql"

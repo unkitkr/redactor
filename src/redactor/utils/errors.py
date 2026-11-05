@@ -33,6 +33,7 @@ ERROR_RUN_ACTIVE: Final = "state_directory_in_use"
 ERROR_INPUT_DIRECTORY: Final = "invalid_input_directory"
 ERROR_DIRECTORY_OVERLAP: Final = "input_and_runtime_directories_overlap"
 ERROR_INPUT_ENTRY: Final = "unsupported_input_entry"
+ERROR_WORKER_FAILED: Final = "worker_failed"
 
 FAILURE_CODES: Final = (
     ERROR_PROCESSING,

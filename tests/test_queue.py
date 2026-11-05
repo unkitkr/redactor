@@ -84,6 +84,21 @@ def test_claim_is_exclusive_and_records_attempt(
     assert attempt.status == STATUS_RUNNING
 
 
+def test_claim_filters_step_and_processing_version(
+    connection: sqlite3.Connection, source_file: Path
+) -> None:
+    for step, version in (("inspect", "v1"), ("rewrite", "v1"), ("inspect", "v2")):
+        enqueue_task(connection, prepare_task(source_file, step, version))
+
+    task = claim_task(connection, step="inspect", processing_version="v2")
+    assert task is not None
+    assert (task.step, task.processing_version) == ("inspect", "v2")
+    assert claim_task(connection, step="inspect", processing_version="v2") is None
+    assert claim_task(connection, step="unknown") is None
+    assert claim_task(connection, processing_version="unknown") is None
+    assert claim_task(connection) is not None
+
+
 def test_completed_task_is_not_dispatched_again(
     connection: sqlite3.Connection, source_file: Path
 ) -> None:
