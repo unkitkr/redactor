@@ -111,7 +111,8 @@ reconciliation, and checkpoint save/resume will be implemented separately.
 ## Schema migrations
 
 Numbered SQL files and their runner live in `src/redactor/migrations/`. The package
-owns discovery, naming rules, and migration execution. It discovers the SQL files
+owns discovery, filename validation, and migration execution. Naming constants are
+grouped in `utils/constants.py`. The package discovers the SQL files
 at database startup, orders them by version, and validates consecutive numbering
 from one. Their count determines the current schema version. Adding the next SQL
 file requires no registry or version-constant update. Add a new migration when
@@ -125,7 +126,7 @@ in a migration must end with a semicolon on its own statement's final line.
 
 ## Layout
 
-- `src/redactor/utils/constants.py`: named defaults, file locations, and states.
+- `src/redactor/utils/constants.py`: constants grouped by domain and responsibility.
 - `src/redactor/utils/errors.py`: failure codes and allowed failure-code lists.
 - `src/redactor/schemas/persistence.py`: task, attempt, checkpoint, and artifact models.
 - `src/redactor/migrations/`: SQL schema changes, discovery, and the migration runner.

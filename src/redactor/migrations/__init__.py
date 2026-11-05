@@ -4,7 +4,7 @@ import re
 from importlib.resources import files
 from importlib.resources.abc import Traversable
 
-from redactor.migrations.constants import MIGRATION_FILENAME_PATTERN, SQL_SUFFIX
+from redactor.utils.constants import MIGRATION_FILENAME_PATTERN, SQL_SUFFIX
 from redactor.utils.errors import ERROR_INVALID_MIGRATIONS
 
 
