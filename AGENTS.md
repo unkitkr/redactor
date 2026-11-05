@@ -18,10 +18,8 @@ separate milestones.
   outputs, descriptive names, type annotations, and proper spacing.
 - Keep business logic in functions. Use declarative, frozen Pydantic models for
   structured data. Do not introduce manager, service, repository, or factory
-  classes when ordinary functions suffice.
-- A small scoped queue client may encapsulate connection ownership for workers.
-  Keep transaction and state-transition logic in the existing queue functions;
-  do not duplicate it in the client.
+  classes. Worker-facing persistence APIs must also use functions, not client
+  classes. Keep transaction and state-transition logic in the queue functions.
 - Introduce an abstraction only when it solves a concrete problem. Reuse shared
   behavior without creating a framework or splitting cohesive code unnecessarily.
 - Group code by domain and responsibility. Keep domain-specific logic with the
