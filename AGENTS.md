@@ -13,29 +13,21 @@ save/resume remain separate milestones.
 
 ## Decision record
 
-- Treat `notes.md` as the ongoing project decision record. Read it before making
-  architectural choices or selecting models, dependencies, and runtime behavior.
-- Record decisions made by the user and decisions reached together, including
-  architecture, queue/durability behavior, code organization, model selection,
-  and validation strategy. Update the notes in the same cohesive change when a
-  decision is made, revised, or implemented.
-- Write `notes.md` for the assignment evaluators in the project author's first
-  person. Explain choices and reasons directly, without references to the user,
-  assistant conversations, or internal agent instructions.
-- Record only decisions already made. Distinguish implemented behavior from
-  decided architecture whose implementation is pending. Keep task lists,
-  undecided proposals, model shortlists, and unresolved questions out of this log.
-  Do not present a suggestion or an unmeasured claim as a decision or capability.
-- Record a tradeoff only when we deliberately accept a cost or constraint. Do not
-  manufacture a tradeoff for every decision. Keep factual current limitations
-  separate from intentional tradeoffs, without turning them into a task list.
-- When a decision changes, identify the replacement and briefly retain the reason
-  where useful. Keep current statuses accurate as implementation progresses.
-- Use plain language and no em dashes in `notes.md` or this file. Never include
-  secrets, raw PHI, model prompts containing input data, or raw research dumps.
+- Keep `notes.md` as a short, evaluator-facing architecture and decision log.
+  Read it before making architectural choices or selecting models and dependencies.
+- Use only concise, one-line bullets in natural, neutral language. No first-person
+  wording, introductory prose, section headings, or em dashes in the notes.
+- Record high-level decisions already made, with a brief reason where useful.
+  Keep coding principles, style rules, module layouts, development procedures,
+  task lists, undecided proposals, and model shortlists out of `notes.md`.
+- Include relevant known limitations and only tradeoffs deliberately accepted.
+  Distinguish a chosen design from implemented capability without adding a roadmap.
+- Update the notes when an architectural decision is made or changes. Replace
+  superseded points so the log stays short and accurate.
+- Keep coding conventions in this file. Use no em dashes here either, and never
+  include secrets, raw PHI, or prompts containing input data in either document.
 - Keep exploratory research artifacts out of commits. Before any push, inspect
-  outgoing history as well as the current tree so unwanted research artifacts are
-  not published. Record useful agreed conclusions in `notes.md` instead.
+  outgoing history as well as the current tree so unwanted research is not published.
 
 ## Code
 
