@@ -3,6 +3,8 @@
 from typing import Final
 
 ERROR_UNSUPPORTED_SCHEMA: Final = "unsupported_state_schema"
+ERROR_INVALID_MIGRATIONS: Final = "invalid_migration_sequence"
+ERROR_MIGRATION_TRANSACTION_REQUIRED: Final = "migration_transaction_required"
 ERROR_INCOMPLETE_MIGRATION: Final = "incomplete_migration_statement"
 ERROR_WAL_UNAVAILABLE: Final = "sqlite_wal_unavailable"
 ERROR_NESTED_TRANSACTION: Final = "nested_transaction_not_supported"

@@ -21,10 +21,15 @@ checkpoint save/resume and coordinator execution remain separate milestones.
   classes when ordinary functions suffice.
 - Introduce an abstraction only when it solves a concrete problem. Reuse shared
   behavior without creating a framework or splitting cohesive code unnecessarily.
+- Group code by domain and responsibility. Keep domain-specific logic and
+  configuration with the package that owns them; reserve `utils/` for genuinely
+  shared functionality. Do not create broad registries or move unrelated code
+  together merely because it uses the same mechanism.
 - Keep mutable state local and pass dependencies explicitly. No mutable global
   variables, global connections, clients, registries, or import-time I/O.
-- Put named constants in `src/redactor/utils/constants.py`; import them where
-  needed. Keep error codes and their allowed-value lists in `utils/errors.py`.
+- Put shared named constants in `src/redactor/utils/constants.py`; put domain-only
+  constants in that domain's `constants.py`. Import them where needed. Keep error
+  codes and their allowed-value lists in `utils/errors.py`.
   Do not scatter magic status strings, error codes, filenames, timeouts,
   limits, or configuration
   defaults through implementation code. SQL syntax, docstrings, and illustrative
@@ -43,6 +48,8 @@ checkpoint save/resume and coordinator execution remain separate milestones.
 - SQLite is the authoritative queue and execution ledger. Local worker messages
   are disposable delivery, not the durable source of truth.
 - Keep schema changes in numbered SQL files under `src/redactor/migrations/`.
+  That package owns discovery and naming rules (in its own `constants.py`), and
+  derives the schema version from its SQL files. Do not maintain a shared registry.
   Append migrations instead of rewriting applied files. Migration SQL preserves
   historical values; it must not interpolate today's application constants.
 - Coordinator-related code belongs in `src/redactor/coordinator/`. The planned

@@ -4,16 +4,15 @@ from pathlib import Path
 
 import pytest
 
-from redactor.persistence import database
+from redactor import migrations
+from redactor.migrations import discover_migrations
 from redactor.persistence.database import open_database, state_directory, transaction
 from redactor.persistence.files import prepare_task
 from redactor.persistence.queue import enqueue_task, get_task
 from redactor.utils.constants import (
     DATABASE_FILENAME,
-    MIGRATION_FILENAMES,
     PRIVATE_DIRECTORY_MODE,
     PRIVATE_FILE_MODE,
-    SCHEMA_VERSION,
     STATE_DIRECTORY,
 )
 from redactor.utils.errors import (
@@ -79,7 +78,9 @@ def test_previous_schema_is_migrated_without_losing_tasks(
 
     with closing(open_database(state)) as connection:
         assert get_task(connection, task.task_id) == task
-        assert connection.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == len(
+            discover_migrations()
+        )
 
 
 def test_failed_migration_rolls_back_schema_and_version(
@@ -91,7 +92,9 @@ def test_failed_migration_rolls_back_schema_and_version(
         connection.execute("ALTER TABLE tasks DROP COLUMN output_path")
         connection.execute("PRAGMA user_version = 1")
 
-    migration = tmp_path / MIGRATION_FILENAMES[1]
+    for source in discover_migrations():
+        (tmp_path / source.name).write_text(source.read_text())
+    migration = tmp_path / "002_file_locations.sql"
     migration.write_text(
         "ALTER TABLE tasks ADD COLUMN temporary_directory TEXT;\n"
         "INSERT INTO missing_table VALUES (1);\n"
@@ -100,7 +103,7 @@ def test_failed_migration_rolls_back_schema_and_version(
     def migration_directory(package: str) -> Path:
         return tmp_path
 
-    monkeypatch.setattr(database, "files", migration_directory)
+    monkeypatch.setattr(migrations, "files", migration_directory)
     with pytest.raises(sqlite3.OperationalError):
         with closing(open_database(state)):
             pytest.fail("Invalid migration succeeded")
