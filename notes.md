@@ -1,380 +1,308 @@
-# Project decisions
+# Architecture and decision log
 
 Updated: 2026-11-06
 
-This is the ongoing record of decisions made with the user, why they were made,
-and the limitations we know about. It records project choices, not raw research.
-Update it as decisions change and work is completed.
+This log records the architecture decisions I have made, their rationale, and the
+known limitations of the implementation. I distinguish implemented behavior from
+design decisions whose implementation is still pending.
 
-Status labels distinguish what exists from what we intend to build:
+## Resource constraints and incremental development
 
-- **Implemented:** present in the repository.
-- **Agreed direction:** chosen for future implementation, but not a current capability.
-- **Open:** a proposal or question that still needs a decision or evidence.
+I am designing for a container with 2 vCPUs and 1 GB of RAM, with runtime network
+access limited to the supplied model endpoint. These constraints led me to choose
+embedded persistence, local files for artifacts, bounded processing, and optional
+hosted-model assistance.
 
-## Scope and constraints
+I built the queue and durability layer first, then added coordinator startup and
+placeholder workers. This lets me test task ownership and recovery before adding
+clinical transformations. I keep changes small and cohesive so I can review and
+roll back each milestone independently.
 
-The target container has 2 vCPUs and 1 GB of RAM. Runtime network access is limited
-to the supplied model endpoint. The generated large CSV must cover every row
-without sampling or truncation and finish within 30 minutes with hosted models
-disabled. Peak memory and throughput must be measured, not inferred from model
-download sizes or a small-file test.
+## Functional code and module boundaries
 
-We are building in small, reviewable milestones. The queue and durability layer
-came first, followed by coordinator startup and placeholder workers. Clinical
-processing, general workflow dispatch, checkpoint save/resume, and model execution
-are separate milestones. Keeping the existing bootstrap does not authorize
-building the entire pipeline in one change.
+I use functional, composable Python with explicit dependencies, type annotations,
+and small modules grouped by responsibility. Business logic and the worker-facing
+persistence API are functions. I use frozen Pydantic models for structured data
+and pass third-party runtime objects into functions without adding manager or
+client wrapper classes.
 
-## Code organization and development
+I keep coordinator code in `src/redactor/coordinator/`, worker execution in
+`src/redactor/workers/`, and shared schemas in `src/redactor/schemas/`. Named
+constants live in `src/redactor/utils/constants.py`, grouped by responsibility.
+Error codes and their allowed values live in `src/redactor/utils/errors.py`.
 
-**Implemented conventions, to continue following:**
+I avoid mutable global runtime state, global connections, and import-time I/O.
+File locations and configuration defaults are named constants. I introduce an
+abstraction only when it addresses a concrete need. For agent code, I have chosen
+to separate prompts, output schemas, transport/runtime, and agent-specific logic.
 
-- Use functional, composable Python with explicit dependencies, clear names,
-  type annotations, spacing, and small cohesive modules.
-- Keep business logic and worker-facing persistence APIs in functions. Do not add
-  manager, service, repository, or client wrapper classes. Frozen Pydantic models
-  are used for structured data; third-party runtime objects may be passed into
-  functions.
-- Group implementation by responsibility. Coordinator code belongs in
-  `src/redactor/coordinator/`; worker execution belongs in `src/redactor/workers/`.
-  Split files when it improves readability, without creating abstractions merely
-  to anticipate possible future use.
-- Keep shared schemas in `src/redactor/schemas/`. Put named constants in
-  `src/redactor/utils/constants.py`, grouped within that file. Error codes and
-  their allowed values belong in `src/redactor/utils/errors.py`.
-- Do not use mutable global runtime state, global connections, or import-time I/O.
-  Keep file locations and configuration defaults in constants rather than
-  scattering magic strings through implementation code.
-- When agents are introduced, separate prompts, output schemas, transport/runtime,
-  and agent-specific functions. Share code where there are actual common needs.
-- Annotate context-manager generators with `Generator`. Ordinary lazy database
-  iterators remain iterators; reading task listings does not claim work.
+I annotate context-manager generators with `Generator`. Ordinary lazy database
+iterators remain iterators; listing tasks does not claim them.
 
-The package currently supports Python 3.11 and later, with Python 3.14 selected for
-development. Ordinary Python 3.14 still has a GIL. Separate worker processes avoid
-sharing one GIL; a free-threaded interpreter is not a requirement. Use the project
-virtual environment so editor diagnostics and command-line dependencies agree.
-Ruff handles linting, formatting, and annotation presence; type checking remains
-a separate check.
+I support Python 3.11 and later, with Python 3.14 selected for development. Ordinary
+Python 3.14 still has a GIL, so I use separate worker processes rather than relying
+on a free-threaded interpreter. I use the project virtual environment for editor
+diagnostics and command-line tools. Ruff handles linting, formatting, and
+annotation presence; type checking is a separate check.
 
-## SQLite owns the durable queue
+## SQLite as the authoritative queue
 
-**Implemented.** SQLite is the authoritative queue and execution ledger. It stores
-task identities, dependencies, attempts, statuses, file locations, and artifact
-metadata. A disposable in-memory queue is not the source of truth. JSON files are
-not used as a replacement for transactional queue state.
+I chose SQLite as the durable queue and execution ledger. It stores task
+identities, dependencies, attempts, statuses, file locations, and artifact
+metadata. Queue state does not depend on an in-memory queue or JSON files.
 
-We chose an embedded database to avoid running Redis, a message broker, or
-PostgreSQL within the small container. Direct SQLite operations and numbered SQL
-migrations are sufficient for this layer; no ORM has been introduced.
+An embedded database avoids running Redis, a message broker, or PostgreSQL within
+the small container. I use direct SQLite operations and numbered SQL migrations;
+the current persistence layer does not need an ORM.
 
-Each worker owns a connection. Claims and state transitions use short
-`BEGIN IMMEDIATE` transactions. Hashing, parsing, model calls, and file writes take
-place outside those write transactions.
+Each worker owns a connection. I use short `BEGIN IMMEDIATE` transactions for
+claims and state transitions. Hashing, parsing, model calls, and file writes take
+place outside database write transactions.
 
-WAL is enabled at database setup, including single-worker runs. It allows readers
-alongside a writer, but SQLite still has one writer at a time. Connections also
-use `synchronous=FULL`, foreign keys, a bounded lock wait, a suggested page-cache
-size, and file-backed temporary storage.
+I enable WAL at database setup, including single-worker runs. It allows readers
+alongside a writer, but SQLite still has one writer at a time. I also configure
+`synchronous=FULL`, foreign keys, a bounded lock wait, a suggested page-cache size,
+and file-backed temporary storage.
 
-**Intentional tradeoff:** accept serialized, short database writes in exchange
+**Intentional tradeoff:** I accept serialized, short database writes in exchange
 for a small embedded dependency and transactional state. Worker computation can
-still run concurrently. We are not trying to reproduce PostgreSQL's
-`SKIP LOCKED` mechanism or build a distributed scheduler.
+still run concurrently. This deployment does not require PostgreSQL's
+`SKIP LOCKED` mechanism or a distributed scheduler.
 
-## File registration and task granularity
+## Task identity and queue granularity
 
-**Implemented:** one task identifies one step for one input. Its identity includes
-the resolved input path, the input's SHA-256 digest, the step, and the processing
-version. Repeated registration preserves an existing task's state. A different
-input, step, or processing version is a different task.
+I represent one step for one input as a task. Its identity includes the resolved
+input path, the input's SHA-256 digest, the step, and the processing version.
+Repeated registration preserves an existing task's state. A different input,
+step, or processing version produces a different task.
 
-File registration and artifact helpers live in `persistence/files.py`. Registration
+I keep registration and artifact helpers in `persistence/files.py`. Registration
 hashes raw bytes in bounded buffers, checks for changes during hashing, and stores
-the task and its temporary/output locations together. It does not create an output
-file. File hashes establish byte identity; they are not pseudonyms for PHI.
+the task and its temporary/output locations together. It creates no output file.
+These hashes establish file identity; I do not use them as pseudonyms for PHI.
 
-Relevant policy, identity-map, model/prompt, and key versions will need to contribute
-to processing identity when those components are implemented. Store a non-secret
-key version, never the secret itself.
+The processing version identifies the configuration relevant to a result. A key
+version can contribute to that identity without storing the secret itself.
 
-**Agreed direction:** queue file references and step metadata, not file contents
-or one independent task for every CSV row. Process large files through bounded
-records or chunks inside a step. Introduce durable chunk tasks only if a concrete
-parallelism or recovery need justifies them.
+I chose to queue file references and step metadata, with bounded record or chunk
+processing inside a step. I do not enqueue file contents or create an independent
+task for every CSV row. The current implementation supports file-step tasks;
+record processing is not implemented yet.
 
-## Claims, retries, and step-level recovery
+## Explicit claims and durable step completion
 
-**Implemented.** Workers pull ready tasks from SQLite through the functional
-`persistence/client.py` API. They explicitly claim, complete, or fail work. Opening
-or closing the queue connection does not acknowledge a task.
+I expose a functional worker API through `persistence/client.py`. Workers pull
+ready tasks from SQLite and explicitly claim, complete, or fail them. Opening or
+closing a queue connection does not acknowledge a task.
 
-Claims select pending tasks whose prerequisites succeeded and record a new attempt
-token. Workers can restrict claims by step and processing version. An old attempt
-cannot accept a result after a new attempt takes ownership.
+A claim selects a pending task whose prerequisites succeeded and records a new
+attempt token. Workers can restrict claims by step and processing version. I use
+the token to reject completion from an old attempt after ownership changes.
 
 `complete_task(..., result=..., successors=...)` accepts a step result and enqueues
-its dependent successors in one transaction. Committed successful steps survive
-recovery. Failed tasks require an explicit retry; rediscovery does not silently
-retry them. Failure records use registered codes rather than raw exception text.
+its dependent successors in one transaction. Successful committed steps survive
+recovery. I require an explicit retry for failed tasks; rediscovery does not retry
+them silently. Failure records use registered codes rather than raw exception text.
 
-Recovery explicitly marks running attempts interrupted and returns their tasks
-to pending. It runs only after exclusive recovery ownership is established.
-Opening the database alone never resets work.
+Recovery marks running attempts interrupted and returns their tasks to pending.
+I invoke it only after establishing exclusive recovery ownership. Opening the
+database alone never resets work.
 
-The guarantee is one accepted logical result with potentially repeated execution.
-Processing functions must make their side effects repeatable. This is not a
-guarantee that CPU work, console output, or a remote model call runs exactly once.
+I distinguish one accepted logical result from exactly-once execution. CPU work,
+console output, or external calls can repeat after interruption. Processing
+functions must therefore make their side effects repeatable.
 
-## Checkpoints inside a step
+## Recovery ownership and the coordinator
 
-**Agreed direction, not implemented.** Long steps should eventually resume from
-durable progress rather than repeating all parsing, output generation, or model
-work. The database has a checkpoint table and schema, but no checkpoint save/resume
-API or parser implementation yet.
+I keep the coordinator as a thin entry point for directory validation, run
+ownership, database setup/migration, recovery, inventory, worker startup, and
+supervision. Workers execute individual tasks and report completion through SQLite.
 
-A future checkpoint needs the durable artifact reference, safe input and output
-positions, completed record count, counters, and output-prefix integrity evidence.
-Persist the output prefix before committing its checkpoint. Recovery must validate
-that prefix and discard any uncommitted output tail before continuing.
+Inventory walks inputs without filtering by extension and registers them before
+workers start. I reject symlinks and nonregular entries during bootstrap
+inventory. Workers do not start after a partial inventory.
 
-A buffered stream position is not automatically a safe record boundary. CSV may
-contain quoted newlines, and general JSON cannot resume at an arbitrary byte
-offset without parser state. Format adapters must define valid resume boundaries.
-The exact checkpoint protocol and frequency remain open.
+I use a POSIX run lock held by the coordinator and inherited by its workers. This
+prevents a replacement coordinator from resetting tasks while a worker from the
+previous run survives. The lock protects recovery ownership; database transactions
+and task claims still control individual work.
 
-## Private artifacts and publication
+I start workers in fresh interpreters, each with its own database connection.
+Only the ownership descriptor is explicitly inherited. Ownership is released by
+closing descriptors, not by unlinking the lock file or explicitly unlocking a
+shared descriptor. Startup can remain blocked until surviving old workers exit.
 
-**Implemented foundation.** Large artifacts live on the filesystem; SQLite stores
-references and integrity metadata. SQLite can store blobs, but large intermediate
-files are kept outside its write transactions and journal.
+The current workers claim `print_task` for `bootstrap-v1`, print safe task metadata,
+and complete that diagnostic step. Prints can repeat after a crash before the
+completion commit. An empty ready queue ends a bootstrap worker; this is not a
+general termination rule for a multi-stage pipeline.
+
+Worker failure stops the group, and normal termination signals trigger bounded
+cleanup. I target local POSIX filesystems on Linux and macOS.
+
+## Filesystem artifacts and publication
+
+I store large artifacts on the filesystem and keep references and integrity
+metadata in SQLite. SQLite can store blobs, but this arrangement keeps large
+intermediate files outside its write transactions and journal.
 
 Each attempt has its own private temporary file. Reopening that path preserves
 its bytes; it does not establish that appending is safe. A new attempt gets a new
-path. Closing the writer, syncing the file, and hashing it produces a sealed
-artifact reference.
+path. I seal an artifact by closing the writer, syncing the file, and hashing it.
 
-Publication helpers install the supplied artifact with an atomic hard link,
-without overwriting a conflicting output. They sync the output directory before
-removing the temporary link, then sync the temporary directory. Replaying
+My publication helper installs the supplied artifact with an atomic hard link,
+without overwriting a conflicting output. It syncs the output directory before
+removing the temporary link, then syncs the temporary directory. Replaying
 finalization accepts identical installed bytes, including after interruption
 between installation and cleanup.
 
-**Intentional tradeoff:** publication currently requires temporary and output
-paths on the same local filesystem. Cross-filesystem publication fails rather
-than falling back to a copy that could expose a partial file.
+**Intentional tradeoff:** I require temporary and output paths to share a local
+filesystem. Cross-filesystem publication fails rather than falling back to a copy
+that could expose a partial file.
 
 Filesystem operations and SQLite completion are separate durability boundaries.
-The caller persists bytes before recording their metadata and must reconcile
-interruption between those operations.
+I persist bytes before recording their metadata. The current finalization helper
+checks byte integrity; it does not establish that an artifact is free of PHI.
 
-**Agreed direction:** rewrite into staging, independently verify the serialized
-artifact, then publish or quarantine. Temporary data is removed only after the
-durable outcome no longer needs it for recovery. Quarantine handling and general
-orphan cleanup are not implemented. Current finalization checks byte integrity;
-it does not itself perform PHI verification.
+For the clinical pipeline, I have chosen staging followed by independent
+verification, then publication or quarantine. Temporary data must remain available
+until the durable outcome no longer needs it for recovery. This workflow is not
+implemented yet.
 
-## Coordinator and worker ownership
+## Recovery within long steps
 
-**Implemented.** The coordinator is a thin entry point for directory validation,
-run ownership, database setup/migration, recovery, inventory, worker startup, and
-worker supervision. Workers own individual task execution and report completion
-through SQLite.
+I have chosen checkpoint-based recovery for long-running steps so a restart does
+not always repeat the entire file or completed model work. A checkpoint table and
+schema exist, but saving and resuming checkpoints is not implemented.
 
-Inventory walks inputs without filtering by extension and registers them before
-workers start. Symlinks and nonregular entries fail bootstrap inventory. A partial
-inventory does not start workers.
+The design requires durable output before a checkpoint is accepted, and recovery
+must validate the committed prefix before continuing. A temporary file's existence
+alone is not a valid checkpoint.
 
-A POSIX run lock is held by the coordinator and inherited by its workers. This
-prevents a replacement coordinator from resetting running tasks while a worker
-from the previous run survives. It is a recovery-ownership lock, not the SQLite
-write lock and not a substitute for claiming tasks.
+I require parser-defined record boundaries. CSV may contain quoted newlines, and
+general JSON cannot resume at an arbitrary byte offset without parser state.
+A buffered stream position alone is therefore insufficient.
 
-Workers start in fresh interpreters and open their own database connections.
-Only the ownership descriptor is explicitly inherited. Close descriptors to
-release ownership; do not unlink the lock file or explicitly unlock a shared
-descriptor. Startup may need to wait for surviving old workers to exit.
+## State location and migrations
 
-The present workers only claim `print_task` for `bootstrap-v1`, print safe task
-metadata, and complete that diagnostic step. Prints can repeat after a crash
-before the completion commit. Empty ready queues end these bootstrap workers;
-that behavior is not a general termination rule for a multi-stage pipeline.
+I use `.redactor` as the default private state directory, with `--state` as an
+optional override for deployment and persistent-volume placement. Resume requires
+retaining that directory and SQLite's journal files across restarts. Private
+filesystem permissions protect state, but do not encrypt it.
 
-Worker failure stops the group, and normal termination signals trigger bounded
-cleanup. The current coordination design targets local POSIX filesystems on Linux
-and macOS. It does not implement leases or multi-host failover.
-
-## State location and schema migrations
-
-**Implemented.** `.redactor` is the default private state directory. `--state` is
-an optional override for deployment and persistent-volume placement, not something
-every invocation must supply. Retain the state directory and SQLite journal files
-across restarts; deleting them loses resume history. Private filesystem permissions
-protect state, but they do not encrypt its contents.
-
-Numbered SQL migrations live in `src/redactor/migrations/`. The package discovers
-and validates consecutive versions and derives the latest schema version from
-those files. There is no separate hand-maintained version registry. Migration
-naming constants remain grouped in the central constants file.
+I keep numbered SQL migrations in `src/redactor/migrations/`. The package discovers
+and validates consecutive versions, then derives the latest schema version from
+those files. I do not maintain a separate version registry. Migration naming
+constants remain grouped in the central constants file.
 
 Pending migrations and SQLite's `user_version` update run in one transaction.
-Unsupported newer databases are rejected. Add a new migration rather than editing
-an applied one. An ORM remains unnecessary for the current schema and operations.
+I reject unsupported newer databases and add new migrations instead of changing
+applied ones.
 
-## Actual file format and native content
+## Actual file types and native representations
 
-**Agreed direction, not implemented.** Detect the actual format from bytes and
-validate its structure before selecting an adapter. An extension mismatch alone
-does not justify quarantine. A valid workbook named `.csv` should use the workbook
-adapter; DICOM content named `.dat` should use the DICOM adapter.
+I have chosen to route files by their validated actual format rather than their
+extension. A valid workbook named `.csv` belongs to the workbook adapter; DICOM
+content named `.dat` belongs to the DICOM adapter. A misleading extension alone
+does not justify quarantine. These format adapters are not implemented yet.
 
-Use a correctly suffixed private working copy when a library requires one. Do not
-flatten a workbook into CSV merely to match its misleading filename. Preserve the
-actual native format and the assignment's required final names, and report the
-detected type and mismatch. Corrupt or unsupported content requires an explicit
-quarantine outcome rather than a silent, incomplete repair.
+I will preserve the actual native format and required final filename, reporting
+the detected type and mismatch. A correctly suffixed private working copy can
+accommodate library requirements. Flattening a workbook into CSV merely to match
+its name could discard content. Corrupt or unsupported content belongs in
+quarantine rather than being silently repaired into an incomplete output.
 
-Text is a shared analysis representation, but extraction must retain native
-locations and context for rewriting. Cells, document text, JSON paths, HL7
-components, DICOM elements, image regions, metadata, and embedded content need
-their appropriate adapters. Hidden surfaces and pixels cannot be omitted just
-because visible text was extracted successfully.
+I have chosen text as a shared analysis representation, with native locations and
+context retained for rewriting. The design includes structured fields, hidden surfaces,
+metadata, embedded content, and pixels. Visible text extraction alone is not
+sufficient coverage.
 
-## Deterministic detection and replaceable models
+## Deterministic detection and interchangeable models
 
-**Agreed direction.** Typed fields and recognizable patterns should use local,
-deterministic handling where sufficient. Explicit name fields do not need NER to
-discover that they contain names. Date parsing and well-defined identifier formats
-can use field meaning, validation rules, and checksums where applicable.
+I have chosen deterministic handling for typed fields and recognizable patterns
+where it is sufficient. Explicit name fields do not need NER to discover their
+type. Date parsing and defined identifier formats can use field meaning,
+validation rules, and applicable checksums.
 
-Patterns alone do not authorize replacement. Clinical codes, measurements,
-medications, and other protected values must survive. Structured files can contain
-unstructured comments, notes, hidden sheets, and embedded objects that still need
-contextual inspection.
+A pattern match alone does not authorize replacement. Clinical codes,
+measurements, medications, and other protected values must survive. Structured
+files can still contain free text and embedded content that require contextual
+inspection.
 
-Build composable functional adapters for local NER and OCR so implementations can
-be replaced and benchmarked independently. Pass loaded runtime objects explicitly
-and reuse them across bounded units. Keep model-specific tokenization, batching,
-and coordinate/offset conversion inside the adapter. Use shared findings schemas
-with source locations, entity types, and evidence. Detectors propose findings;
-replacement planning and native writing are separate responsibilities.
+I have chosen composable functional adapters for local NER and OCR so I can replace
+and benchmark implementations independently. Loaded runtime objects are explicit
+dependencies, reused across bounded units. Model-specific tokenization, batching,
+and coordinate/offset conversion belong inside each adapter. Shared findings carry
+source locations, entity types, and evidence. Detection, replacement planning, and
+native writing remain separate responsibilities. These adapters are not yet
+implemented.
 
-No final NER or OCR model has been selected. Model research and artifact sizes are
-not evidence of recall, throughput, or peak memory in our container. Selection
-requires a common evaluation set and the actual worker/runtime configuration.
+## Identity and replacement boundaries
 
-## Identity, surrogates, and secrets
+I treat entity resolution separately from detection. A name plus a reliable,
+correctly scoped unique identifier can establish straightforward matches; a name
+alone does not establish a unique person. Supported aliases must share a
+consistent identity while distinct people remain separate.
 
-**Agreed direction:** resolve supported person aliases consistently, keep distinct
-people separate, and generate replacements deterministically. A name plus a
-reliable, correctly scoped unique identifier can establish the straightforward
-cases. A name alone does not establish a unique person. Detection and entity
-resolution remain separate responsibilities.
+I have chosen deterministic replacement independent of the detector that found a
+value. Replacements must preserve the required shape and format. Patient-specific
+date handling must remain consistent across representations. Secrets belong in
+environment configuration, never in logs, reports, source code, or task identities.
+The clinical replacement layer is not implemented yet.
 
-Keep secrets in environment configuration and out of logs, reports, source code,
-and task identities. Replacement must preserve the required shape and format.
-Patient-specific date handling must be consistent across representations.
+## Hosted models and the structured-data path
 
-**Open implementation proposals:** keyed derivation such as HMAC, domain-separated
-identifier/person namespaces, canonicalization, collision handling, realistic
-formatters, and key rotation/versioning. Plain encoding or fixed character
-substitution is not sufficient protection. These details have not been implemented
-or finalized as a complete pseudonymization policy.
+I have chosen a small functional helper around the OpenAI SDK for the configured
+endpoint, with transport separate from prompts and output schemas. The endpoint
+determines compatibility and vision support. The helper is not implemented yet.
 
-The supplied generator chooses MRNs independently of names and birth dates, so
-repeated MRNs can carry conflicting demographics. Stable replacement of an
-identifier value and resolution of a person are different operations. We still
-need a documented deterministic policy for conflicting identifiers, ambiguous
-mentions, patient/provider/relative roles, and date ownership. Do not silently
-merge conflicting people or hardcode fixture values.
+The structured-data path is designed to work with hosted calls disabled. I chose
+bounded streaming and local contextual processing, covering every row and
+free-text field without a hosted request per cell. CSV/TSV record parsing, general
+JSON parsing, and spreadsheet handling require their respective adapters.
 
-The mechanism for collecting cross-file evidence and committing a stable identity
-mapping before dependent rewrites is also open. Any retained raw mappings,
-evidence, prompts, and responses are sensitive. Storage protection beyond the
-existing private permissions must be decided before retaining those materials.
+Hosted assistance is optional for difficult contextual or image cases. A model
+outage must not lower the publication standard. Runtime assets needed for local
+processing must be available without additional network destinations.
 
-## Hosted models and offline operation
-
-**Agreed direction.** Use a small functional helper around the OpenAI SDK for the
-configured endpoint. Keep transport separate from prompts and output schemas.
-Endpoint compatibility and vision support depend on the supplied service. They
-do not block building the deterministic structured-data path.
-
-The large-CSV path must operate with hosted calls disabled. Avoid a hosted request
-per row or cell. Use bounded streaming and local contextual processing, while
-covering all rows and free-text fields. General JSON needs incremental parsing;
-XLS and XLSX need their respective adapters rather than whole-file flattening.
-
-Hosted assistance is optional for difficult contextual or image cases. Keep
-timeouts, retries, output validation, and cost accounting bounded. A model outage
-must not silently lower the publication standard. Local weights and other runtime
-assets must be available without downloads from additional network destinations.
-
-**Open implementation details:** SDK retry ownership, persistent response caching,
-conservative request-cost reservation, and accounting for uncertain requests.
-A crash after remote execution but before local persistence can repeat billing
-or produce a different response. Neither temperature zero nor SQLite establishes
-exactly-once remote execution without an endpoint contract.
+I do not claim exactly-once remote execution or billing. A crash after a remote
+request completes but before local persistence can cause a repeat request or a
+different response. SQLite and temperature zero do not remove that boundary.
 
 ## Verification and reporting
 
-**Agreed direction, not implemented.** Verification is a required pipeline gate
-over the serialized artifact. It must establish its own evidence rather than
-accepting the detector's claim that everything was replaced. A separate worker
-pool is not required merely to make verification independent; scheduling is open.
+I have chosen independent verification of the serialized artifact as a required
+publication gate. Verification must establish its own evidence, check native
+validity and protected clinical values, and distinguish expected surrogates from
+original identifiers. A failed or incomplete verification cannot authorize
+publication.
 
-Publish only a verified artifact. Otherwise retain a machine-readable quarantine
-reason. Verification must also check native validity and protected clinical values
-and distinguish expected surrogates from residual original identifiers.
+Reports derive counts from durable accepted state and reconcile every input with
+a terminal outcome. The design records actual type, status/reason,
+detected/applied/verified counts, timing, and model usage/cost without exposing PHI.
+Verification, quarantine, and reporting are not implemented yet.
 
-Reports should reconcile every discovered input with a terminal outcome and derive
-counts from durable accepted state, not console messages. Record actual type,
-status/reason, detected/applied/verified counts, timing, and model usage/cost
-without exposing PHI. This reporting layer does not exist yet.
+## Validation approach and current limits
 
-## Validation and change management
+I use small commits with semantic messages and tests for behavior, failures,
+retries, stale attempts, and crash boundaries. The existing tests cover queue
+transitions, migrations, file integrity, and selected real subprocess interruption
+boundaries. They do not establish clinical safety or full-pipeline crash equivalence.
 
-Commit cohesive, reviewable implementation or documentation chunks using semantic
-messages. Preserve user changes. Keep tests meaningful and add coverage for new
-behavior, failures, retries, stale attempts, and crash boundaries. Run the checks
-appropriate to each change; documentation-only changes need document validation,
-not invented runtime tests.
+I have chosen to compare interchangeable model adapters on the same inputs using
+identifier recall, changes to protected clinical content, latency, throughput,
+and peak container memory. The required large-file benchmark covers the complete
+2 GiB path, including verification and reporting, under the actual CPU/RAM limits
+with zero hosted calls. No end-to-end performance result is available yet.
 
-Existing tests cover queue transitions, migrations, file integrity, and selected
-real subprocess interruption boundaries. They do not establish clinical safety
-or full-pipeline crash equivalence.
+The current implementation is an execution foundation. Clinical processing,
+general stage scheduling, checkpoint save/resume, and general temporary-file
+cleanup are absent. The artifact finalizer is attempt-scoped and does not yet
+provide durable handoff between separate rewrite, verify, and publish tasks.
 
-Future model benchmarks should compare recall by identifier type, changes to
-protected clinical content, latency, throughput, and peak container memory on the
-same inputs. Measure the complete 2 GiB path, including verification and reporting,
-under the actual CPU/RAM limits with zero hosted calls. No such end-to-end
-measurement has been completed yet.
-
-Keep exploratory research artifacts out of published Git history. Review outgoing
-history as well as the current tree before any push. This decision record contains
-agreed architecture and explicit open choices, not raw research dumps.
-
-If a material implementation decision cannot be made pragmatically from the
-assignment and our discussions, pause that implementation and ask the user.
-
-## Known limitations to resolve
-
-These are current gaps, not accepted permanent tradeoffs:
-
-- No clinical processing, general stage scheduler, or checkpoint save/resume yet.
-- No final model selection, inference benchmark, or measured full-pipeline memory
-  and throughput result.
-- No independent verifier, durable verifier verdict, quarantine workflow, report
-  reconciliation, or general temporary-file cleanup yet.
-- The current artifact finalizer is attempt-scoped. Passing artifacts between
-  separate rewrite, verify, and publish tasks needs durable lineage and ownership.
-- Registered output paths currently use the original basename. Nested inputs with
-  the same basename can target the same output; conflicting bytes are rejected.
-  Output namespace handling needs a decision before clinical publication.
-- Task identity includes the resolved absolute input path. Relocating inputs
-  changes task identity; cross-location resume is not implemented.
-- Recovery needs the retained local state and the old workers to release ownership.
-  It is not a backup, disaster-recovery, or multi-host execution system.
-- Identity ambiguity, collision policy, key lifecycle, and sensitive mapping
-  protection still need concrete implementation decisions.
+Registered output paths currently use the original basename. Nested inputs with
+the same basename can target the same output; conflicting bytes are rejected.
+Task identity includes the resolved absolute input path, so relocating inputs
+changes that identity. Recovery requires retained local state and old workers
+releasing ownership. It does not provide backup, disaster recovery, or multi-host
+execution.
