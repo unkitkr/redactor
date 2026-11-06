@@ -16,6 +16,7 @@ from redactor.utils.constants import (
     NER_DIGIT_CUE_PATTERN,
     NER_EMAIL_CUE_PATTERN,
     NER_EMAIL_LABEL,
+    NER_IP_CUE_PATTERN,
     NER_IP_LABEL,
     NER_NUMBER_WORD_PATTERN,
     NER_NUMERIC_IDENTIFIER_LABELS,
@@ -78,7 +79,7 @@ def possible_entity(entity: TextEntity, text: str | None = None) -> bool:
     if entity.label == NER_EMAIL_LABEL:
         return bool(re.search(NER_EMAIL_CUE_PATTERN, value))
     if entity.label == NER_IP_LABEL:
-        return numeric or ":" in value or "." in value
+        return bool(re.search(NER_IP_CUE_PATTERN, value))
     if entity.label == NER_URL_LABEL:
         return any(character.isalnum() for character in value) and bool(
             re.search(NER_URL_CUE_PATTERN, value)

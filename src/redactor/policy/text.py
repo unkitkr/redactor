@@ -21,6 +21,7 @@ from redactor.utils.constants import (
     FIELD_IDENTIFIER,
     FIELD_LOCATION,
     FIELD_NETWORK,
+    FIELD_ORGANIZATION,
     FIELD_PATIENT_NAME,
     FIELD_PERSON_NAME,
     FIELD_PHONE,
@@ -29,6 +30,7 @@ from redactor.utils.constants import (
     FIELD_WEB,
     FIELD_ZIP,
     IDENTITY_RELATIVE,
+    ORGANIZATION_SURROGATE_PREFIX,
     UNLINKED_PERSON_NAMESPACE,
 )
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_ENTITY_EVIDENCE
@@ -45,6 +47,10 @@ def text_edits(
                 canonical_record_identifier(value, finding.namespace),
                 key,
                 namespace=finding.namespace,
+            )
+        elif finding.kind == FIELD_ORGANIZATION:
+            replacement = ORGANIZATION_SURROGATE_PREFIX + replace_identifier(
+                value, key, namespace=FIELD_ORGANIZATION
             )
         elif finding.kind == FIELD_SSN:
             replacement = replace_ssn(value, key)

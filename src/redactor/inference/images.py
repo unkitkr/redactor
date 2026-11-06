@@ -24,6 +24,9 @@ def analyze_image_content(
     settings: PipelineSettings,
     detector: NerAdapter,
     ocr: OcrAdapter,
+    *,
+    patient_name: str = "",
+    provider_name: str = "",
 ) -> tuple[tuple[PixelFrame, ...], dict[str, int]]:
     frames = read_image_frames(source, settings.resources)
     faces = load_face_detector(settings.local.model_directory / YUNET_DIRECTORY)
@@ -44,7 +47,11 @@ def analyze_image_content(
     counts: Counter[str] = Counter()
     for index, evidence in enumerate(assessed):
         masks, findings = text_pixel_masks(
-            evidence.regions, (evidence.width, evidence.height), detector
+            evidence.regions,
+            (evidence.width, evidence.height),
+            detector,
+            patient_name=patient_name,
+            provider_name=provider_name,
         )
         counts.update(findings)
         counts.update(mask.kind for mask in evidence.masks)

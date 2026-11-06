@@ -9,7 +9,7 @@ import pytest
 from PIL import Image, ImageDraw, ImageFont, PngImagePlugin
 
 from redactor.coordinator.bootstrap import prepare_run
-from redactor.inference.runtime import local_adapters
+from redactor.inference.runtime import runtime_adapters
 from redactor.persistence.files.artifacts import inspect_artifact
 from redactor.persistence.files.checkpoints import latest_checkpoint
 from redactor.persistence.queue.tasks import claim_task, iter_tasks
@@ -43,9 +43,14 @@ def test_images_publish_all_frames_and_reject_pixel_or_metadata_leaks(
     originals = {path.name: path.read_bytes() for path in source.iterdir()}
     key = bytes(range(32))
     run = prepare_run(connection, source, settings, key)
-    ner, ocr = local_adapters(settings.local, settings.resources)
+    ner, ocr, verifier_ner = runtime_adapters(settings.local, settings.resources)
     handlers = pipeline_handlers(
-        settings, key, ner, run.resolution_task_id, local_ocr=ocr
+        settings,
+        key,
+        ner,
+        run.resolution_task_id,
+        local_ocr=ocr,
+        verifier_ner=verifier_ner,
     )
     while task := claim_task(connection):
         execute_task(connection, task, handlers)
@@ -101,7 +106,7 @@ def test_images_publish_all_frames_and_reject_pixel_or_metadata_leaks(
                 inspect_artifact(task.output_path, persist=False),
                 settings=settings,
                 mapping_key=key,
-                local_ner=ner,
+                local_ner=verifier_ner,
             )
     task.output_path.write_bytes(clean)
     assert {path.name: path.read_bytes() for path in source.iterdir()} == originals

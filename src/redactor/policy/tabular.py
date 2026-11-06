@@ -33,6 +33,7 @@ from redactor.utils.constants import (
     FIELD_LOCATION,
     FIELD_LOT,
     FIELD_NETWORK,
+    FIELD_ORGANIZATION,
     FIELD_PATIENT_ID,
     FIELD_PATIENT_NAME,
     FIELD_PERSON_NAME,
@@ -44,6 +45,7 @@ from redactor.utils.constants import (
     FIELD_TEXT,
     FIELD_WEB,
     FIELD_ZIP,
+    ORGANIZATION_SURROGATE_PREFIX,
     SSN_NAMESPACE,
     SURROGATE_INITIAL_ALPHABET,
 )
@@ -127,6 +129,10 @@ def cell_edits(
             replacement = policy.identifier_prefix + str(
                 int(replacement.removeprefix(policy.identifier_prefix))
             )
+    elif policy.kind == FIELD_ORGANIZATION:
+        replacement = ORGANIZATION_SURROGATE_PREFIX + replace_identifier(
+            value, key, namespace=FIELD_ORGANIZATION
+        )
     elif policy.kind == FIELD_LOT:
         replacement = replace_lot(value, key)
     elif policy.kind in (FIELD_DATE, FIELD_BIRTH_DATE):

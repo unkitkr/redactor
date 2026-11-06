@@ -64,12 +64,35 @@ def analyze_native_task(
             locations
         ):
             raise ValueError(ERROR_COVERAGE)
+        patient_names = {
+            record.evidence.patient.name
+            for record in document.records
+            if record.evidence
+            and record.evidence.patient
+            and record.evidence.patient.name
+        }
+        provider_names = {
+            record.evidence.provider.name
+            for record in document.records
+            if record.evidence
+            and record.evidence.provider
+            and record.evidence.provider.name
+        }
+        patient_name = next(iter(patient_names)) if len(patient_names) == 1 else ""
+        provider_name = next(iter(provider_names)) if len(provider_names) == 1 else ""
         pixels = 0
         for image in document.images:
             if local_ocr is None:
                 raise ValueError(ERROR_COVERAGE)
             pixels += embedded_pixel_count(image, resources.max_image_pixels - pixels)
-            assessment = analyze_embedded_image(image, settings, detector, local_ocr)
+            assessment = analyze_embedded_image(
+                image,
+                settings,
+                detector,
+                local_ocr,
+                patient_name=patient_name,
+                provider_name=provider_name,
+            )
             if pixels > resources.max_image_pixels:
                 raise ValueError(ERROR_RESOURCE_LIMIT)
             images.append(assessment)

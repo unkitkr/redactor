@@ -26,6 +26,7 @@ FieldKind = Literal[
     "ssn",
     "relative_name",
     "person_name",
+    "organization",
     "network",
     "web",
 ]

@@ -22,6 +22,11 @@ Find people (patients, providers, relatives and household members), organization
 locations and addresses, dates, times, identifiers, contact details and explicit ages.
 Do not label diseases, medications, clinical codes, measurements or units as people
 or identifiers. A disease named after a person is not a mention of that person.
+Sex/gender enums, laboratory test names, protocol/schema versions and document
+headings are not identifiers. Do not classify them as identifying entities.
+For identifiers, provide a precise label when supported by the text: medical record
+number, account number, device identifier, driver license, or ssn. Do not infer a
+specific identifier subtype from digit count alone.
 Entity observations do not decide identity linkage or authorize redaction.
 
 Each entity must quote an exact, nonempty substring of the decoded text field.

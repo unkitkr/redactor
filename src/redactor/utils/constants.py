@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v22"
+PIPELINE_VERSION: Final = "pipeline-v25"
 RUNTIME_SOURCE_SUFFIXES: Final = (".py", ".sql")
 RUNTIME_IGNORED_SUFFIXES: Final = (".pyc", ".pyo")
 RUNTIME_MISSING_ARTIFACT: Final = "missing"
@@ -130,6 +130,7 @@ SPACY_EXCLUDED_COMPONENTS: Final = (
 )
 ENTITY_PERSON: Final = "person"
 ENTITY_ORGANIZATION: Final = "organization"
+ENTITY_IDENTIFIER: Final = "identifier"
 ENTITY_LOCATION: Final = "location"
 ENTITY_DATE: Final = "date"
 ENTITY_TIME: Final = "time"
@@ -172,7 +173,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v17"
+VERIFIER_VERSION: Final = "verifier-v19"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -291,7 +292,7 @@ HTTP_CONTENT_ENCODING_HEADER: Final = "content-encoding"
 HTTP_IDENTITY_ENCODING: Final = "identity"
 
 # Grounded text detection
-DETECTOR_PROMPT_VERSION: Final = "text-entities-v1"
+DETECTOR_PROMPT_VERSION: Final = "text-entities-v2"
 DETECTOR_OBSERVATION_CONTEXT: Final = b"redactor-detection-observation-v1:"
 DETECTOR_TEXT_FIELD: Final = "text"
 
@@ -605,7 +606,7 @@ DICOM_UID_NAMESPACE: Final = "dicom_uid"
 DICOM_UID_PREFIX: Final = "2.25."
 DICOM_IDENTITY_FIELDS: Final = (
     ("ImplementationVersionName", "identifier", "dicom_implementation"),
-    ("InstitutionName", "location", ""),
+    ("InstitutionName", "organization", "organization"),
     ("PatientName", "patient_name", ""),
     ("PatientID", "patient_id", "mrn"),
     ("PatientBirthDate", "birth_date", ""),
@@ -667,6 +668,8 @@ FIELD_ZIP: Final = "zip"
 FIELD_LOT: Final = "lot"
 FIELD_CLINICAL: Final = "clinical"
 FIELD_TEXT: Final = "text"
+FIELD_ORGANIZATION: Final = "organization"
+LAB_DESCRIPTION_NAMESPACE: Final = "laboratory-description"
 FIELD_LOCATION: Final = "location"
 FIELD_NETWORK: Final = "network"
 FIELD_WEB: Final = "web"
@@ -1314,6 +1317,25 @@ IDENTITY_PATIENT: Final = "patient"
 IDENTITY_RELATIVE: Final = "relative"
 ROW_CONTEXT_TEMPLATE: Final = "{input_sha256}:row:{number}:{role}"
 TABULAR_FIELD_ALIASES: Final = (
+    (FIELD_CLINICAL, "version", ("schema", "schema_version", "version")),
+    (
+        FIELD_ORGANIZATION,
+        "organization",
+        (
+            "payer",
+            "insurer",
+            "insurance",
+            "insurance_company",
+            "plan",
+            "organization",
+            "institution",
+        ),
+    ),
+    (
+        FIELD_CLINICAL,
+        LAB_DESCRIPTION_NAMESPACE,
+        ("test", "test_name", "laboratory_test"),
+    ),
     (FIELD_CLINICAL, "application", ("application",)),
     (FIELD_CLINICAL, "version", ("appversion",)),
     (FIELD_IDENTIFIER, "claim", ("claim_no", "claim_id")),
@@ -1402,7 +1424,7 @@ CLINICAL_FIELD_PATTERNS: Final = (
             r"Microsoft Excel Compatible / Openpyxl [0-9.]+)"
         ),
     ),
-    ("version", r"[0-9]+(?:\.[0-9]+)*"),
+    ("version", r"v?[0-9]+(?:\.[0-9]+)*"),
     ("state", r"[A-Z]{2}"),
     ("icd", r"[A-Z][0-9][0-9A-Z](?:\.[0-9A-Z]{1,4})?"),
     ("procedure", r"(?:[0-9]{5}|[A-Z][0-9]{4}|[0-9]{4}[A-Z])"),
@@ -1531,6 +1553,10 @@ VERHOEFF_PERMUTATIONS: Final = (
     (7, 0, 4, 6, 9, 1, 3, 2, 5, 8),
 )
 TEXT_CLINICAL_PATTERNS: Final = (
+    r"(?i)\b(?:spoke|discussed|reviewed)\s+w/",
+    r"(?im)^(?:progress note|discharge summary|referral (?:letter|packet)|"
+    r"clinical note|history of present illness|assessment and plan)\s*$",
+    r"(?i)\b(?:sex|gender)\s*[:=]\s*(?:M|F|O|U|male|female|other|unknown)\b",
     r"(?i)\b(?:in|since|during|through|year|quit|dx|diagnosed)\s+(?:19|20)[0-9]{2}\b",
     r"(?i)\b(?:T|temp(?:erature)?)\s*[:=]?\s*[0-9]+(?:\.[0-9]+)?\s*°?[CF]\b",
     r"(?i)\b(?:A1c|HbA1c|GCS|LDL|HDL|HR|BP|pulse|heart rate|blood pressure)\s*[:=]?\s*"
@@ -1810,7 +1836,6 @@ HL7_RELATIONSHIP_DISPLAYS: Final = (
 
 
 # Conservative vocabulary for coded laboratory display names, not patient text.
-LAB_DESCRIPTION_NAMESPACE: Final = "laboratory-description"
 LAB_DESCRIPTION_TERMS: Final = (
     "a1c",
     "hb",
@@ -1886,6 +1911,9 @@ EVALUATION_TEXT_CORPUS: Final = "benchmarks/corpus/text.json"
 EVALUATION_FINDING_TYPES: Final = (
     (FIELD_PATIENT_NAME, "person"),
     (FIELD_PROVIDER_NAME, "person"),
+    (FIELD_PERSON_NAME, "person"),
+    (FIELD_ORGANIZATION, "organization"),
+    (FIELD_LOCATION, "location"),
     (IDENTITY_RELATIVE, "person"),
     (FIELD_DATE, "date"),
     (FIELD_AGE, "age"),
@@ -1992,7 +2020,8 @@ NON_IDENTIFYING_ROLE_PATTERN: Final = (
 )
 NER_OLDER_AGE_WORD_PATTERN: Final = r"(?i)\b(?:nonagenarian|(?:super)?centenarian)s?\b"
 CLINICAL_NEGATION_PREFIX_PATTERN: Final = (
-    r"(?i)\b(?:no|without|denies|negative for|history of|with|has)\s+$"
+    r"(?i)\b(?:no|without|denies|negative for|history of|with|has|mild|moderate|"
+    r"severe|possible|probable|suspected|early|late)\s+$"
 )
 CLINICAL_RANGE_GAP_PATTERN: Final = r"[\s.,;:!?()\[\]{}'\"’/-]*"
 NARRATIVE_VERB_PATTERN: Final = (
@@ -2882,3 +2911,34 @@ SHORT_IDENTIFIER_DIGITS: Final = 16
 DICOM_STRING_LIMITS: Final = (("SH", 16), ("AE", 16), ("LO", 64), ("UI", 64))
 
 DICOM_BINARY_VRS: Final = ("OB", "OW", "OF", "OD", "OL", "OV", "UN")
+
+# FHIR primitive extensions retain an explicit bounded age without a precise DOB.
+FHIR_DATA_ABSENT_REASON_URL: Final = (
+    "http://hl7.org/fhir/StructureDefinition/data-absent-reason"
+)
+FHIR_AGE_BAND_URL: Final = "urn:redactor:structure-definition:age-band"
+FHIR_BIRTH_BOUND_URL: Final = "urn:redactor:structure-definition:birth-date-upper-bound"
+# Model subtypes that have deterministic identifier replacements.
+NER_IDENTIFIER_NAMESPACES: Final = (
+    ("medical record number", MRN_NAMESPACE),
+    ("account number", ACCOUNT_NAMESPACE),
+    ("device identifier", "device"),
+    ("driver license", "driver_license"),
+)
+NER_IDENTIFIER_VALUE_PATTERN: Final = r"[A-Za-z0-9][A-Za-z0-9./_-]*"
+
+NER_IP_CUE_PATTERN: Final = (
+    r"(?i)(?:[0-9]{1,3}\.){3}[0-9]{1,3}|(?:[0-9a-f]*:){2}|"
+    r"(?:\[dot\]|\(dot\)).*(?:\[dot\]|\(dot\))"
+)
+
+ORGANIZATION_SURROGATE_PREFIX: Final = "Organization "
+ORGANIZATION_CUE_PATTERN: Final = (
+    r"(?i)\b(?:hospital|clinic|medical|health|healthcare|university|insurance|"
+    r"association|corporation|inc|ltd|llc)\b"
+)
+ORGANIZATION_FIELD_PATTERN: Final = (
+    r"(?i)\b(?:payer|insurer|insurance|organization|institution|facility)\s*:\s*$"
+)
+
+LOCAL_ENVIRONMENT_FILENAME: Final = ".env.local"

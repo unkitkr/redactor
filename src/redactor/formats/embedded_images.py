@@ -39,6 +39,9 @@ def analyze_embedded_image(
     settings: PipelineSettings,
     detector: NerAdapter,
     ocr: OcrAdapter,
+    *,
+    patient_name: str = "",
+    provider_name: str = "",
 ) -> EmbeddedImageEvidence:
     with TemporaryDirectory() as temporary:
         path = Path(temporary) / PIXEL_TEMPORARY_FILENAME
@@ -47,7 +50,14 @@ def analyze_embedded_image(
             image_format = source.format
         if image_format is None:
             raise ValueError(ERROR_COVERAGE)
-        frames, counts = analyze_image_content(path, settings, detector, ocr)
+        frames, counts = analyze_image_content(
+            path,
+            settings,
+            detector,
+            ocr,
+            patient_name=patient_name,
+            provider_name=provider_name,
+        )
     return EmbeddedImageEvidence(
         location=image.location, image_format=image_format, frames=frames, counts=counts
     )

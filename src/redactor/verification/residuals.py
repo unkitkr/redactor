@@ -1,6 +1,7 @@
 """Check whole source and output mentions against location-bound evidence."""
 
 import re
+from unicodedata import category
 
 from redactor.inference.evidence import validate_entity_evidence
 from redactor.inference.semantics import possible_entity, refine_entity
@@ -113,6 +114,13 @@ def _covered_name_with_role(
     ):
         return True
     cursor = mention.start
+    # Models sometimes attach a signature dash, quote or list marker to a name.
+    # Only punctuation/whitespace can precede its already verified edit span;
+    # even a single unedited initial must still cause rejection.
+    while cursor < mention.end and (
+        text[cursor].isspace() or category(text[cursor]).startswith("P")
+    ):
+        cursor += 1
     prefix = re.match(VERIFIER_MENTION_PREFIX_PATTERN, text[cursor : mention.end])
     if prefix:
         cursor += prefix.end()

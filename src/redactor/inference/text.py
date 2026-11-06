@@ -14,7 +14,9 @@ from redactor.schemas.entities import NerAdapter, TextEntities
 from redactor.schemas.redaction import TextFinding, TextRange
 from redactor.utils.constants import (
     AGE_GROUP_MINIMUM,
+    ENTITY_IDENTIFIER,
     ENTITY_LOCATION,
+    ENTITY_ORGANIZATION,
     ENTITY_PERSON,
     FIELD_ADDRESS,
     FIELD_AGE,
@@ -23,6 +25,7 @@ from redactor.utils.constants import (
     FIELD_IDENTIFIER,
     FIELD_LOCATION,
     FIELD_NETWORK,
+    FIELD_ORGANIZATION,
     FIELD_PATIENT_NAME,
     FIELD_PERSON_NAME,
     FIELD_PHONE,
@@ -31,6 +34,10 @@ from redactor.utils.constants import (
     FIELD_WEB,
     FIELD_ZIP,
     IDENTITY_RELATIVE,
+    NER_IDENTIFIER_NAMESPACES,
+    NER_IDENTIFIER_VALUE_PATTERN,
+    ORGANIZATION_CUE_PATTERN,
+    ORGANIZATION_FIELD_PATTERN,
     PRESERVED_US_GEOGRAPHY,
     SSN_NAMESPACE,
     TEXT_DATE_PATTERN,
@@ -165,6 +172,7 @@ def find_text_phi(
         ):
             continue
         entity_kind = None
+        namespace = ""
         if entity.entity_type == ENTITY_PERSON:
             patient_match = bool(patient_name) and compatible_name_spelling(
                 entity.text, patient_name, allow_surname=True
@@ -182,6 +190,19 @@ def find_text_phi(
             if entity.text.casefold().strip() in PRESERVED_US_GEOGRAPHY:
                 continue
             entity_kind = FIELD_LOCATION
+        elif entity.entity_type == ENTITY_ORGANIZATION and (
+            re.search(ORGANIZATION_CUE_PATTERN, entity.text)
+            or re.search(ORGANIZATION_FIELD_PATTERN, text[: entity.start])
+        ):
+            entity_kind = FIELD_ORGANIZATION
+        elif entity.entity_type == ENTITY_IDENTIFIER and entity.label in dict(
+            NER_IDENTIFIER_NAMESPACES
+        ):
+            if any(character.isdigit() for character in entity.text) and re.fullmatch(
+                NER_IDENTIFIER_VALUE_PATTERN, entity.text
+            ):
+                entity_kind = FIELD_IDENTIFIER
+                namespace = dict(NER_IDENTIFIER_NAMESPACES)[entity.label]
         if entity_kind is None:
             raise ValueError(ERROR_COVERAGE)
         findings.append(
@@ -190,6 +211,7 @@ def find_text_phi(
                 end=entity.end,
                 original=entity.text,
                 kind=entity_kind,
+                namespace=namespace,
             )
         )
     ordered = tuple(sorted(findings, key=lambda finding: (finding.start, finding.end)))

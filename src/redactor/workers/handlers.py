@@ -34,6 +34,7 @@ def pipeline_handlers(
     *,
     model_transport: httpx.AsyncBaseTransport | None = None,
     local_ocr: OcrAdapter | None = None,
+    verifier_ner: NerAdapter | None = None,
 ) -> dict[str, StepHandler]:
     return {
         STEP_INSPECT: partial(
@@ -61,7 +62,7 @@ def pipeline_handlers(
             verify_task,
             settings=settings,
             mapping_key=mapping_key,
-            local_ner=local_ner,
+            local_ner=verifier_ner or local_ner,
             resolution_task_id=resolution_task_id,
         ),
         STEP_PUBLISH: partial(

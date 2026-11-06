@@ -42,7 +42,12 @@ def located_words(
 
 
 def text_pixel_masks(
-    regions: tuple[OcrRegion, ...], size: tuple[int, int], detector: NerAdapter
+    regions: tuple[OcrRegion, ...],
+    size: tuple[int, int],
+    detector: NerAdapter,
+    *,
+    patient_name: str = "",
+    provider_name: str = "",
 ) -> tuple[tuple[PixelMask, ...], dict[str, int]]:
     text, words = located_words(regions)
     findings: list[TextFinding] = []
@@ -52,7 +57,12 @@ def text_pixel_masks(
             finding.model_copy(
                 update={"start": finding.start + offset, "end": finding.end + offset}
             )
-            for finding in find_text_phi(region.text, detector)
+            for finding in find_text_phi(
+                region.text,
+                detector,
+                patient_name=patient_name,
+                provider_name=provider_name,
+            )
         )
         offset += len(region.text) + 1
     protected = protected_clinical_ranges(text)
