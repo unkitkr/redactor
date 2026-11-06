@@ -27,6 +27,7 @@
 - Verification always runs; remote judging examines unresolved units only, uses separate configuration, and obeys the global model-disable switch.
 - Remote judge findings require location-bound evidence and cannot override failed deterministic checks or unassessed native surfaces.
 - Identity matching uses scoped identifiers and corroborating evidence; contradictory people stay separate even when an identifier value receives one consistent replacement.
+- Initials require a scoped identifier and one compatible full-name candidate; names alone never merge people, and ambiguous mentions retain separate identities.
 - Providers have separate pseudonyms; a person appearing as patient and provider retains separate role identities.
 - Patient dates share one keyed offset; unattributable dates use a stable separate context, with patient linkage explicitly unresolved.
 - Ages of 90 or more become 90+; ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications, and diseases are preserved.

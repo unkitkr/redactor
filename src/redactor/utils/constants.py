@@ -286,6 +286,16 @@ NPI_BASE_DIGITS: Final = 9
 NPI_PREFIX_CHOICES: Final = ("1", "2")
 NPI_LUHN_PREFIX_SUM: Final = 24
 
+# Corroborated identity evidence and opaque database indexes
+IDENTITY_PROVIDER: Final = "provider"
+IDENTITY_CORROBORATED: Final = "corroborated"
+IDENTITY_ISOLATED: Final = "isolated"
+IDENTITY_AMBIGUOUS: Final = "ambiguous"
+IDENTITY_IDENTIFIER_NAMESPACE: Final = "identity-identifier"
+IDENTITY_NAME_NAMESPACE: Final = "identity-name"
+IDENTITY_BIRTH_NAMESPACE: Final = "identity-birth-date"
+IDENTITY_OBSERVATION_NAMESPACE: Final = "identity-observation"
+
 # Calendar-date spelling and older-age generalization
 DATE_OFFSET_NAMESPACE: Final = "patient-date-offset"
 DATE_STYLE_YMD: Final = "ymd"
