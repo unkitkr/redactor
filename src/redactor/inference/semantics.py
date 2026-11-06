@@ -11,6 +11,7 @@ from redactor.utils.constants import (
     ENTITY_LOCATION,
     ENTITY_PERSON,
     ENTITY_TIME,
+    NAME_TITLES,
     NAME_TRAILING_VERB_PATTERN,
     NER_DATE_WORD_PATTERN,
     NER_DIGIT_CUE_PATTERN,
@@ -60,8 +61,9 @@ def possible_entity(entity: TextEntity, text: str | None = None) -> bool:
         return False
     if entity.entity_type == ENTITY_AGE:
         return numeric or bool(re.search(NER_OLDER_AGE_WORD_PATTERN, value))
-    if entity.entity_type == ENTITY_PERSON and re.fullmatch(
-        NON_IDENTIFYING_ROLE_PATTERN, value
+    if entity.entity_type == ENTITY_PERSON and (
+        re.fullmatch(NON_IDENTIFYING_ROLE_PATTERN, value)
+        or value.strip().casefold().removesuffix(".") in NAME_TITLES
     ):
         return False
     if entity.entity_type == ENTITY_LOCATION and text is not None:

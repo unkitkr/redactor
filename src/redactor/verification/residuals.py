@@ -67,6 +67,7 @@ def scan_residuals(
     provider_name: str = "",
     clinical: tuple[TextRange, ...] | None = None,
     assessed_ages: tuple[TextRange, ...] | None = None,
+    structural: tuple[TextRange, ...] = (),
 ) -> None:
     clinical = protected_clinical_ranges(text) if clinical is None else clinical
     for mention in sensitive_ranges(
@@ -83,7 +84,7 @@ def scan_residuals(
         ):
             raise ValueError(ERROR_RESIDUAL_PHI)
     age_ranges = assessed_age_ranges(text) if assessed_ages is None else assessed_ages
-    allowed = exemptions + clinical + age_ranges
+    allowed = exemptions + clinical + age_ranges + structural
     # Do not hide edited words before inference: they can provide the context
     # needed to recognize an initial or surname that the writer left behind.
     entities = validate_entity_evidence(text, TextEntities(entities=local_ner(text)))

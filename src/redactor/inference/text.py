@@ -25,6 +25,7 @@ from redactor.utils.constants import (
     ORGANIZATION_CUE_PATTERN,
     ORGANIZATION_FIELD_PATTERN,
     PRESERVED_US_GEOGRAPHY,
+    VERIFIER_FACILITY_PATTERN,
 )
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_ENTITY_EVIDENCE
 
@@ -65,6 +66,42 @@ def finish_text_phi(
         if entity is None or not possible_entity(entity, text):
             continue
         entity = refine_entity(entity)
+        if entity.entity_type in (ENTITY_ORGANIZATION, ENTITY_LOCATION):
+            if any(
+                finding.kind == FIELD_ORGANIZATION
+                and finding.start <= entity.start
+                and entity.end <= finding.end
+                and re.fullmatch(VERIFIER_FACILITY_PATTERN, finding.original)
+                for finding in findings
+            ):
+                # The complete facility replacement already covers this second
+                # grounded fragment. A span extending outside it is not covered.
+                continue
+            for facility in re.finditer(VERIFIER_FACILITY_PATTERN, text):
+                if (
+                    facility.start() <= entity.start
+                    and entity.end <= facility.end()
+                    and not any(
+                        facility.start() < span.end and span.start < facility.end()
+                        for span in prepared.protected
+                    )
+                    and not any(
+                        facility.start() < finding.end
+                        and finding.start < facility.end()
+                        for finding in findings
+                    )
+                ):
+                    # A grounded partial organization or location can establish
+                    # the full syntactic facility phrase on the same line.
+                    entity = entity.model_copy(
+                        update={
+                            "start": facility.start(),
+                            "end": facility.end(),
+                            "text": facility[0],
+                            "entity_type": ENTITY_ORGANIZATION,
+                        }
+                    )
+                    break
         if any(
             region.start <= entity.start and entity.end <= region.end
             for region in prepared.protected
