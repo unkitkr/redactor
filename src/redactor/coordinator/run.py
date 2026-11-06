@@ -10,6 +10,7 @@ from redactor.coordinator.reconcile import reconcile_run
 from redactor.persistence.database import open_database
 from redactor.persistence.models.budget import recover_model_attempts
 from redactor.persistence.queue.tasks import recover_interrupted
+from redactor.persistence.runs.outputs import bind_output_directory
 from redactor.schemas.coordinator import CoordinatorConfig
 from redactor.utils.configuration import load_settings, read_mapping_key
 
@@ -30,6 +31,7 @@ def run_coordinator(config: CoordinatorConfig) -> None:
             settings = load_settings(config.configuration_path)
             key = read_mapping_key()
             run = prepare_run(connection, input_directory, settings, key)
+            bind_output_directory(connection, run.manifest)
             run_workers(
                 state_directory,
                 config.worker_count,

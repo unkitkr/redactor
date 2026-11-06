@@ -1,10 +1,25 @@
 # Redactor
 
-Local building blocks for the PHI pseudonymization assignment. The implementation
-includes durable queue state, artifact helpers, a startup coordinator, and
-placeholder workers. Clinical processing and workflow orchestration come later.
+PHI pseudonymization with durable SQLite tasks, identity resolution, saved-file
+verification and publication or quarantine. Current publication covers supported
+CSV/TSV, labelled text, XLSX and HL7 ADT; unsupported formats and surfaces
+quarantine. See [notes.md](notes.md) for measured limitations.
 
-## Coordinator bootstrap
+## Run the pipeline
+
+Set `REDACTOR_SECRET_KEY` to a base64-encoded 32-byte secret and retain it for
+replay. The checked-in model selection currently requires unfinished GLiNER
+production integration and fails closed when inference is needed. For the
+implemented local path, use a separate TOML configuration containing:
+
+```toml
+[local]
+ner = "spacy"
+[remote]
+enabled = false
+```
+
+Pass that file with `--config <path>`. The ordinary entry point is:
 
 ```bash
 uv run redactor --input input --state .redactor --workers 2
@@ -17,11 +32,20 @@ starting workers. Inventory walks nested directories without filtering by file
 extension or loading entire files into memory. Symlinks and nonregular entries
 fail startup; workers do not start after an incomplete inventory.
 
-Each worker opens its own queue connection, claims a `print_task` step, prints a
-JSON summary containing only its task ID, step, attempt count, and worker PID,
-and records completion. No clinical transformation or publication occurs. The
-placeholder consumes only its own step and processing version, leaving other
-pipeline work untouched. Repeating a successful run produces no new task prints.
+Each worker opens its own queue connection and completes durable pipeline steps.
+Inspection and analysis precede a frozen identity snapshot, rewriting, independent
+saved-file verification, and publication or quarantine. A successful run produces
+`output/published/`, `output/quarantine/`, `output/report.json` and `output/run.log`
+beside the state directory. Reports contain hashes and counts, not raw PHI.
+
+`output/.run-id` binds those files to one inventory, configuration, secret identity
+and pipeline version. The same run can resume; a changed run or unowned older
+outputs cause `output_content_conflict` before workers start. Use a fresh workspace
+for an upgrade, for example `--state tmp/new-run/.redactor`, which writes to
+`tmp/new-run/output/`. Existing outputs are never deleted or relabelled.
+
+The optional `--diagnostic` mode retains the queue bootstrap demonstration and
+prints task metadata without clinical processing.
 
 The coordinator waits for its workers and stops the group if any worker fails.
 SIGINT and SIGTERM trigger bounded cleanup. A persistent lock file under the state
@@ -31,10 +55,10 @@ while a surviving worker still runs. Workers stop taking tasks when their parent
 exits; restart after they exit. Never delete the lock file to bypass ownership.
 This uses local POSIX filesystem semantics on Linux and macOS.
 
-The console print and SQLite completion are separate operations. A crash between
-them can repeat a diagnostic line on restart; console output is not an exactly-once
-result artifact. Durable attempt history records the retry. Checkpoints inside a
-step, clinical output, and scheduling multiple pipeline stages are later work.
+A crash can repeat a diagnostic console line because printing and SQLite
+completion are separate operations. Clinical artifacts use durable checkpoints
+and atomic installation instead; full-run SIGKILL equivalence remains a separate
+acceptance test, as recorded in the notes.
 
 Coordinator responsibilities are split between `run.py`, `inventory.py`,
 `ownership.py`, `processes.py`, `signals.py`, and `cli.py`.
@@ -67,8 +91,9 @@ cost budget can stop retries sooner. Authentication failures and malformed model
 responses fall back immediately. The OpenAI SDK's additional retries are disabled.
 Attempt counts, cost reservations, pending retry waits, and the logical request's
 deadline persist across worker restarts. Restarting does not grant a fresh retry
-or time budget. Only inference workers explicitly load the installed local model;
-the CLI still runs diagnostic workers while clinical stages are being connected.
+or time budget. Only inference workers explicitly load the installed local model. The provider
+wrapper is tested, but hosted detection and judging are not integrated into
+clinical publication; model comparisons and offline replay live under `tools/`.
 
 ## Durable queue
 
