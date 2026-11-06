@@ -4,6 +4,7 @@ from contextlib import closing
 
 from redactor.coordinator.bootstrap import prepare_run
 from redactor.coordinator.inventory import register_inputs, validate_directories
+from redactor.coordinator.monitoring import dashboard_process
 from redactor.coordinator.ownership import own_run
 from redactor.coordinator.processes import run_workers
 from redactor.coordinator.reconcile import reconcile_run
@@ -20,7 +21,12 @@ def run_coordinator(config: CoordinatorConfig) -> None:
     state_directory = config.state_directory.resolve()
     validate_directories(input_directory, state_directory)
 
-    with own_run(state_directory) as lock_descriptor:
+    with (
+        own_run(state_directory) as lock_descriptor,
+        dashboard_process(
+            state_directory, config.dashboard_port, enabled=config.dashboard_enabled
+        ),
+    ):
         with closing(open_database(state_directory)) as connection:
             recover_interrupted(connection)
             recover_model_attempts(connection)

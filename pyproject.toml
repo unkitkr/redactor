@@ -24,6 +24,7 @@ dependencies = [
 
 [project.scripts]
 redactor = "redactor.coordinator.cli:main"
+redactor-dashboard = "redactor.monitoring.cli:main"
 
 [build-system]
 requires = ["hatchling>=1.27"]

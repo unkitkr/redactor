@@ -36,6 +36,7 @@ def test_selected_gliner_publishes_replays_and_missing_weights_quarantine(
         sys.executable,
         "-m",
         "redactor",
+        "--no-dashboard",
         "--input",
         str(source),
         "--state",

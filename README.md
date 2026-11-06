@@ -98,6 +98,57 @@ uv run mypy src tests
 uv run pytest -q
 ```
 
+## Queue and benchmark dashboard
+
+The pipeline starts a read-only dashboard at `http://127.0.0.1:8765` while the
+coordinator runs. Use `--no-dashboard` to disable it or `--dashboard-port 8766`
+to select another port. A dashboard startup failure prints `monitor_startup_failed`
+and processing continues. The dashboard exits with the coordinator and inherits
+no run lock. For inspection after a run, start it separately from the project root:
+
+```bash
+uv run redactor-dashboard --state .redactor
+```
+
+The queue view reads committed SQLite state every five seconds while visible.
+Snapshots are cached briefly; a running claim is not a heartbeat, and checkpoint
+counts describe durable work. Published and quarantined file counts are separate
+from step task counts. Responses exclude input paths, clinical content and private
+model state. Reads have a short time budget and never run migrations or recovery.
+
+The benchmark view reads `benchmarks/results/*.json` and `benchmarks/baseline-*.json`.
+It separates accuracy, historical requests, offline replay, container receipts and
+throughput. Missing measurements remain missing. Reports are bounded and cached
+for 30 seconds; Refresh may return that cached snapshot. Use `--benchmarks` and
+`--images` on the standalone command to select other local directories.
+
+OCR benchmarks include 12 images: three documents with clean, rotated, blurred and
+low-contrast variants. The gallery shows reference images from `tmp/ocr-corpus/`
+only when the manifest matches a measured corpus. Recreate them with
+`uv run python tools/make_ocr_corpus.py` if absent. These tests measure transcription
+and identifier localization; they do not test safe redacted-image publication.
+
+The server uses Python's standard library and packaged HTML/CSS/JavaScript, with
+no frontend build, CDN, telemetry or model imports. It is a local development
+monitor without authentication. The standalone `--host 0.0.0.0` option supports
+an explicitly bound container port; keep access restricted to your trusted machine.
+
+## Staging model files
+
+```bash
+uv sync --locked
+uv run python tools/benchmarks/fetch_models.py
+```
+
+`uv sync` installs Python runtimes and the packaged spaCy model. The second command
+downloads the separately pinned GLiNER, OpenMed, PP-OCR and Tesseract artifacts
+listed in `benchmarks/model-artifacts.json` into `.models/`, verifies their sizes
+and SHA-256 checksums, and skips matching files. It fetches the benchmark set,
+not just the models selected in `redactor.toml`. Run this setup with internet
+access before entering the restricted execution container. Runtime inference
+does not fetch missing weights; stage or mount them read-only. Hosted models run
+at the configured endpoint and have no local weight download.
+
 ## Model requests
 
 Remote request settings live in `redactor.toml`. `max_attempts` includes the first

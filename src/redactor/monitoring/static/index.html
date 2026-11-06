@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>Redactor · Pipeline monitor</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script type="module" src="/static/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="/">redactor</a>
+      <span class="header-description">Pipeline monitor</span>
+      <span class="read-only">Read only</span>
+    </header>
+    <main id="main" class="shell">
+      <h1 class="sr-only">Pipeline monitor</h1>
+      <nav class="tabs" role="tablist" aria-label="Monitor views">
+        <button id="queue-tab" class="tab" role="tab" type="button" aria-selected="true" aria-controls="queue-panel">Queue</button>
+        <button id="benchmarks-tab" class="tab" role="tab" type="button" aria-selected="false" aria-controls="benchmarks-panel" tabindex="-1">Benchmarks</button>
+      </nav>
+      <section id="queue-panel" role="tabpanel" aria-labelledby="queue-tab">
+        <div class="toolbar">
+          <div class="field run-field">
+            <label for="run-select">Run</label>
+            <select id="run-select"><option value="">Latest available run</option></select>
+          </div>
+          <div class="refresh-tools">
+            <span id="queue-updated" class="muted" role="status">Waiting for a snapshot</span>
+            <button id="queue-refresh" type="button" class="button">Refresh</button>
+          </div>
+        </div>
+        <div id="queue-notice" class="notice" role="status" hidden></div>
+        <p id="snapshot-run" class="snapshot-caption muted"></p>
+        <div id="queue-summary" class="summary-grid" aria-label="Run summary"></div>
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Steps</h2>
+            <p>“Running” is a claim, not a worker heartbeat.</p>
+          </div>
+          <div id="queue-steps" class="table-scroll" role="region" aria-label="Pipeline step counts" tabindex="0"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Recent tasks</h2>
+            <p>Up to 50 tasks, with running tasks first. Checkpoints show saved work.</p>
+          </div>
+          <div id="queue-tasks" class="table-scroll" role="region" aria-label="Recent queue tasks" tabindex="0"></div>
+        </section>
+        <p class="footnote">Reads committed state every 5 seconds while this view is visible. No queue writes.</p>
+      </section>
+      <section id="benchmarks-panel" role="tabpanel" aria-labelledby="benchmarks-tab" hidden>
+        <div class="toolbar benchmark-toolbar">
+          <div class="field search-field">
+            <label for="benchmark-search">Search</label>
+            <input id="benchmark-search" type="search" placeholder="Model, mode or context" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="benchmark-kind">Measurement</label>
+            <select id="benchmark-kind">
+              <option value="">All measurements</option>
+              <option value="text">Text detection</option>
+              <option value="ocr">OCR</option>
+              <option value="throughput">Throughput</option>
+              <option value="diagnostic">Diagnostics</option>
+            </select>
+          </div>
+          <button id="benchmark-refresh" type="button" class="button">Refresh</button>
+        </div>
+        <div id="benchmark-notice" class="notice" role="status" hidden></div>
+        <p class="context-note">Results depend on corpus, mode and verifier version. Replay time is local rescoring, not endpoint latency. “n/a” means no measurement.</p>
+        <p id="benchmark-count" class="muted" role="status"></p>
+        <div id="benchmark-reports"></div>
+        <section id="image-section" class="panel" hidden>
+          <div class="panel-heading">
+            <h2>OCR reference images</h2>
+            <p>12 variants of 3 documents. Reference inputs, not predicted overlays.</p>
+          </div>
+          <p class="section-note">OCR scores measure transcription and localization. They do not establish safe image publication.</p>
+          <div id="benchmark-images" class="image-grid"></div>
+        </section>
+        <div id="benchmark-issues"></div>
+      </section>
+      <noscript><p class="notice">Enable JavaScript to load snapshots from this server.</p></noscript>
+    </main>
+    <footer class="site-footer">Local queue state and benchmark reports. Queue document contents and private filesystem paths are not exposed.</footer>
+  </body>
+</html>

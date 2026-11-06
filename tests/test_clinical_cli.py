@@ -40,6 +40,7 @@ def test_clinical_cli_publishes_verifies_and_replays(tmp_path: Path) -> None:
         sys.executable,
         "-m",
         "redactor",
+        "--no-dashboard",
         "--input",
         str(source),
         "--state",
