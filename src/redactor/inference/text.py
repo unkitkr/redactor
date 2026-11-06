@@ -8,6 +8,7 @@ from redactor.inference.masking import mask_assessed_ranges, restore_entity
 from redactor.inference.semantics import possible_entity, refine_entity
 from redactor.policy.dates import parse_date
 from redactor.policy.name_matching import compatible_name_spelling
+from redactor.policy.name_mentions import known_name_ranges
 from redactor.policy.text_patterns import age_mentions, clinical_ranges
 from redactor.schemas.entities import NerAdapter, TextEntities
 from redactor.schemas.redaction import TextFinding, TextRange
@@ -118,6 +119,26 @@ def find_text_phi(
                     kind=FIELD_AGE,
                 )
             )
+    # A model is not needed to rediscover a corroborated full name or initial
+    # spelling already present in this record's typed identity fields.
+    mentions: dict[tuple[int, int], set[str]] = {}
+    for name, kind in (
+        (patient_name, FIELD_PATIENT_NAME),
+        (provider_name, FIELD_PROVIDER_NAME),
+    ):
+        for span in known_name_ranges(text, name):
+            mentions.setdefault((span.start, span.end), set()).add(kind)
+    for (start, end), roles in sorted(mentions.items()):
+        if any(start < found.end and end > found.start for found in findings):
+            continue
+        findings.append(
+            TextFinding(
+                start=start,
+                end=end,
+                original=text[start:end],
+                kind=next(iter(roles)) if len(roles) == 1 else FIELD_PERSON_NAME,
+            )
+        )
     masks = tuple(protected) + tuple(
         TextRange(start=f.start, end=f.end) for f in findings
     )

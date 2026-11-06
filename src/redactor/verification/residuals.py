@@ -11,6 +11,7 @@ from redactor.utils.constants import (
     AGE_GROUP_MINIMUM,
     ENTITY_LOCATION,
     PRESERVED_US_GEOGRAPHY,
+    VERIFIER_EDIT_JOIN_PATTERN,
     VERIFIER_MENTION_PREFIX_PATTERN,
     VERIFIER_MENTION_SUFFIX_PATTERN,
     VERIFIER_RELATIVE_TIME_PATTERN,
@@ -98,16 +99,22 @@ def scan_residuals(
 def _covered_name_with_role(
     text: str, mention: TextRange, exemptions: tuple[TextRange, ...]
 ) -> bool:
-    """NER may include a role label; no unedited name fragment is exempted."""
-    for span in exemptions:
-        if not contains_range(mention, span):
+    """A prediction can cross verified edits and punctuation, never unseen words."""
+    cursor = mention.start
+    prefix = re.match(VERIFIER_MENTION_PREFIX_PATTERN, text[cursor : mention.end])
+    if prefix:
+        cursor += prefix.end()
+    covered = False
+    for span in sorted(exemptions, key=lambda value: value.start):
+        if span.end <= cursor or span.start >= mention.end:
             continue
-        prefix = text[mention.start : span.start]
-        if prefix and re.fullmatch(VERIFIER_MENTION_PREFIX_PATTERN, prefix) is None:
-            continue
-        if mention.end == span.end:
+        if span.start > cursor:
+            gap = text[cursor : span.start]
+            if not covered or re.fullmatch(VERIFIER_EDIT_JOIN_PATTERN, gap) is None:
+                return False
+        cursor = max(cursor, span.end)
+        covered = True
+        if cursor >= mention.end:
             return True
-        suffix = re.match(VERIFIER_MENTION_SUFFIX_PATTERN, text[span.end :])
-        if suffix is not None and span.end + suffix.end() >= mention.end:
-            return True
-    return False
+    suffix = re.match(VERIFIER_MENTION_SUFFIX_PATTERN, text[cursor:])
+    return bool(covered and suffix and cursor + suffix.end() >= mention.end)

@@ -44,10 +44,15 @@ def test_hosted_pipeline_replays_falls_back_and_verifies_independently(
     source = tmp_path / "input"
     source.mkdir()
     original = source / "records.csv"
+    narrative = "Jane Smith returned for review."
+    if scenario == "omitted":
+        # Known patient mentions now have deterministic coverage. Keep testing
+        # an omitted, unlinked person that only the independent local pass finds.
+        narrative += " Dana Mitchell reviewed the chart."
     original.write_text(
         "patient,mrn,birth_date,admit_ts,dx_codes,comments\n"
         "Jane Smith,001234,1970-01-02,2026-01-02,E11.9,"
-        "Jane Smith returned for review.\n"
+        f"{narrative}\n"
     )
     settings = PipelineSettings(
         remote=RemoteSettings(

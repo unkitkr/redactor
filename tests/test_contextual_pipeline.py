@@ -40,7 +40,8 @@ def test_local_pipeline_handles_context_without_title_or_person_allowlists(
                 "1975-04-18",
                 "2025-07-23",
                 "I10",
-                "Chen returned. Friend Rowan Hale visited. No Bell's palsy. "
+                "Chen returned. Reviewed with N. Chen. Friend Rowan Hale visited. "
+                "No Bell's palsy. "
                 "Metformin 850 mg BID. GCS 15. Call 312-555-0193. "
                 "Return 07/24/25 13:45.",
             )

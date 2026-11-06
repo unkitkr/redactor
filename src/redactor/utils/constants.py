@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v7"
+PIPELINE_VERSION: Final = "pipeline-v8"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -148,7 +148,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v5"
+VERIFIER_VERSION: Final = "verifier-v6"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -198,6 +198,7 @@ VERIFIER_MENTION_ROLE: Final = (
     r"partner|caregiver|guardian|doctor|Dr\.?|Prof\.?)"
 )
 VERIFIER_MENTION_PREFIX_PATTERN: Final = rf"(?i){VERIFIER_MENTION_ROLE}[ \t]+"
+VERIFIER_EDIT_JOIN_PATTERN: Final = r"(?i)[ \t]*(?:(?:[,;&]|and)[ \t]*)*"
 VERIFIER_MENTION_SUFFIX_PATTERN: Final = (
     rf"(?i)[ \t]+(?:&|and)[ \t]+{VERIFIER_MENTION_ROLE}(?:-in-law)?(?=[ \t,.;:]|$)"
 )
