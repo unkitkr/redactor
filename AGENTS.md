@@ -137,10 +137,10 @@ working clinical publication path.
 
 ## Tests and milestones
 
-- Prefer a small number of meaningful integration tests using real files, SQLite,
-  and subprocesses. Cover related behavior together rather than adding a test for
-  every function. Include stale attempts, interruption, and deliberately broken
-  outputs that the verifier must reject; avoid repetitive implementation tests.
+- Write new tests as a small set of integration tests using real files, SQLite,
+  and subprocesses. Do not add isolated unit tests or a test for every function.
+  Cover related behavior together, including stale attempts, interruption, and
+  deliberately broken serialized outputs that the verifier must reject.
 - Annotate test parameters and return types as well as production functions.
   Ruff enforces annotation presence; a type checker validates their use.
 - Run focused tests during implementation and the full applicable suite before
