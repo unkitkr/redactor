@@ -1,0 +1,17 @@
+{
+  "generator": "tools/make_large_csv.py",
+  "generator_sha256": "ec2d9caa5095ddedc6846bb986d95db9f44b04def7ba20fd06999c65a5607c8c",
+  "generator_arguments": {
+    "size_gb": 1,
+    "seed": 1
+  },
+  "input_bytes": 1073957724,
+  "input_sha256": "3986275a83a766adb9a0768efe5b57dca755933c9ee61f3c9af8cb3990d150d6",
+  "input_rows": 5600000,
+  "columns": 14,
+  "malformed_rows": 0,
+  "multiline_records": 1398979,
+  "validation_seconds": 13.691957458038814,
+  "scope": "Generated source fixture only; row validation is independent of pipeline processing.",
+  "generated_file_committed": false
+}
