@@ -150,8 +150,10 @@ working clinical publication path.
   milestone commit. Use semantic messages such as
   `feat(queue): persist task claims and recovery` or
   `fix(durability): reject truncated checkpoint artifacts`.
-- Never commit secrets, private runtime state, virtual environments, or generated
-  benchmark files. The supplied synthetic inputs are assignment fixtures.
+- Never commit secrets, private runtime state, virtual environments, downloaded
+  weights, or generated bulk benchmark inputs. Small synthetic labels, benchmark
+  code and PHI-free measurement records may be committed for reproducibility.
+  The supplied synthetic inputs are assignment fixtures.
 - Preserve user changes. Do not rewrite commit history for presentation.
 - If a decision cannot be made pragmatically from the assignment and conversation,
   stop implementation and ask the user. Explain the concrete unresolved choice.
