@@ -1,11 +1,15 @@
 """Check exact edit locations and rescan serialized text without hiding context."""
 
+from unicodedata import normalize
+
 from redactor.schemas.entities import NerAdapter
 from redactor.schemas.redaction import TextEdit, TextRange
+from redactor.utils.constants import UNICODE_NORMAL_FORM
 from redactor.utils.errors import (
     ERROR_CLINICAL_CHANGED,
     ERROR_REPLACEMENT,
 )
+from redactor.verification.normalization import normalized_edits
 from redactor.verification.residuals import (
     assessed_age_ranges,
     protected_clinical_ranges,
@@ -70,6 +74,20 @@ def verify_text_changes(
             clinical=_output_ranges(clinical, expected),
             assessed_ages=_output_ranges(age_ranges, expected),
         )
+        canonical_original = normalize(UNICODE_NORMAL_FORM, original)
+        canonical_output = normalize(UNICODE_NORMAL_FORM, output)
+        if canonical_original != original or canonical_output != output:
+            # Normalization is an extra read-only view. Exact serialized gaps,
+            # raw mentions and replacement bytes were already checked above.
+            verify_text_changes(
+                canonical_original,
+                canonical_output,
+                normalized_edits(original, expected),
+                local_ner,
+                free_text=True,
+                patient_name=patient_name,
+                provider_name=provider_name,
+            )
 
 
 def _output_ranges(

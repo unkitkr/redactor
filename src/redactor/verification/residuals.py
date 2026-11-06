@@ -11,6 +11,7 @@ from redactor.utils.constants import (
     VERIFIER_MENTION_PREFIX_PATTERN,
     VERIFIER_MENTION_SUFFIX_PATTERN,
     VERIFIER_RELATIVE_TIME_PATTERN,
+    VERIFIER_ROLE_LABEL_PATTERN,
 )
 from redactor.utils.errors import ERROR_RESIDUAL_PHI
 from redactor.verification.evidence import contains_range, sensitive_ranges
@@ -23,7 +24,8 @@ def protected_clinical_ranges(text: str) -> tuple[TextRange, ...]:
     )
     candidates = clinical_ranges(text) + tuple(
         TextRange(start=match.start(), end=match.end())
-        for match in re.finditer(VERIFIER_RELATIVE_TIME_PATTERN, text)
+        for pattern in (VERIFIER_RELATIVE_TIME_PATTERN, VERIFIER_ROLE_LABEL_PATTERN)
+        for match in re.finditer(pattern, text)
     )
     return tuple(
         span

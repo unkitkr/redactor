@@ -166,8 +166,8 @@ VERIFIER_FACILITY_PATTERN: Final = (
     r"(?:Hospital|Clinic|Centre|Center|Laboratory)\b"
 )
 VERIFIER_CONTACT_CANDIDATE_PATTERN: Final = (
-    r"(?<![\w+])(?P<number>(?:\+|00)?[0-9](?:[0-9 \t().-]*[0-9]))"
-    r"(?:[ \t]*(?i:ext(?:ension)?\.?|x|#)[ \t]*[:=]?[ \t]*[0-9]+)?(?!\w)"
+    r"(?<![\w+])(?P<number>(?:\+|00)?\d(?:[\d \t().-]*\d))"
+    r"(?:[ \t]*(?i:ext(?:ension)?\.?|x|#)[ \t]*[:=]?[ \t]*\d+)?(?!\w)"
 )
 VERIFIER_CONTACT_MINIMUM_DIGITS: Final = 7
 VERIFIER_CONTACT_INTERNATIONAL_PREFIXES: Final = ("+", "00")
@@ -190,6 +190,10 @@ VERIFIER_MENTION_ROLE: Final = (
 VERIFIER_MENTION_PREFIX_PATTERN: Final = rf"(?i){VERIFIER_MENTION_ROLE}[ \t]+"
 VERIFIER_MENTION_SUFFIX_PATTERN: Final = (
     rf"(?i)[ \t]+(?:&|and)[ \t]+{VERIFIER_MENTION_ROLE}(?:-in-law)?(?=[ \t,.;:]|$)"
+)
+VERIFIER_ROLE_LABEL_PATTERN: Final = (
+    rf"(?i)\b{VERIFIER_MENTION_ROLE}(?=[ \t]*:|[ \t]+(?:is|was|aged)[ \t]+"
+    r"[0-9]{1,3}\+?[ \t]+years?[ \t]+old\b)"
 )
 VERIFICATION_PASS: Final = "pass"
 VERIFICATION_FAIL: Final = "fail"
@@ -1129,6 +1133,37 @@ AGE_YEARS_PATTERN: Final = (
     r"(?i)\b(?P<age>[0-9]{1,3})(?:\+)?(?:[- ]years?[- ]old|\s*y/o)\b"
 )
 TEXT_MASK_TOKEN: Final = " [REDACTED] "
+# Clinical code validation. A valid checksum does not establish terminology membership.
+SNOMED_LABELLED_CODE_PATTERN: Final = (
+    r"(?i)\bSNOMED(?:[ \t]+CT)?(?:[ \t]*[:#][ \t]*|[ \t]+)"
+    r"(?P<code>[0-9]+)(?![\w+\-]|\.[0-9])"
+)
+SNOMED_CONCEPT_ID_PATTERN: Final = r"[1-9][0-9]{5,17}"
+SNOMED_CONCEPT_PARTITIONS: Final = ("00", "10")
+SNOMED_EXTENSION_PARTITION: Final = "10"
+SNOMED_EXTENSION_MINIMUM_DIGITS: Final = 11
+VERHOEFF_MULTIPLICATION: Final = (
+    (0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+    (1, 2, 3, 4, 0, 6, 7, 8, 9, 5),
+    (2, 3, 4, 0, 1, 7, 8, 9, 5, 6),
+    (3, 4, 0, 1, 2, 8, 9, 5, 6, 7),
+    (4, 0, 1, 2, 3, 9, 5, 6, 7, 8),
+    (5, 9, 8, 7, 6, 0, 4, 3, 2, 1),
+    (6, 5, 9, 8, 7, 1, 0, 4, 3, 2),
+    (7, 6, 5, 9, 8, 2, 1, 0, 4, 3),
+    (8, 7, 6, 5, 9, 3, 2, 1, 0, 4),
+    (9, 8, 7, 6, 5, 4, 3, 2, 1, 0),
+)
+VERHOEFF_PERMUTATIONS: Final = (
+    (0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+    (1, 5, 7, 6, 2, 8, 3, 0, 9, 4),
+    (5, 8, 0, 3, 7, 9, 6, 1, 4, 2),
+    (8, 9, 1, 6, 0, 4, 3, 5, 2, 7),
+    (9, 4, 5, 3, 1, 2, 6, 8, 7, 0),
+    (4, 2, 8, 6, 5, 7, 3, 9, 0, 1),
+    (2, 7, 9, 3, 8, 0, 6, 4, 1, 5),
+    (7, 0, 4, 6, 9, 1, 3, 2, 5, 8),
+)
 TEXT_CLINICAL_PATTERNS: Final = (
     r"\b(?:MRN|DOB|NPI|SSN)(?=[ :\t])",
     r"\b(?:MD|RN)\b",

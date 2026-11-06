@@ -17,7 +17,7 @@
 ## Choices
 
 - Typed fields use deterministic transformations; optional hosted detection and judging obey the global model-disable switch and require local fallback.
-- Verification checks intact source and saved text, including unknown column labels; independent evidence must fit a complete edit span, and failed checks or unknown coverage quarantine the original.
+- Verification checks intact and Unicode-normalized source and saved text, including unknown column labels; identifying evidence must fit a complete edit span, and failures or unknown coverage quarantine.
 - Scoped identifiers and corroboration link identities; names alone do not, conflicting middle names cannot bridge through shorter spellings, and provider roles stay separate.
 - Linked patients share a date offset; ages at or above 90 become 90+, revealing birth dates are generalized, and unrepresentable native bounds quarantine.
 - ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications and diseases retain their content.
@@ -38,7 +38,7 @@
 - Native files default to 32 MiB, expanded archives to 256 MiB and images to 16 million pixels; only CSV rewriting streams beyond the native-file limit.
 - Unsupported Office extensions, custom namespace prefixes and part paths quarantine; unsupported international phones and extensions also quarantine instead of accepting a partial replacement.
 - The labelled cases exposed verifier false accepts involving initialled names, international phones and model-specific misses; shared writer/verifier detection still permits correlated errors.
-- The config-only selection leaves GLiNER unsupported by the production loader: the CLI test published 0 instead of 4 files (124 tests passed, 1 failed); PP-OCR and hosted detection remain benchmark-only.
+- The selected GLiNER adapter remains unsupported by the production loader: the default CLI test publishes 0 instead of 4 files; explicit spaCy passes publish and replay. PP-OCR and hosted detection remain benchmark-only.
 - OpenMed reached 1 GiB in isolation; NVIDIA full weights were excluded before inference. GLiNER matched upstream on 140 inputs; OpenMed BIO grouping remains experimental.
 - Hosted publication integration, remote judging, pixel verification, cross-issuer linkage, collision auditing, the shared-medication-batch exception and full-run crash equivalence remain incomplete or unvalidated; legacy XLS is unsupported.
 - Atomic installation requires one filesystem; replay requires both state and the original secret, and conflicting existing outputs are never overwritten.

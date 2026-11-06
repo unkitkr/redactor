@@ -2,6 +2,7 @@
 
 import re
 
+from redactor.policy.clinical_codes import snomed_ranges
 from redactor.schemas.redaction import TextRange
 from redactor.utils.constants import (
     AGE_EXPLICIT_PATTERN,
@@ -17,7 +18,7 @@ def clinical_ranges(text: str) -> tuple[TextRange, ...]:
         TextRange(start=match.start(), end=match.end())
         for pattern in TEXT_CLINICAL_PATTERNS
         for match in re.finditer(pattern, text)
-    )
+    ) + snomed_ranges(text)
 
 
 def age_mentions(text: str) -> tuple[tuple[TextRange, TextRange, int], ...]:
