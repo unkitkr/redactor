@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "A local, resumable PHI pseudonymization pipeline"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["pydantic>=2.10,<3"]
+dependencies = [
+    "cryptography>=46,<51",
+    "pydantic>=2.10,<3",
+]
 
 [project.scripts]
 redactor = "redactor.coordinator.cli:main"

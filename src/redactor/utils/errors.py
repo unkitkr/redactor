@@ -44,6 +44,7 @@ ERROR_UNKNOWN_STEP: Final = "unknown_pipeline_step"
 ERROR_PIPELINE_BLOCKED: Final = "pipeline_dependencies_blocked"
 ERROR_INVENTORY_LIMIT: Final = "inventory_manifest_limit_exceeded"
 ERROR_RUN_CONTEXT: Final = "run_context_mismatch"
+ERROR_PRIVATE_RECORD: Final = "invalid_private_evidence"
 
 VERIFICATION_REASON_CODES: Final = (
     ERROR_CHECK_MISSING,
@@ -78,6 +79,7 @@ COORDINATOR_FAILURE_CODES: Final = (
 )
 
 FAILURE_CODES: Final = (
+    ERROR_PRIVATE_RECORD,
     ERROR_VERIFICATION,
     ERROR_VERIFICATION_CONTEXT,
     ERROR_VERIFICATION_RECORD,

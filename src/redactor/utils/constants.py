@@ -129,3 +129,10 @@ RUNS_DIRECTORY: Final = "runs"
 RUN_MANIFEST_FILENAME: Final = "manifest.json"
 RUN_MANIFEST_PENDING_FILENAME: Final = "manifest.part"
 STATE_KEY_CONTEXT: Final = b"redactor-state-key-v1"
+
+# Private evidence envelopes
+ENCRYPTION_KEY_CONTEXT: Final = b"redactor-private-evidence-v1:"
+ENCRYPTION_HEADER: Final = b"RDE1"
+ENCRYPTION_NONCE_BYTES: Final = 12
+ENCRYPTION_TAG_BYTES: Final = 16
+MAX_PRIVATE_RECORD_BYTES: Final = 4 * 1024 * 1024

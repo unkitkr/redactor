@@ -28,6 +28,7 @@
 - Patient dates share one keyed offset; unattributable dates use a stable separate context, with patient linkage explicitly unresolved.
 - Ages of 90 or more become 90+; ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications, and diseases are preserved.
 - Keyed replacements use environment secrets; retained identifying evidence and model responses require encryption and private storage.
+- Private evidence uses AES-GCM with fresh nonces and context-bound keys; only opaque references and safe counters belong in queue metadata.
 - Valid mislabeled files retain their actual native format and original output name; corrupt, unsupported, or unverifiable content is quarantined without silent repair.
 - Nested input paths are preserved under the output root to avoid collisions between files with the same basename.
 - Initial coverage targets the supplied file families plus CSV/TSV; legacy binary XLS is explicitly unsupported, and pixel PHI may be masked.
