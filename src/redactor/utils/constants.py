@@ -154,3 +154,11 @@ MODEL_PURPOSE_JUDGE: Final = "judge"
 HTTP_RETRY_AFTER_HEADER: Final = "retry-after"
 HTTP_CONTENT_ENCODING_HEADER: Final = "content-encoding"
 HTTP_IDENTITY_ENCODING: Final = "identity"
+
+# Native delimited text
+CSV_ADAPTER_VERSION: Final = "csv-utf8-v1"
+CSV_DELIMITERS: Final = (",", "\t", ";")
+CSV_SNIFF_BYTES: Final = 64 * 1024
+UTF8_BOM: Final = b"\xef\xbb\xbf"
+LINE_ENDING_LF: Final = "\n"
+LINE_ENDING_CRLF: Final = "\r\n"

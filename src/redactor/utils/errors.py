@@ -59,6 +59,9 @@ ERROR_MODEL_INPUT: Final = "remote_model_input_limit_exceeded"
 ERROR_MODEL_REQUEST: Final = "remote_model_request_rejected"
 ERROR_MODEL_PRICE_BOUND: Final = "remote_model_price_bound_exceeded"
 ERROR_MODEL_ACCOUNTING: Final = "invalid_model_accounting_transition"
+ERROR_CSV_STRUCTURE: Final = "invalid_csv_structure"
+ERROR_CSV_RECORD_LIMIT: Final = "csv_record_limit_exceeded"
+ERROR_TEXT_ENCODING: Final = "unsupported_text_encoding"
 
 MODEL_REASON_CODES: Final = (
     ERROR_MODEL_DISABLED,
@@ -109,6 +112,9 @@ COORDINATOR_FAILURE_CODES: Final = (
 )
 
 FAILURE_CODES: Final = (
+    ERROR_CSV_STRUCTURE,
+    ERROR_CSV_RECORD_LIMIT,
+    ERROR_TEXT_ENCODING,
     ERROR_PRIVATE_RECORD,
     ERROR_VERIFICATION,
     ERROR_VERIFICATION_CONTEXT,
