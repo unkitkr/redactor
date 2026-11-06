@@ -1,12 +1,15 @@
 """Run the real multiprocess CLI, reconcile its outputs, and replay accepted work."""
 
 import base64
+import csv
 import json
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+from redactor.policy.normalization import normalize_name
 
 
 def test_clinical_cli_publishes_verifies_and_replays(tmp_path: Path) -> None:
@@ -52,6 +55,20 @@ def test_clinical_cli_publishes_verifies_and_replays(tmp_path: Path) -> None:
     published = tmp_path / "output" / "published" / "records.csv"
     before = published.read_bytes()
     assert before != (source / "records.csv").read_bytes()
+    with published.open(encoding="utf-8-sig", newline="") as stream:
+        csv_rows = list(csv.DictReader(stream))
+    with (source / "records.csv").open(encoding="utf-8-sig", newline="") as stream:
+        source_rows = list(csv.DictReader(stream))
+    matching_row = next(
+        index for index, row in enumerate(source_rows) if row["mrn"] == "0087482"
+    )
+    hl7 = (tmp_path / "output/published/message.hl7").read_text()
+    patient_segment = next(line for line in hl7.splitlines() if line.startswith("PID|"))
+    patient_fields = patient_segment.split("|")
+    assert normalize_name(patient_fields[5].replace("$", "^")) == normalize_name(
+        csv_rows[matching_row]["patient"]
+    )
+    assert patient_fields[3].split("$")[0] == csv_rows[matching_row]["mrn"]
     replay = subprocess.run(
         command, env=environment, capture_output=True, text=True, timeout=30
     )

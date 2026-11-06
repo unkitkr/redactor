@@ -69,7 +69,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v1"
+PIPELINE_VERSION: Final = "pipeline-v2"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -138,7 +138,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v1"
+VERIFIER_VERSION: Final = "verifier-v2"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -323,6 +323,7 @@ IDENTITY_BIRTH_NAMESPACE: Final = "identity-birth-date"
 IDENTITY_OBSERVATION_NAMESPACE: Final = "identity-observation"
 IDENTITY_BATCH_NAMESPACE: Final = "identity-observation-batch"
 IDENTITY_BATCH_LIMIT: Final = 20_000
+IDENTITY_CANDIDATE_LIMIT: Final = 512
 IDENTITY_STORAGE_CONTEXT: Final = "identity-observation:{task_id}:{observation_key}"
 IDENTITY_COHORT_CONTEXT: Final = "identity-cohort:{task_id}:{identity_key}"
 IDENTITY_SNAPSHOT_NAMESPACE: Final = "identity-snapshot-v1"

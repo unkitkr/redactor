@@ -92,12 +92,13 @@ def identity_candidates(
     observation: IdentityObservation,
     key: bytes,
 ) -> Generator[IdentityObservation, None, None]:
-    if observation.is_anchor:
-        return
     values: tuple[str, ...]
     if observation.identifier_key and (observation.name_key or observation.birth_key):
         condition = "observations.identifier_key = ?"
         values = (observation.identifier_key,)
+        if observation.birth_key:
+            condition += " AND observations.birth_key = ?"
+            values += (observation.birth_key,)
     elif observation.name_key and observation.birth_key:
         condition = "observations.name_key = ? AND observations.birth_key = ?"
         values = (observation.name_key, observation.birth_key)

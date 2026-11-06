@@ -27,7 +27,7 @@
 - Verification always runs; remote judging examines unresolved units only, uses separate configuration, and obeys the global model-disable switch.
 - Remote judge findings require location-bound evidence and cannot override failed deterministic checks or unassessed native surfaces.
 - Identity matching uses scoped identifiers and corroborating evidence; contradictory people stay separate even when an identifier value receives one consistent replacement.
-- Initials require a scoped identifier and one compatible full-name candidate; names alone never merge people, and ambiguous mentions retain separate identities.
+- Initials and omitted middle names require corroboration; compatible anchors share one identity, conflicting middle names cannot be joined through a shorter spelling, and names alone never merge people.
 - Identity evidence uses encrypted SQLite records with keyed indexes; bounded batches commit evidence and complete-record scan offsets together.
 - Frozen identity snapshots exclude rejected sources; matched aliases share one clinical reference date and older-age decision across files.
 - Providers have separate pseudonyms; a person appearing as patient and provider retains separate role identities.

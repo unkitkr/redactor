@@ -94,3 +94,38 @@ def test_cross_file_aliases_require_corroboration_and_keep_roles_separate(
         name_only.evidence.model_copy(update={"context_key": "different-record"}), key
     )
     assert another_context.observation_key != name_only.observation_key
+
+
+def test_middle_name_omission_links_anchors_without_bridging_conflicting_people() -> (
+    None
+):
+    key = bytes(range(32))
+    full = IdentityEvidence(
+        role="patient",
+        name="John Andrew Smith",
+        identifier="123",
+        identifier_namespace="mrn",
+        birth_date=date(1970, 1, 1),
+        context_key="full",
+    )
+    candidates = tuple(
+        prepare_observation(full.model_copy(update={"name": name}), key)
+        for name in (
+            "John Andrew Smith",
+            "John A. Smith",
+            "John Smith",
+        )
+    )
+    expected = min(candidate.observation_key for candidate in candidates)
+    for candidate in candidates:
+        assert match_identity(candidate, candidates).identity_key == expected
+    conflicting = prepare_observation(
+        full.model_copy(update={"name": "John Benjamin Smith"}), key
+    )
+    for candidate in (*candidates, conflicting):
+        assert (
+            match_identity(candidate, (*candidates, conflicting)).identity_key
+            == candidate.observation_key
+        )
+    initial = prepare_observation(full.model_copy(update={"name": "J. Smith"}), key)
+    assert match_identity(initial, (*candidates, conflicting)).status == "ambiguous"
