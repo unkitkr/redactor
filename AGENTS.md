@@ -43,7 +43,7 @@ working clinical publication path.
 
 ## Code
 
-- For dashboard UI work, follow `DESIGN.md`; keep measurements traceable and never
+- For dashboard UI work, follow `docs/dashboard-design.md`; keep measurements traceable and never
   substitute decorative progress or fabricated data for durable state.
 - Write functional, composable, reusable, readable Python with explicit inputs and
   outputs, descriptive names, type annotations, and proper spacing.
