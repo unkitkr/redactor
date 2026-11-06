@@ -115,6 +115,40 @@ Exact requested and returned model IDs, routed providers, token counts, and resp
 
 Successful API receipts report **$0.045215**. The shared durable ledger accounts for **$2.4229058**, below the $3 cap, because it retains conservative reservations for rejected or uncertain requests. One additional diagnostic HTTP 400 response had no usage receipt. Initial GLM requests with reasoning disabled were rejected; [that failure run](results/glm-flash-rejected.json) is retained separately and is not a GLM accuracy measurement.
 
+## Supplied held-in pipeline run
+
+The [full pipeline record](held-in-pipeline.json) uses all 12 supplied files
+(533,410 bytes), the checked-in GLiNER configuration, two workers and the default
+dashboard. Under 2 vCPUs, 1 GiB memory, no extra swap and no network, the run finished
+in 2.624 seconds at 572.86 MiB whole-container peak memory. It published no files:
+five quarantined for incomplete coverage, six for unsupported formats and one for
+an invalid container structure. Rewriting and saved-output verification were not
+reached, so this is not a redaction-throughput or accuracy result.
+
+An exact-command replay took 1.085 seconds, preserved every output byte and added
+no task attempts. All 37 tasks remained completed; inputs were unchanged, and no
+model requests or charges occurred. This is a completed-run replay, not injected
+crash recovery. The record includes model hashes, source and configuration hashes,
+runtime versions and the existing evaluation image ID.
+
+The reusable probe runs inside a prepared Linux container with the source,
+configuration, inputs and weights mounted read-only, the retained secret supplied
+through the environment, and state/output on native Linux storage:
+
+```sh
+LLM_ENABLED=0 python tools/benchmarks/pipeline.py \
+  --input /work/input --config /work/redactor.toml \
+  --state /work/run/.redactor --workers 2 \
+  --output /work/run/measurement.json
+```
+
+Use a fresh state directory for this probe; it performs the initial run and replay
+itself. Apply the resource limits when creating the container, as in the
+[project instructions](../README.md#run-in-a-constrained-container).
+The [separate storage observation](docker-bind-mount-observation.json) records
+SQLite errors with macOS bind-mounted state. The unchanged pipeline passed on
+native Linux storage; the precise filesystem mechanism was not diagnosed.
+
 ## Dashboard overhead
 
 The [dashboard measurement](results/dashboard-overhead.json) used 1,000 synthetic queue tasks and 33 benchmark files under 2 vCPUs, 1 GiB memory, no extra swap and no network. The parent-owned server started in 0.284 seconds. Four queue polls over 20 seconds consumed 0.15 CPU seconds, or 0.75% of one core, with mean request latency of 40.33 ms. Idle CPU usage was below the 10 ms clock resolution during a 10-second observation.
