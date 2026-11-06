@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, NonNegativeInt, PositiveInt
 
 from redactor.utils.constants import SHA256_PATTERN
 
@@ -34,3 +34,10 @@ class IdentityObservation(BaseModel, frozen=True, extra="forbid"):
 class IdentityMatch(BaseModel, frozen=True, extra="forbid"):
     identity_key: str = Field(pattern=SHA256_PATTERN)
     status: Literal["corroborated", "isolated", "ambiguous"]
+
+
+class IdentityScanProgress(BaseModel, frozen=True, extra="forbid"):
+    sequence: PositiveInt
+    input_offset: NonNegativeInt
+    record_count: NonNegativeInt
+    batch_digest: str = Field(pattern=SHA256_PATTERN)

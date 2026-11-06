@@ -295,6 +295,9 @@ IDENTITY_IDENTIFIER_NAMESPACE: Final = "identity-identifier"
 IDENTITY_NAME_NAMESPACE: Final = "identity-name"
 IDENTITY_BIRTH_NAMESPACE: Final = "identity-birth-date"
 IDENTITY_OBSERVATION_NAMESPACE: Final = "identity-observation"
+IDENTITY_BATCH_NAMESPACE: Final = "identity-observation-batch"
+IDENTITY_BATCH_LIMIT: Final = 20_000
+IDENTITY_STORAGE_CONTEXT: Final = "identity-observation:{task_id}:{observation_key}"
 
 # Calendar-date spelling and older-age generalization
 DATE_OFFSET_NAMESPACE: Final = "patient-date-offset"
