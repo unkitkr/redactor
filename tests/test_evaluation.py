@@ -82,3 +82,78 @@ def test_ocr_metrics_distinguish_reading_from_safe_localization(tmp_path: Path) 
     assert isinstance(broad, dict)
     assert broad["identifiers_recovered"] == 1
     assert broad["identifier_boxes_overlapping_clinical"] == 1
+
+
+def test_remote_evaluation_replays_from_private_ledger_without_credentials(
+    tmp_path: Path,
+) -> None:
+    import hashlib
+
+    import httpx
+    import pytest
+
+    from redactor.agents.detector.prompts import detection_request
+    from redactor.evaluation.remote import load_remote_ner, remote_settings
+    from redactor.evaluation.state import evaluation_state
+    from redactor.schemas.entities import TextEntities
+    from redactor.utils.constants import EVALUATION_REMOTE_MODELS
+    from redactor.utils.errors import ERROR_RUN_ACTIVE
+    from redactor.utils.provider import request_json
+
+    source = tmp_path / "synthetic.txt"
+    source.write_text("No personal identifiers in this synthetic example.")
+    state = tmp_path / "state"
+    model = EVALUATION_REMOTE_MODELS[0]
+    calls = 0
+
+    async def endpoint(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(
+            200,
+            json={
+                "id": "evaluation-test",
+                "object": "chat.completion",
+                "created": 0,
+                "model": model,
+                "choices": [
+                    {
+                        "index": 0,
+                        "finish_reason": "stop",
+                        "message": {"role": "assistant", "content": '{"entities":[]}'},
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 20,
+                    "completion_tokens": 10,
+                    "total_tokens": 30,
+                },
+            },
+        )
+
+    text = source.read_text()
+    with evaluation_state(state, source, "analyze") as (connection, claimed, key):
+        with (
+            pytest.raises(RuntimeError, match=ERROR_RUN_ACTIVE),
+            evaluation_state(state, source, "analyze"),
+        ):
+            pass
+        result = request_json(
+            connection,
+            claimed,
+            remote_settings(model),
+            detection_request(text, hashlib.sha256(text.encode()).hexdigest()),
+            TextEntities,
+            key,
+            environment={"LLM_API_KEY": "test-only"},
+            transport=httpx.MockTransport(endpoint),
+        )
+        assert result.backend == "remote"
+    with evaluation_state(state, source, "analyze") as (connection, claimed, key):
+        adapter = load_remote_ner(
+            connection, claimed, model, key, "", state / "receipts.jsonl"
+        )
+        assert adapter(text) == ()
+    assert calls == 1
+    assert not (state / "receipts.jsonl").exists()
+    assert (state / "encryption.key").stat().st_mode & 0o777 == 0o600

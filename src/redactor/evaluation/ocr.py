@@ -5,9 +5,9 @@ from pathlib import Path
 from time import perf_counter
 from typing import cast
 
+from redactor.evaluation.failures import evaluation_failure
 from redactor.schemas.evaluation import OcrAdapter, OcrExample, OcrRegion
 from redactor.utils.constants import EVALUATION_OCR_COVERAGE
-from redactor.utils.failures import failure_reason
 
 
 def normalized(text: str) -> str:
@@ -47,7 +47,7 @@ def evaluate_ocr(
             output = adapter(Path(example.image))
         except Exception as exception:
             output = ()
-            error = failure_reason(exception)
+            error = evaluation_failure(exception)
         recovered = normalized(" ".join(item.text for item in output))
         truth = normalized(example.reference_text)
         sensitive = [item for item in example.regions if item.sensitive]

@@ -3,6 +3,7 @@
 from collections import Counter
 from time import perf_counter
 
+from redactor.evaluation.failures import evaluation_failure
 from redactor.evaluation.metrics import (
     clinical_overlaps,
     detection_counts,
@@ -16,12 +17,15 @@ from redactor.schemas.entities import NerAdapter
 from redactor.schemas.evaluation import EvaluationSpan, TextExample
 from redactor.schemas.redaction import TextContext
 from redactor.utils.constants import EVALUATION_FINDING_TYPES
-from redactor.utils.failures import failure_reason
 from redactor.verification.text import verify_text_changes
 
 
 def evaluate_text_examples(
-    examples: tuple[TextExample, ...], adapter: NerAdapter, *, combined: bool
+    examples: tuple[TextExample, ...],
+    adapter: NerAdapter,
+    *,
+    combined: bool,
+    verifier_adapter: NerAdapter | None = None,
 ) -> dict[str, object]:
     totals: Counter[str] = Counter()
     per_kind: dict[str, Counter[str]] = {}
@@ -62,7 +66,11 @@ def evaluate_text_examples(
                 output = apply_text_edits(example.text, edits)
                 try:
                     verify_text_changes(
-                        example.text, output, edits, adapter, free_text=True
+                        example.text,
+                        output,
+                        edits,
+                        verifier_adapter or adapter,
+                        free_text=True,
                     )
                 except ValueError:
                     verifier_passed = False
@@ -76,7 +84,7 @@ def evaluate_text_examples(
                     for item in adapter(example.text)
                 )
         except Exception as exception:
-            error = failure_reason(exception)
+            error = evaluation_failure(exception)
             totals["abstentions"] += 1
         counts = span_counts(expected, predicted)
         for field in ("true_positive", "false_positive", "false_negative"):
