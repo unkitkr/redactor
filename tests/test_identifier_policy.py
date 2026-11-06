@@ -93,14 +93,14 @@ def test_identifier_policy_replays_across_files_and_preserves_clinical_fields(
     assert format_person_name("Smith, Jane", name) == ", ".join(reversed(name.split()))
     assert format_person_name("Smith^Jane", name) == "^".join(reversed(name.split()))
     phone = replace_phone("(415) 555-0100", key)
-    digits = "".join(character for character in phone if character.isdigit())
-    assert len(digits) == 10 and digits != "4155550100"
+    phone_digits = "".join(character for character in phone if character.isdigit())
+    assert len(phone_digits) == 10 and phone_digits != "4155550100"
     assert phone[0] == "(" and phone[4:6] == ") " and phone[9] == "-"
     assert (
         replace_phone("+1 415-555-0100", key)
-        == f"+1 {digits[:3]}-{digits[3:6]}-{digits[6:]}"
+        == f"+1 {phone_digits[:3]}-{phone_digits[3:6]}-{phone_digits[6:]}"
     )
-    assert replace_phone("４１５５５５０１００", key) == digits
+    assert replace_phone("４１５５５５０１００", key) == phone_digits
     assert replace_email("Jane.Smith@sample.invalid", key) == replace_email(
         "jane.smith@sample.invalid", key
     )
