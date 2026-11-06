@@ -21,6 +21,7 @@ dependencies = [
     "rapidocr==3.10.0",
     "spacy>=3.8.18,<3.9",
     "tokenizers==0.23.3",
+    "zxing-cpp>=3,<4",
 ]
 
 [project.scripts]

@@ -29,6 +29,7 @@ from redactor.schemas.pipeline import StepResult
 from redactor.utils.constants import (
     CSV_ADAPTER_VERSION,
     HASH_CHUNK_BYTES,
+    IMAGE_FORMATS,
     STEP_ANALYZE,
     STEP_INSPECT,
     STEP_QUARANTINE,
@@ -41,6 +42,7 @@ from redactor.utils.errors import (
     ERROR_RESOURCE_LIMIT,
 )
 from redactor.utils.failures import failure_reason
+from redactor.workers.rewrite_image import rewrite_image_task
 from redactor.workers.rewrite_native import rewrite_native_task
 
 
@@ -97,6 +99,8 @@ def rewrite_task(
     )
     if analysis.reason is not None:
         raise ValueError(ERROR_FORMAT_UNSUPPORTED)
+    if inspection.file_type in IMAGE_FORMATS:
+        return rewrite_image_task(connection, task, analysis, settings.resources)
     detector = detection_adapter(
         connection,
         task,

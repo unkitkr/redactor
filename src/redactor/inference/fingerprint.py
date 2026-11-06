@@ -17,6 +17,7 @@ from redactor.utils.constants import (
     RUNTIME_MISSING_ARTIFACT,
     RUNTIME_PACKAGES,
     RUNTIME_SOURCE_SUFFIXES,
+    YUNET_DIRECTORY,
 )
 
 
@@ -47,6 +48,7 @@ def runtime_fingerprint(settings: LocalSettings) -> str:
         OCR_PPOCR_DIRECTORY if settings.ocr == OCR_PPOCR else OCR_TESSDATA_DIRECTORY
     )
     values["ocr"] = directory_fingerprint(ocr_directory)
+    values["faces"] = directory_fingerprint(settings.model_directory / YUNET_DIRECTORY)
     executable = shutil.which(OCR_TESSERACT)
     values["tesseract"] = (
         file_fingerprint(Path(executable)) if executable else RUNTIME_MISSING_ARTIFACT

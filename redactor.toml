@@ -2,7 +2,7 @@
 # Local processing is the default. Set LLM_ENABLED=1 to allow hosted detection.
 # Set LLM_ENABLED=0 to disable remote detection and judging together.
 # Selected models from benchmarks/README.md; local weights must be staged first.
-# GLiNER is supported; PP-OCR is still evaluation-only.
+# GLiNER and PP-OCR run locally; hosted text detection is optional.
 [remote]
 enabled = false
 base_url = "https://openrouter.ai/api/v1"

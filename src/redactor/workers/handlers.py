@@ -6,6 +6,7 @@ import httpx
 
 from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.entities import NerAdapter
+from redactor.schemas.ocr import OcrAdapter
 from redactor.schemas.pipeline import StepHandler
 from redactor.utils.constants import (
     STEP_ANALYZE,
@@ -32,6 +33,7 @@ def pipeline_handlers(
     resolution_task_id: str,
     *,
     model_transport: httpx.AsyncBaseTransport | None = None,
+    local_ocr: OcrAdapter | None = None,
 ) -> dict[str, StepHandler]:
     return {
         STEP_INSPECT: partial(
@@ -44,6 +46,7 @@ def pipeline_handlers(
             settings=settings,
             mapping_key=mapping_key,
             local_ner=local_ner,
+            local_ocr=local_ocr,
             transport=model_transport,
         ),
         STEP_RESOLVE: partial(resolve_task, mapping_key=mapping_key),

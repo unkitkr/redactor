@@ -16,6 +16,7 @@ from redactor.schemas.pipeline import StepResult
 from redactor.schemas.verification import VerificationCheck
 from redactor.utils.constants import (
     CHECK_COVERAGE,
+    IMAGE_FORMATS,
     STEP_INSPECT,
     STEP_PUBLISH,
     STEP_QUARANTINE,
@@ -27,6 +28,7 @@ from redactor.utils.errors import ERROR_PROCESSING, VERIFICATION_REASON_CODES
 from redactor.utils.failures import failure_reason
 from redactor.verification.context import verification_context
 from redactor.verification.csv import verify_csv
+from redactor.verification.images import verify_images
 from redactor.verification.native import verify_native
 from redactor.verification.verdict import conclude_verification
 
@@ -50,7 +52,16 @@ def verify_task(
             FileInspection,
             encryption_key=mapping_key,
         )
-        if inspection.csv_layout is not None:
+        if inspection.file_type in IMAGE_FORMATS:
+            checks = verify_images(
+                connection,
+                task,
+                artifact,
+                settings=settings,
+                mapping_key=mapping_key,
+                local_ner=local_ner,
+            )
+        elif inspection.csv_layout is not None:
             checks = verify_csv(
                 connection,
                 task,

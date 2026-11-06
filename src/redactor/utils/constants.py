@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v20"
+PIPELINE_VERSION: Final = "pipeline-v21"
 RUNTIME_SOURCE_SUFFIXES: Final = (".py", ".sql")
 RUNTIME_IGNORED_SUFFIXES: Final = (".pyc", ".pyo")
 RUNTIME_MISSING_ARTIFACT: Final = "missing"
@@ -89,6 +89,7 @@ RUNTIME_PACKAGES: Final = (
     "onnxruntime",
     "openai",
     "openpyxl",
+    "opencv-python-headless",
     "pillow",
     "pydantic",
     "pydicom",
@@ -96,6 +97,7 @@ RUNTIME_PACKAGES: Final = (
     "rapidocr",
     "spacy",
     "tokenizers",
+    "zxing-cpp",
 )
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
@@ -169,7 +171,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v15"
+VERIFIER_VERSION: Final = "verifier-v16"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -311,6 +313,7 @@ FORMAT_DICOM: Final = "dicom"
 FORMAT_JPEG: Final = "jpeg"
 FORMAT_PNG: Final = "png"
 FORMAT_TIFF: Final = "tiff"
+IMAGE_FORMATS: Final = (FORMAT_JPEG, FORMAT_PNG, FORMAT_TIFF)
 FORMAT_JSON: Final = "json"
 FORMAT_FHIR: Final = "fhir"
 FORMAT_HL7: Final = "hl7"
@@ -556,6 +559,31 @@ NANP_MINIMUM_PREFIX: Final = 200
 PHONE_LINE_NUMBER_SPACE: Final = 10_000
 SURROGATE_STREET_NUMBER_SPACE: Final = 9900
 SURROGATE_STREET_NUMBER_MINIMUM: Final = 100
+
+# Pixel carriers and locally pinned face detection.
+PIXEL_TEXT: Final = "text"
+PIXEL_BARCODE: Final = "barcode"
+PIXEL_FACE: Final = "face"
+PIXEL_MASK_PADDING: Final = 2
+PIXEL_MASK_HEIGHT_MARGIN: Final = 0.25
+PIXEL_MASK_COLOR: Final = 0
+PIXEL_MAXIMUM_FRAMES: Final = 256
+PIXEL_JPEG_QUALITY: Final = 100
+PIXEL_IMAGE_MODES: Final = ("RGB", "L", "P")
+PIXEL_RGB_MODE: Final = "RGB"
+PIXEL_TEMPORARY_FILENAME: Final = "frame.png"
+PIXEL_PNG_FORMAT: Final = "PNG"
+PIXEL_JPEG_FORMAT: Final = "JPEG"
+PIXEL_TIFF_FORMAT: Final = "TIFF"
+PIXEL_TIFF_COMPRESSION: Final = "tiff_deflate"
+YUNET_DIRECTORY: Final = "yunet"
+YUNET_FILENAME: Final = "face_detection_yunet_2026may.onnx"
+YUNET_SHA256: Final = "ebafce4e3c118d6554634be5c27ab333b4c047a9a8c3faf1d7cf93101c22f0f0"
+YUNET_TILE_SIZE: Final = 640
+YUNET_TILE_OVERLAP: Final = 320
+YUNET_MAXIMUM_CANDIDATES: Final = 5000
+YUNET_SCORE_THRESHOLD: Final = 0.6
+YUNET_NMS_THRESHOLD: Final = 0.3
 
 # Typed tabular fields. Unknown columns still require text analysis.
 FIELD_PATIENT_NAME: Final = "patient_name"
@@ -1428,7 +1456,7 @@ VERHOEFF_PERMUTATIONS: Final = (
 TEXT_CLINICAL_PATTERNS: Final = (
     r"(?i)\b(?:in|since|during|through|year|quit|dx|diagnosed)\s+(?:19|20)[0-9]{2}\b",
     r"(?i)\b(?:T|temp(?:erature)?)\s*[:=]?\s*[0-9]+(?:\.[0-9]+)?\s*°?[CF]\b",
-    r"(?i)\b(?:A1c|HbA1c|GCS|LDL|HDL|HR|BP)\s*[:=]?\s*"
+    r"(?i)\b(?:A1c|HbA1c|GCS|LDL|HDL|HR|BP|pulse|heart rate|blood pressure)\s*[:=]?\s*"
     r"[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?\s*(?:%|mg/dL|mmol/L|mmHg|bpm)?",
     r"\b(?:MRN|DOB|NPI|SSN)(?=[ :\t])",
     r"\b(?:MD|RN)\b",

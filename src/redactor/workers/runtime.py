@@ -3,7 +3,7 @@
 from contextlib import closing
 
 from redactor.inference.fingerprint import runtime_fingerprint
-from redactor.inference.model_loader import load_local_ner
+from redactor.inference.runtime import local_adapters
 from redactor.persistence.database import open_database
 from redactor.persistence.queue.tasks import get_task
 from redactor.persistence.runs.manifests import read_manifest
@@ -40,13 +40,12 @@ def consume_pipeline(config: WorkerConfig) -> None:
         }
     )
     ner: NerAdapter = unavailable_ner
+    ocr = None
     if config.inference:
-        try:
-            ner = load_local_ner(settings.local)
-        except ValueError:
-            # Typed fields still work; any required inference fails closed.
-            ner = unavailable_ner
-    handlers = pipeline_handlers(settings, key, ner, config.resolution_task_id)
+        ner, ocr = local_adapters(settings.local, settings.resources)
+    handlers = pipeline_handlers(
+        settings, key, ner, config.resolution_task_id, local_ocr=ocr
+    )
     steps = tuple(
         step
         for step in handlers

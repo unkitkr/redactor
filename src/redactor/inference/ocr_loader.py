@@ -29,7 +29,9 @@ def load_local_ocr(
             directory = settings.ocr_directory or (
                 settings.model_directory / OCR_TESSDATA_DIRECTORY
             )
-            adapter = load_tesseract(directory, settings.ocr_language)
+            adapter = load_tesseract(
+                directory, settings.ocr_language, word_boxes=word_boxes
+            )
         elif settings.ocr == OCR_PPOCR:
             from redactor.inference.adapters.ppocr import load_ppocr
 

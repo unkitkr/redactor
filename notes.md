@@ -1,6 +1,6 @@
 ## Architecture
 
-- Work follows one path: inspect, analyze, freeze identities, rewrite, verify the saved output, publish or quarantine, then reconcile reports.
+- Files follow one path: inspect, extract native content, redact, save, independently verify, then publish; failures quarantine and the report reconciles every input.
 - SQLite keeps the queue and step history; workers claim tasks and record progress, while a shared run lock prevents recovery until earlier workers exit.
 - Each run freezes input, code and model hashes, dependency versions, configuration and secret-key identity; changed runtimes require fresh state, and checkpoints support replay of the same run.
 - Large artifacts stay on private disk, and CSV checkpoints end at complete records; one inference worker and one light worker limit model duplication.
@@ -13,8 +13,9 @@
 - **SQLite WAL** avoids external queue and database services; short transactions keep contention down, but writes still serialize and identity evidence grows the state.
 - **Pydantic, TOML and AES-GCM** provide validated contracts, configuration and encrypted identifying state, with secrets supplied through the environment.
 - **GLiNER PII Edge UINT8** is the local NER choice for its measured recall and memory balance: 69.2% exact recall at 195.6 MiB in isolation; production coverage remains limited.
-- **PP-OCRv5 mobile English** is the OCR choice: 44/52 identifiers localized versus Tesseract's 36/52, at 343.7 MiB isolated peak memory; it is benchmarked but not integrated into publication.
+- **PP-OCRv5 mobile English** extracts image text; separate Tesseract OCR checks saved output, with ZXing-C++ for barcode carriers and pinned YuNet weights for faces.
 - **Pixel localization:** PP-OCR word boxes retain line context and distinguish names from nearby clinical values; incomplete word coverage fails closed.
+- **Model routing:** bulk text and structured data use bounded local processing; hosted mode uses LLMs for smaller unstructured content, with local fallback rather than further local-model tuning.
 - **GLM 5.3 Flash** is the optional hosted-text choice: the highest measured exact-span F1 (75%), with greater latency; hosted detection is connected to analysis, and these scores do not validate a judge.
 - **OpenAI SDK** provides the transport behind encrypted response replay, bounded backoff, circuit state and shared cost reservations.
 - **PyMuPDF** is selected under its AGPL license.
@@ -35,6 +36,7 @@
 - **Locations:** ZIP codes retain only permitted three-digit prefixes, otherwise 000.
 - **Device and batch identifiers:** the policy pseudonymizes device production identifiers and ambiguous lots, while preserving known shared medication batches unless patient linkage is evident, following the [HHS distinction](https://www.hhs.gov/hipaa/for-professionals/faq/can-device-identifier-di-portion-unique-device-identifier-udi-be-part-limited-or-de-identified/index.html); the shared-batch exception remains incomplete or unvalidated.
 - **Verification:** intact and Unicode-normalized source and saved text are checked, including unknown column labels; identifying evidence must fit a complete edit span, and failed or incomplete checks quarantine.
+- **Pixel policy:** identifying text, barcode carriers and faces are masked; fresh image containers remove source metadata, and verification checks every pixel plus independent source/output OCR. JPEG encoding introduces codec loss; PNG/TIFF preserve unmasked pixels exactly.
 - **XLSX verification:** checks cover XML names, metadata and ZIP contents, reject ambiguous cells, and compare unedited layout and styles with the source.
 - **Workbook references:** comments are assessed across runs; authors, custom range names and package labels are replaced while preserving targets and styles; unsupported drawing content and computed names quarantine.
 - **JSON:** nested records inherit identity context, number spellings and scalar types are preserved, and declared base64 JSON attachments are recursively assessed; duplicate keys and unsupported payloads quarantine.
@@ -58,14 +60,14 @@
 
 ## Known limitations
 
-- **Publication coverage:** CSV/TSV, bounded labelled text, native JSON, supported XLSX and HL7 ADT have publication paths; other formats, including legacy XLS, and unsupported populated surfaces quarantine.
+- **Publication coverage:** CSV/TSV, bounded labelled text, native JSON, supported XLSX, HL7 ADT and bounded JPEG/PNG/TIFF have publication paths; other formats and unsupported populated surfaces quarantine.
 - **GLiNER coverage:** fresh contextual CSV/text cases publish and replay; full mixed-format acceptance and a new accuracy measurement remain outstanding.
 - **Detection limits:** observed name/contact escapes are blocked, but unfamiliar entities can evade shared statistical NER and overextended model spans can reject clean text.
 - **Verifier precision:** datatype checks address the recorded title misclassification; other statistical false positives remain possible ([historical diagnostic](benchmarks/verifier-metadata-diagnostic.json)).
 - **Bulk execution:** the earlier 1 GiB failure remains unexplained; workers now retain safe failure categories and numeric error codes, but identity state growth and full throughput are unresolved.
 - **Unsupported details:** unsupported Office extensions, custom namespace prefixes, unsupported part paths, and unsupported international phones or extensions quarantine rather than accept partial handling.
 - **File limits:** defaults are 32 MiB for native files, 256 MiB for expanded archives and 16 million pixels for images; only CSV rewriting streams beyond the native-file limit.
-- **OCR limits:** only single-frame images, aspect ratios up to 64 and at most 256 text regions are accepted, bounding preprocessing and rejecting uncertain partial coverage; image benchmarks do not validate safe image publication.
+- **OCR limits:** at most 256 frames, 16 million aggregate pixels and 256 text regions per frame; unsupported color modes and transparency quarantine. Separate lines retain their spatial boundaries. Statistical misses remain possible.
 - **Model headroom:** OpenMed reached 1 GiB in isolation, and NVIDIA full weights were excluded before inference; GLiNER matched upstream on 140 inputs, while OpenMed BIO grouping remains experimental.
 - **Validation gaps:** remote judging, pixel verification, cross-issuer linkage, collision auditing and full-run crash equivalence remain incomplete or unvalidated.
 - **Recovery boundary:** atomic file installation requires one filesystem, and replay requires the saved state and original secret.

@@ -24,6 +24,7 @@ from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.entities import NerAdapter
 from redactor.schemas.formats import FileInspection
 from redactor.schemas.identity import IdentityEvidence
+from redactor.schemas.ocr import OcrAdapter
 from redactor.schemas.persistence import Task
 from redactor.schemas.pipeline import StepResult
 from redactor.utils.constants import (
@@ -31,6 +32,7 @@ from redactor.utils.constants import (
     FORMAT_CSV,
     FORMAT_TSV,
     IDENTITY_BATCH_LIMIT,
+    IMAGE_FORMATS,
     MAX_PRIVATE_RECORD_BYTES,
     STEP_INSPECT,
 )
@@ -40,6 +42,7 @@ from redactor.utils.errors import (
     ERROR_RESOURCE_LIMIT,
 )
 from redactor.utils.failures import failure_reason
+from redactor.workers.analyze_image import analyze_image_task
 from redactor.workers.analyze_native import analyze_native_task
 
 
@@ -50,6 +53,7 @@ def analyze_task(
     settings: PipelineSettings,
     mapping_key: bytes,
     local_ner: NerAdapter,
+    local_ocr: OcrAdapter | None = None,
     transport: httpx.AsyncBaseTransport | None = None,
 ) -> StepResult:
     resources = settings.resources
@@ -71,6 +75,16 @@ def analyze_task(
                 local_ner=local_ner,
                 transport=transport,
             )
+            if inspection.file_type in IMAGE_FORMATS and local_ocr is not None:
+                return analyze_image_task(
+                    connection,
+                    task,
+                    inspection,
+                    settings=settings,
+                    mapping_key=mapping_key,
+                    detector=detector,
+                    local_ocr=local_ocr,
+                )
             if (
                 inspection.file_type not in (FORMAT_CSV, FORMAT_TSV)
                 or inspection.csv_layout is None
