@@ -27,6 +27,8 @@ ERROR_ARTIFACT_CORRUPT: Final = "checkpoint_artifact_corrupt"
 ERROR_INCOMPLETE_INPUT: Final = "input_not_fully_consumed"
 ERROR_PROCESSING: Final = "processing_error"
 ERROR_TIMEOUT: Final = "processing_timeout"
+ERROR_CONFIGURATION: Final = "invalid_pipeline_configuration"
+ERROR_MAPPING_KEY: Final = "invalid_mapping_key"
 
 # Coordinator startup and input discovery
 ERROR_RUN_ACTIVE: Final = "state_directory_in_use"

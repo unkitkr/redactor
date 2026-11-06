@@ -1,0 +1,44 @@
+# Secrets are read only from LLM_API_KEY and REDACTOR_SECRET_KEY.
+# Set LLM_ENABLED=0 to disable remote detection and judging together.
+[remote]
+enabled = true
+base_url = ""
+model = ""
+vision = false
+json_mode = true
+budget_usd = "3.00"
+# Supply endpoint prices before enabling paid requests. Missing prices use local inference.
+# input_usd_per_million = "0.00"
+# output_usd_per_million = "0.00"
+max_attempts = 3
+timeout_seconds = 15.0
+deadline_seconds = 45.0
+circuit_failures = 3
+circuit_cooldown_seconds = 60.0
+max_output_tokens = 1024
+max_input_bytes = 16384
+
+[local]
+ner = "spacy"
+ocr = "tesseract"
+spacy_model = "en_core_web_sm"
+model_directory = ".models"
+ocr_language = "eng"
+# ner_directory = ".models/gliner-edge"
+# ocr_directory = ".models/ppocr-mobile"
+
+[verification]
+judge_enabled = true
+# Judge selection is independent of the detection model. Blank disables remote judging.
+judge_model = ""
+judge_vision = false
+
+[resources]
+max_record_bytes = 1048576
+chunk_bytes = 4194304
+max_image_pixels = 16000000
+max_nesting_depth = 16
+checkpoint_records = 5000
+
+[policy]
+maximum_date_shift_days = 365
