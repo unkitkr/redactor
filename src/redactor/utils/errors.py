@@ -77,6 +77,7 @@ ERROR_LOCAL_INPUT: Final = "local_model_input_limit_exceeded"
 ERROR_LOCAL_INFERENCE: Final = "local_model_inference_failed"
 ERROR_ENTITY_EVIDENCE: Final = "invalid_entity_span_evidence"
 ERROR_IDENTITY_EVIDENCE: Final = "invalid_identity_evidence"
+ERROR_IDENTITY_SNAPSHOT: Final = "invalid_identity_snapshot"
 
 INSPECTION_REASON_CODES: Final = (
     ERROR_FORMAT_UNSUPPORTED,
@@ -138,6 +139,7 @@ COORDINATOR_FAILURE_CODES: Final = (
 )
 
 FAILURE_CODES: Final = (
+    ERROR_IDENTITY_SNAPSHOT,
     ERROR_IDENTITY_EVIDENCE,
     ERROR_LOCAL_UNAVAILABLE,
     ERROR_LOCAL_INPUT,

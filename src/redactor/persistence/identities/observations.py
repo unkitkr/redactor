@@ -148,25 +148,38 @@ def save_observation_batch(
 
 
 def iter_observations(
-    connection: sqlite3.Connection, task_id: str, key: bytes
+    connection: sqlite3.Connection,
+    task_id: str,
+    key: bytes,
+    *,
+    after_key: str = "",
 ) -> Iterator[IdentityObservation]:
     if get_task(connection, task_id).status != STATUS_SUCCEEDED:
         raise ValueError(ERROR_STEP_RESULT)
     cursor = connection.execute(
         "SELECT observation_key, encrypted_payload FROM identity_observations "
-        "WHERE task_id = ? ORDER BY observation_key",
-        (task_id,),
+        "WHERE task_id = ? AND observation_key > ? ORDER BY observation_key",
+        (task_id, after_key),
     )
     try:
         for row in cursor:
-            payload = decrypt_payload(
-                key,
-                row["encrypted_payload"],
-                context=_context(task_id, row["observation_key"]),
+            yield decode_observation(
+                key, task_id, row["observation_key"], row["encrypted_payload"]
             )
-            yield IdentityObservation.model_validate_json(payload)
     finally:
         cursor.close()
+
+
+def decode_observation(
+    key: bytes, task_id: str, observation_key: str, encrypted_payload: bytes
+) -> IdentityObservation:
+    payload = decrypt_payload(
+        key, encrypted_payload, context=_context(task_id, observation_key)
+    )
+    observation = IdentityObservation.model_validate_json(payload)
+    if observation.observation_key != observation_key:
+        raise ValueError(ERROR_IDENTITY_EVIDENCE)
+    return observation
 
 
 def _merge(

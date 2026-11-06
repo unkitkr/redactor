@@ -303,6 +303,11 @@ IDENTITY_OBSERVATION_NAMESPACE: Final = "identity-observation"
 IDENTITY_BATCH_NAMESPACE: Final = "identity-observation-batch"
 IDENTITY_BATCH_LIMIT: Final = 20_000
 IDENTITY_STORAGE_CONTEXT: Final = "identity-observation:{task_id}:{observation_key}"
+IDENTITY_COHORT_CONTEXT: Final = "identity-cohort:{task_id}:{identity_key}"
+IDENTITY_SNAPSHOT_NAMESPACE: Final = "identity-snapshot-v1"
+IDENTITY_BINDING_NAMESPACE: Final = "identity-binding-v1"
+IDENTITY_RESOLUTION_BATCH_SIZE: Final = 1000
+IDENTITY_LOOKUP_CACHE_ENTRIES: Final = 512
 
 # Calendar-date spelling and older-age generalization
 DATE_OFFSET_NAMESPACE: Final = "patient-date-offset"
