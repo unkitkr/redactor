@@ -42,6 +42,7 @@ class IdentityScanProgress(BaseModel, frozen=True, extra="forbid"):
     input_offset: NonNegativeInt
     record_count: NonNegativeInt
     batch_digest: str = Field(pattern=SHA256_PATTERN)
+    counts: dict[str, NonNegativeInt] = Field(default_factory=dict)
 
 
 class IdentityCohort(BaseModel, frozen=True, extra="forbid"):

@@ -1,6 +1,7 @@
 """Commit bounded evidence batches and their input cursor in one transaction."""
 
 import hmac
+import json
 import sqlite3
 from collections.abc import Iterator, Sequence
 
@@ -18,6 +19,7 @@ from redactor.utils.constants import (
     IDENTITY_BATCH_LIMIT,
     IDENTITY_BATCH_NAMESPACE,
     IDENTITY_STORAGE_CONTEXT,
+    JSON_SEPARATORS,
     MAX_PRIVATE_RECORD_BYTES,
     STATUS_SUCCEEDED,
     STEP_ANALYZE,
@@ -35,11 +37,15 @@ def scan_progress(
     connection: sqlite3.Connection, task_id: str
 ) -> IdentityScanProgress | None:
     row = connection.execute(
-        "SELECT sequence, input_offset, record_count, batch_digest "
+        "SELECT sequence, input_offset, record_count, batch_digest, counts_json "
         "FROM identity_scan_progress WHERE task_id = ?",
         (task_id,),
     ).fetchone()
-    return IdentityScanProgress.model_validate(dict(row)) if row is not None else None
+    if row is None:
+        return None
+    values = dict(row)
+    values["counts"] = json.loads(values.pop("counts_json"))
+    return IdentityScanProgress.model_validate(values)
 
 
 def save_observation_batch(
@@ -51,6 +57,7 @@ def save_observation_batch(
     sequence: int,
     input_offset: int,
     record_count: int,
+    counts: dict[str, int] | None = None,
 ) -> IdentityScanProgress:
     """The byte offset must end a complete native record, never a read buffer."""
     require_attempt(connection, claimed)
@@ -62,6 +69,7 @@ def save_observation_batch(
         input_offset=input_offset,
         record_count=record_count,
         batch_digest=digest,
+        counts=counts or {},
     )
     previous = scan_progress(connection, claimed.task_id)
     if previous == progress:
@@ -71,6 +79,13 @@ def save_observation_batch(
         or input_offset > claimed.input_size
         or (previous is not None and input_offset <= previous.input_offset)
         or (previous is not None and record_count <= previous.record_count)
+        or (
+            previous is not None
+            and any(
+                progress.counts.get(kind, 0) < count
+                for kind, count in previous.counts.items()
+            )
+        )
     ):
         raise ValueError(ERROR_INVALID_CHECKPOINT)
 
@@ -135,14 +150,22 @@ def save_observation_batch(
         connection.execute(
             """
             INSERT INTO identity_scan_progress (
-                task_id, sequence, input_offset, record_count, batch_digest
-            ) VALUES (?, ?, ?, ?, ?)
+                task_id, sequence, input_offset, record_count, batch_digest, counts_json
+            ) VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(task_id) DO UPDATE SET sequence = excluded.sequence,
                 input_offset = excluded.input_offset,
                 record_count = excluded.record_count,
-                batch_digest = excluded.batch_digest
+                batch_digest = excluded.batch_digest,
+                counts_json = excluded.counts_json
             """,
-            (claimed.task_id, sequence, input_offset, record_count, digest),
+            (
+                claimed.task_id,
+                sequence,
+                input_offset,
+                record_count,
+                digest,
+                json.dumps(progress.counts, separators=JSON_SEPARATORS),
+            ),
         )
     return progress
 

@@ -3,15 +3,21 @@
 import sqlite3
 
 from redactor.identity.resolution import resolve_sources
-from redactor.persistence.files.results import write_step_result
+from redactor.persistence.files.results import read_step_result, write_step_result
 from redactor.persistence.identities.snapshots import build_identity_snapshot
 from redactor.persistence.identities.sources import initialize_resolution
 from redactor.persistence.runs.inventory import file_step
 from redactor.persistence.runs.manifests import read_manifest
+from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.persistence import Artifact, Task
 from redactor.schemas.pipeline import StepResult
 from redactor.utils.configuration import key_fingerprint
-from redactor.utils.constants import STEP_ANALYZE, STEP_RESOLVE
+from redactor.utils.constants import (
+    STEP_ANALYZE,
+    STEP_QUARANTINE,
+    STEP_RESOLVE,
+    STEP_REWRITE,
+)
 from redactor.utils.errors import ERROR_RUN_CONTEXT
 
 
@@ -34,4 +40,11 @@ def resolve_task(
         connection, task, mapping_key, manifest.settings.policy.maximum_date_shift_days
     )
     artifact = write_step_result(connection, task, snapshot, encryption_key=mapping_key)
-    return StepResult(artifact=artifact)
+    successors = []
+    for source, analysis_id in zip(manifest.files, analysis_task_ids, strict=True):
+        analysis = read_step_result(
+            connection, analysis_id, FileAnalysis, encryption_key=mapping_key
+        )
+        step = STEP_REWRITE if analysis.reason is None else STEP_QUARANTINE
+        successors.append(file_step(connection, manifest_artifact, source, step))
+    return StepResult(artifact=artifact, successors=tuple(successors))
