@@ -63,6 +63,8 @@ class VerificationSettings(BaseModel, frozen=True, extra="forbid"):
     judge_enabled: bool = True
     judge_model: str = ""
     judge_vision: bool = False
+    input_usd_per_million: Decimal | None = Field(default=None, ge=0)
+    output_usd_per_million: Decimal | None = Field(default=None, ge=0)
 
 
 class ResourceSettings(BaseModel, frozen=True, extra="forbid"):

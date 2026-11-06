@@ -32,6 +32,9 @@ judge_enabled = true
 # Judge selection is independent of the detection model. Blank disables remote judging.
 judge_model = ""
 judge_vision = false
+# Judge prices are separate because its model may have different rates.
+# input_usd_per_million = "0.00"
+# output_usd_per_million = "0.00"
 
 [resources]
 max_record_bytes = 1048576
