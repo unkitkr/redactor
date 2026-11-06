@@ -16,12 +16,17 @@ from redactor.formats.tabular_fields import column_policies
 from redactor.formats.text import replace_text_fields, text_record
 from redactor.formats.xml_text import replace_text_nodes
 from redactor.identity.tabular import row_evidence
+from redactor.policy.identifiers import canonical_uuid
 from redactor.policy.name_matching import compatible_name_spelling
 from redactor.schemas.configuration import ResourceSettings
 from redactor.schemas.native import NativeDocument, NativeImage, NativeRecord
 from redactor.schemas.redaction import ColumnPolicy, FieldKind, RowEvidence
 from redactor.utils.constants import (
     DOCX_BUILTIN_STYLE_PATTERN,
+    DOCX_CUSTOM_XML_ITEM_ID_NAMESPACE,
+    DOCX_DATA_BINDING_TAG,
+    DOCX_DATASTORE_ITEM_ID_ATTRIBUTE,
+    DOCX_DATASTORE_ITEM_TAG,
     DOCX_FORMAT_ENUMS,
     DOCX_HEX_ELEMENTS,
     DOCX_IMAGE_SUFFIXES,
@@ -34,6 +39,7 @@ from redactor.utils.constants import (
     DOCX_SCHEMA_LABELS,
     DOCX_SCHEMA_NAMESPACES,
     DOCX_SCHEMA_PREFIXES,
+    DOCX_STORE_ITEM_ID_ATTRIBUTE,
     DOCX_STYLE_ELEMENTS,
     DOCX_TEXT_TAGS,
     FIELD_DATE,
@@ -70,6 +76,37 @@ def parse_word_xml(content: bytes) -> Element:
     ):
         raise ValueError(ERROR_COVERAGE)
     return cast(Element, root)
+
+
+def custom_xml_binding_targets(
+    archive: ZipFile,
+) -> dict[tuple[str, str], tuple[str, str]]:
+    """Resolve each content-control binding to a unique custom XML definition.
+
+    GUID spelling is case-insensitive and may use braces. Missing definitions
+    and duplicate IDs cannot establish a safe binding graph.
+    """
+    definitions: dict[str, tuple[str, str]] = {}
+    references: dict[tuple[str, str], str] = {}
+    for part in archive.namelist():
+        if not part.endswith(XML_SUFFIXES):
+            continue
+        for index, element in enumerate(parse_word_xml(archive.read(part)).iter()):
+            location = part, str(index)
+            if element.tag == DOCX_DATASTORE_ITEM_TAG:
+                value = canonical_uuid(
+                    element.attrib.get(DOCX_DATASTORE_ITEM_ID_ATTRIBUTE, "")
+                )
+                if value in definitions:
+                    raise ValueError(ERROR_COVERAGE)
+                definitions[value] = location
+            elif element.tag == DOCX_DATA_BINDING_TAG:
+                references[location] = canonical_uuid(
+                    element.attrib.get(DOCX_STORE_ITEM_ID_ATTRIBUTE, "")
+                )
+    if any(value not in definitions for value in references.values()):
+        raise ValueError(ERROR_COVERAGE)
+    return {location: definitions[value] for location, value in references.items()}
 
 
 def optional_thumbnails(archive: ZipFile) -> set[str]:
@@ -338,7 +375,13 @@ def word_surfaces(
                 continue
             kind: FieldKind = FIELD_TEXT
             namespace = ""
-            if element.tag == OOXML_RELATIONSHIP_TAG and name == "Target":
+            if (element.tag, attribute) in (
+                (DOCX_DATASTORE_ITEM_TAG, DOCX_DATASTORE_ITEM_ID_ATTRIBUTE),
+                (DOCX_DATA_BINDING_TAG, DOCX_STORE_ITEM_ID_ATTRIBUTE),
+            ):
+                canonical_uuid(value)
+                kind, namespace = FIELD_IDENTIFIER, DOCX_CUSTOM_XML_ITEM_ID_NAMESPACE
+            elif element.tag == OOXML_RELATIONSHIP_TAG and name == "Target":
                 if element.attrib.get("TargetMode") != "External":
                     # Canonical part names contain format roles and counters only.
                     if re.fullmatch(
@@ -496,6 +539,7 @@ def read_docx(
     images: list[NativeImage] = []
     subject_parts: set[str] = set()
     with ZipFile(path) as archive:
+        custom_xml_binding_targets(archive)
         thumbnails = optional_thumbnails(archive)
         remaining = set(archive.namelist()) - thumbnails
         for part in archive.namelist():

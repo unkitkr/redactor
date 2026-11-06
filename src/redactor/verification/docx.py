@@ -5,6 +5,7 @@ from xml.etree.ElementTree import Element
 from zipfile import ZipFile
 
 from redactor.formats.docx import (
+    custom_xml_binding_targets,
     optional_thumbnails,
     parse_word_xml,
     remove_thumbnail_references,
@@ -18,6 +19,8 @@ from redactor.verification.archive import check_saved_archive
 def check_docx_structure(original: Path, output: Path) -> None:
     check_saved_archive(output)
     with ZipFile(original) as source, ZipFile(output) as saved:
+        if custom_xml_binding_targets(source) != custom_xml_binding_targets(saved):
+            raise ValueError(ERROR_COVERAGE)
         thumbnails = optional_thumbnails(source)
         expected = [part for part in source.namelist() if part not in thumbnails]
         if expected != saved.namelist():

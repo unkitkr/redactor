@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v25"
+PIPELINE_VERSION: Final = "pipeline-v26"
 RUNTIME_SOURCE_SUFFIXES: Final = (".py", ".sql")
 RUNTIME_IGNORED_SUFFIXES: Final = (".pyc", ".pyo")
 RUNTIME_MISSING_ARTIFACT: Final = "missing"
@@ -119,6 +119,7 @@ DEFAULT_SPACY_MODEL: Final = "en_core_web_sm"
 DEFAULT_NER_MAX_CHARACTERS: Final = 16_384
 DEFAULT_NER_CACHE_ENTRIES: Final = 512
 DEFAULT_NER_CACHE_CHARACTERS: Final = 1024
+NER_FIELD_LABEL_SEPARATOR: Final = ": "
 MAX_TEXT_ENTITIES: Final = 512
 SPACY_NER_COMPONENT: Final = "ner"
 SPACY_EXCLUDED_COMPONENTS: Final = (
@@ -173,7 +174,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v19"
+VERIFIER_VERSION: Final = "verifier-v20"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -581,6 +582,21 @@ PIXEL_TIFF_COMPRESSION: Final = "tiff_deflate"
 NATIVE_IMAGE_LOCATION: Final = "image"
 DOCX_WORD_NAMESPACE: Final = (
     "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+)
+DOCX_CUSTOM_XML_ITEM_ID_NAMESPACE: Final = "docx-custom-xml-item"
+DOCX_DATASTORE_ITEM_ID_ATTRIBUTE: Final = (
+    "{http://schemas.openxmlformats.org/officeDocument/2006/customXml}itemID"
+)
+DOCX_STORE_ITEM_ID_ATTRIBUTE: Final = f"{{{DOCX_WORD_NAMESPACE}}}storeItemID"
+DOCX_DATASTORE_ITEM_TAG: Final = (
+    "{http://schemas.openxmlformats.org/officeDocument/2006/customXml}datastoreItem"
+)
+DOCX_DATA_BINDING_TAG: Final = f"{{{DOCX_WORD_NAMESPACE}}}dataBinding"
+UUID_BYTES: Final = 16
+UUID_VERSION: Final = 4
+UUID_PATTERN: Final = (
+    r"(?P<brace>\{)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+    r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?(brace)\})"
 )
 DOCX_TEXT_TAGS: Final = (
     f"{{{DOCX_WORD_NAMESPACE}}}t",
@@ -2586,6 +2602,10 @@ DOCX_SCHEMA_LABELS: Final = (
     "cy",
     "data",
     "datastoreItem",
+    "dataBinding",
+    "storeItemID",
+    "prefixMappings",
+    "xpath",
     "date",
     "decimalSymbol",
     "defJc",

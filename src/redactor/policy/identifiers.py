@@ -1,8 +1,12 @@
 """Stable typed identifiers; generated values are claims for later verification."""
 
+import re
+from uuid import UUID
+
 from redactor.policy.keys import derive_digest
 from redactor.policy.normalization import normalize_digits, normalize_identifier
 from redactor.utils.constants import (
+    DOCX_CUSTOM_XML_ITEM_ID_NAMESPACE,
     IDENTIFIER_DIGITS,
     NPI_BASE_DIGITS,
     NPI_LUHN_PREFIX_SUM,
@@ -15,6 +19,9 @@ from redactor.utils.constants import (
     SSN_DIGITS,
     SSN_DISALLOWED_AREA,
     SSN_NAMESPACE,
+    UUID_BYTES,
+    UUID_PATTERN,
+    UUID_VERSION,
 )
 from redactor.utils.errors import ERROR_IDENTIFIER, ERROR_REPLACEMENT_COLLISION
 
@@ -23,6 +30,8 @@ def replace_identifier(
     value: str, key: bytes, *, namespace: str, scope: str = ""
 ) -> str:
     """Use a larger decimal space instead of truncating a hash to a short MRN."""
+    if namespace == DOCX_CUSTOM_XML_ITEM_ID_NAMESPACE:
+        return _replace_uuid(value, key, namespace=namespace, scope=scope)
     canonical = normalize_identifier(value)
     digest = derive_digest(key, canonical, namespace=namespace, scope=scope)
     digits = (
@@ -35,6 +44,24 @@ def replace_identifier(
     if surrogate == canonical:
         raise ValueError(ERROR_REPLACEMENT_COLLISION)
     return surrogate
+
+
+def canonical_uuid(value: str) -> str:
+    """Accept one complete GUID, with paired optional braces and no extra text."""
+    if re.fullmatch(UUID_PATTERN, value) is None:
+        raise ValueError(ERROR_IDENTIFIER)
+    return str(UUID(value))
+
+
+def _replace_uuid(value: str, key: bytes, *, namespace: str, scope: str) -> str:
+    canonical = canonical_uuid(value)
+    digest = derive_digest(key, canonical, namespace=namespace, scope=scope)
+    surrogate = str(UUID(bytes=digest[:UUID_BYTES], version=UUID_VERSION))
+    if surrogate == canonical:
+        raise ValueError(ERROR_REPLACEMENT_COLLISION)
+    if value.isupper():
+        surrogate = surrogate.upper()
+    return "{" + surrogate + "}" if value.startswith("{") else surrogate
 
 
 def replace_lot(value: str, key: bytes, *, scope: str = "") -> str:
