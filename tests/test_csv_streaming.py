@@ -18,7 +18,7 @@ from redactor.persistence.files.checkpoints import resume_checkpoint, save_check
 from redactor.persistence.files.registration import register_file
 from redactor.persistence.queue.tasks import claim_task, recover_interrupted
 from redactor.schemas.persistence import Checkpoint
-from redactor.utils.constants import CSV_ADAPTER_VERSION
+from redactor.utils.constants import CSV_ADAPTER_VERSION, DEFAULT_RECORD_BYTES
 from redactor.utils.errors import ERROR_CSV_RECORD_LIMIT, ERROR_CSV_STRUCTURE
 
 
@@ -30,15 +30,16 @@ def test_csv_checkpoint_resumes_multiline_records_without_duplicates(
         ["one", 'quoted "value"\nsecond line', "12.5"],
         ["two", "Renée, label", "6.0"],
         ["three", "multiple\r\nphysical\r\nlines", "0"],
+        ["four", "a large quoted field, " * 10_000, "1"],
     ]
     with source.open("w", encoding="utf-8-sig", newline="") as stream:
         writer = csv.writer(stream, lineterminator="\r\n")
         writer.writerow(["code", "comment", "value"])
         writer.writerows(rows)
-    layout = inspect_csv(source, 4096)
+    layout = inspect_csv(source, DEFAULT_RECORD_BYTES)
     assert layout.has_bom
     assert layout.line_ending == "\r\n"
-    records = list(iter_csv_records(source, layout, 4096))
+    records = list(iter_csv_records(source, layout, DEFAULT_RECORD_BYTES))
     assert [list(record.values) for record in records] == rows
     assert records[-1].end_offset == source.stat().st_size
 
@@ -75,7 +76,7 @@ def test_csv_checkpoint_resumes_multiline_records_without_duplicates(
         for record in iter_csv_records(
             source,
             layout,
-            4096,
+            DEFAULT_RECORD_BYTES,
             start_offset=checkpoint.input_offset,
             completed_records=checkpoint.record_count,
         ):

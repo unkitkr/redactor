@@ -105,6 +105,10 @@ def encode_csv_header(layout: CsvLayout) -> bytes:
 def _read_records(
     stream: BinaryIO, delimiter: str, maximum_record_bytes: int
 ) -> Generator[tuple[tuple[str, ...], int], None, None]:
+    # csv exposes a process-wide character limit, not a per-reader option. Only
+    # raise it so interleaved readers cannot invalidate each other. The byte bound
+    # below remains authoritative for each reader, including quoted multiline data.
+    csv.field_size_limit(max(csv.field_size_limit(), maximum_record_bytes))
     record_start_offset = stream.tell()
 
     def physical_lines() -> Iterator[str]:
