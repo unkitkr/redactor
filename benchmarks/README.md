@@ -3,14 +3,14 @@
 ## Final pipeline-v25 evidence
 
 - [Supplied local run](held-in-local-v25.json): 5 published, 7 quarantined; 27.18 s, 803.43 MiB peak; exact replay adds no attempts or endpoint calls.
-- Hosted GLM 5.3 Flash comparison is running on the same 12 inputs, excluding the generated bulk file.
+- [Hosted GLM 5.3 Flash](held-in-hosted-v25.json): the same 5 published / 7 quarantined; 562.21 s, 768.57 MiB peak, 162 endpoint attempts, $0.02078351 recorded receipts and $0.03442045 conservative bound. Three attempts have uncertain charges; 135 remote observations were used and 24 fell back locally. The generated bulk file was excluded. This final hosted run used normal Docker bridge networking, without independently enforced endpoint-only egress.
 - [Native integration](native-integration-v25.json): 14 passed, no skips, offline under two CPUs / 1 GB / no swap. Includes real OCR and saved-image tampering.
 - [Text regression](accuracy-v25.json): 40 held-in labelled cases, precision 83.78%, recall 79.49%, F1 81.58%; zero observed false accepts and one false reject. These are text-unit scores, not full-file recall.
 - [Exact committed output manifest](output-v25-manifest.json) binds every artifact byte to the measured default-local run.
 - [Full 2 GiB diagnostic](large-csv-2g-v18.json) failed the 30-minute gate. No completed bulk throughput is claimed.
 - [Prior local failure analysis](diagnostic-local-v24.json) distinguishes unresolved model/verifier evidence from corrupt containers. [Earlier fixture runs](history/) remain historical measurements.
 
-Host validation: 198 passed, two host OCR-dependent skips; Ruff and mypy passed. The preceding 197-test coverage run measured 82%; the newly added composed structured-format integration also passes. Controlled subprocess tests kill workers at analysis, checkpoint, rewrite, verification and publication boundaries. They do not establish random-SIGKILL equivalence for all supplied native files.
+Host validation: 198 passed, two host OCR-dependent skips; Ruff and mypy passed. The preceding 197-test coverage run measured 82%; the newly added composed structured-format integration also passes. Controlled subprocess tests kill workers at analysis, checkpoint, rewrite, verification and publication boundaries. A separate [full supplied-set crash check](crash-replay-v25.json) killed coordinator, workers and dashboard twice at seeded timings during analysis; all 19 published/quarantine artifacts and semantic results matched the clean run, with zero duplicate successes. These two timings do not establish exhaustive crash coverage.
 
 The sections below retain historical candidate comparisons. Their old publication limits and verifier versions do not describe the final pipeline.
 

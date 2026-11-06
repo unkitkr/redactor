@@ -33,6 +33,7 @@ Hosted judging and vision extraction are not integrated.
 
 ## Results
 
+
 Results go to `tmp/local/output/` or `tmp/hosted/output/`: `published/`,
 `quarantine/`, `report.json` and `run.log`. Quarantine retains original sensitive
 files. Exit code zero means processing reconciled, not that every file published.
@@ -43,15 +44,18 @@ Fresh production containers used **2 CPUs, 1,000,000,000 bytes RAM, no extra swa
 
 | Measurement | Local | Hosted GLM 5.3 Flash |
 | --- | ---: | ---: |
-| Published / quarantined | 5 / 7 | Running |
-| Elapsed | 27.18 s | Running |
-| Peak container memory | 803.43 MiB | Running |
-| Endpoint requests / receipt cost | 0 / $0 | Running |
+| Published / quarantined | 5 / 7 | 5 / 7 |
+| Elapsed | 27.18 s | 562.21 s |
+| Peak container memory | 803.43 MiB | 768.57 MiB |
+| Endpoint attempts / recorded receipts | 0 / $0 | 162 / $0.0208 |
 
 The exact local result is committed in [`output/`](output/). Six valid files still
-quarantine; the corrupt file correctly fails container validation. Local replay
-preserved all output bytes and added no attempts. This does **not** meet full
-supplied-file acceptance. [Per-file evidence](benchmarks/held-in-local-v25.json).
+quarantine; the corrupt file correctly fails container validation. Both replays
+preserved all output bytes and added no attempts. Hosted mode did not improve coverage. This does **not** meet full
+supplied-file acceptance. [Local evidence](benchmarks/held-in-local-v25.json) · [Hosted evidence](benchmarks/held-in-hosted-v25.json).
+
+Two [SIGKILL recoveries](benchmarks/crash-replay-v25.json) matched clean artifact bytes.
+Hosted receipt totals exclude three uncertain attempts; the cost bound was $0.0344.
 
 The full **2 GiB CSV gate failed**: the previous run timed out after 30 minutes,
 with 1.82 million of 11.2 million rows analyzed and none published.

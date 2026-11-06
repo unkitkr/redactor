@@ -180,7 +180,7 @@ docker run --name redactor-local \
 The build needs internet access; this local-only run has no network access and no
 extra swap. Keep SQLite state and outputs on the Docker volume: macOS bind-mounted
 state produced `SQLITE_CORRUPT` in this evaluation, while native container storage
-completed the run and replay ([storage observation](benchmarks/docker-bind-mount-observation.json)).
+completed the run and replay ([storage observation](../benchmarks/docker-bind-mount-observation.json)).
 The precise filesystem mechanism was not diagnosed. Inputs and weights can remain
 read-only bind mounts.
 
@@ -226,4 +226,4 @@ SQLite uses WAL, short transactions and `synchronous=FULL`; writes still seriali
 Worker APIs are functional, and step completion commits its result and successors
 together. Artifact bytes are persisted before their database references. A saved
 verification verdict is bound to the exact output, source and identity snapshot
-before publication. These boundaries are described in the [architecture notes](notes.md).
+before publication. These boundaries are described in the [architecture notes](../notes.md).
