@@ -4,7 +4,12 @@ from pathlib import Path
 from xml.etree.ElementTree import Element
 from zipfile import ZipFile
 
-from redactor.formats.docx import parse_word_xml, word_surfaces
+from redactor.formats.docx import (
+    optional_thumbnails,
+    parse_word_xml,
+    remove_thumbnail_references,
+    word_surfaces,
+)
 from redactor.utils.constants import DOCX_IMAGE_SUFFIXES, XML_SUFFIXES
 from redactor.utils.errors import ERROR_CLINICAL_CHANGED, ERROR_COVERAGE
 from redactor.verification.archive import check_saved_archive
@@ -13,12 +18,15 @@ from redactor.verification.archive import check_saved_archive
 def check_docx_structure(original: Path, output: Path) -> None:
     check_saved_archive(output)
     with ZipFile(original) as source, ZipFile(output) as saved:
-        if source.namelist() != saved.namelist():
+        thumbnails = optional_thumbnails(source)
+        expected = [part for part in source.namelist() if part not in thumbnails]
+        if expected != saved.namelist():
             raise ValueError(ERROR_COVERAGE)
-        for part in source.namelist():
+        for part in expected:
             before, after = source.read(part), saved.read(part)
             if part.endswith(XML_SUFFIXES):
                 left, right = parse_word_xml(before), parse_word_xml(after)
+                remove_thumbnail_references(left, part, thumbnails, set(expected))
                 _clear_assessed(left, part)
                 _clear_assessed(right, part)
                 if _structure(left) != _structure(right):

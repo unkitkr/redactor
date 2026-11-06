@@ -1,9 +1,11 @@
 """Rewrite Word XML runs, metadata and embedded images in a fresh archive."""
 
+import posixpath
 import re
 from collections.abc import Iterator
 from pathlib import Path
 from typing import cast
+from urllib.parse import unquote, urlsplit
 from xml.etree.ElementTree import Element
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
@@ -44,7 +46,11 @@ from redactor.utils.constants import (
     NATIVE_IMAGE_LOCATION,
     OFFICE_PUBLIC_FONTS,
     OFFICE_STRUCTURAL_VALUES,
+    OOXML_CONTENT_TYPES,
     OOXML_NAMESPACE_PREFIX_PATTERN,
+    OOXML_OVERRIDE_TAG,
+    OOXML_PACKAGE_RELATIONSHIPS,
+    OOXML_RELATIONSHIP_NAMESPACE,
     OOXML_RELATIONSHIP_TAG,
     OOXML_SUPPORTED_RELATIONSHIP_TYPES,
     TEXT_ENCODING,
@@ -64,6 +70,70 @@ def parse_word_xml(content: bytes) -> Element:
     ):
         raise ValueError(ERROR_COVERAGE)
     return cast(Element, root)
+
+
+def optional_thumbnails(archive: ZipFile) -> set[str]:
+    """Remove only package previews that have no non-preview consumer."""
+    candidates: set[str] = set()
+    referenced: set[str] = set()
+    for part in archive.namelist():
+        if not part.endswith(".rels"):
+            continue
+        root = parse_word_xml(archive.read(part))
+        for relation in root:
+            target = relation.attrib.get("Target", "")
+            thumbnail = (
+                part == OOXML_PACKAGE_RELATIONSHIPS
+                and relation.attrib.get("Type")
+                == OOXML_RELATIONSHIP_NAMESPACE + "/metadata/thumbnail"
+            )
+            if relation.attrib.get("TargetMode") == "External":
+                if thumbnail:
+                    raise ValueError(ERROR_COVERAGE)
+                continue
+            base = posixpath.dirname(posixpath.dirname(part))
+            resolved = posixpath.normpath(
+                posixpath.join(base, unquote(urlsplit(target).path))
+            ).lstrip("/")
+            if thumbnail:
+                if not (
+                    resolved.startswith("docProps/thumbnail.")
+                    and resolved.endswith(DOCX_IMAGE_SUFFIXES)
+                    and resolved in archive.namelist()
+                ):
+                    raise ValueError(ERROR_COVERAGE)
+                candidates.add(resolved)
+            else:
+                referenced.add(resolved)
+    return candidates - referenced
+
+
+def remove_thumbnail_references(
+    root: Element, part: str, thumbnails: set[str], remaining: set[str]
+) -> None:
+    if not thumbnails:
+        return
+    if part == OOXML_PACKAGE_RELATIONSHIPS:
+        for relation in tuple(root):
+            if (
+                relation.attrib.get("Type")
+                == OOXML_RELATIONSHIP_NAMESPACE + "/metadata/thumbnail"
+                and posixpath.normpath(
+                    unquote(urlsplit(relation.attrib.get("Target", "")).path)
+                ).lstrip("/")
+                in thumbnails
+            ):
+                root.remove(relation)
+    elif part == OOXML_CONTENT_TYPES:
+        extensions = {name.rsplit(".", 1)[-1] for name in thumbnails}
+        used = {name.rsplit(".", 1)[-1] for name in remaining}
+        for declaration in tuple(root):
+            if (
+                declaration.tag == OOXML_OVERRIDE_TAG
+                and declaration.attrib.get("PartName", "").lstrip("/") in thumbnails
+                or declaration.attrib.get("Extension") in extensions - used
+            ):
+                root.remove(declaration)
 
 
 def _technical_attribute(element: Element, attribute: str, value: str) -> bool:
@@ -108,7 +178,7 @@ def _technical_attribute(element: Element, attribute: str, value: str) -> bool:
                 r"(?:wordprocessingml\.(?:document\.main|styles|numbering|settings|"
                 r"webSettings|fontTable|comments|header|footer|footnotes|endnotes)|"
                 r"extended-properties|custom-properties|theme|customXmlProperties)\+xml"
-                r"|application/vnd\.openxmlformats-package\.relationships\+xml"
+                r"|application/vnd\.openxmlformats-package\.(?:relationships|core-properties)\+xml"
                 r"|application/xml|image/(?:png|jpeg|tiff)",
                 value,
             )
@@ -156,6 +226,17 @@ def _technical_attribute(element: Element, attribute: str, value: str) -> bool:
         return bool(re.fullmatch(r"[A-Z][a-z]{3}", value))
     if name == "val" and local == "lvlText":
         return bool(re.fullmatch(r"(?:%[1-9]|[.()\- \u2022\uf0b7])+", value))
+    if local == "tblLook" and name == "val":
+        return bool(re.fullmatch(r"[0-9A-Fa-f]{4}", value))
+    if local == "tblLook" and name in (
+        "firstColumn",
+        "firstRow",
+        "lastColumn",
+        "lastRow",
+        "noHBand",
+        "noVBand",
+    ):
+        return value in ("0", "1", "true", "false")
     if name == "val" and local in ("family", "pitch"):
         return value in (
             "auto",
@@ -277,6 +358,11 @@ def word_surfaces(
                 kind = FIELD_DATE
             elif str(element.tag).endswith("}docId") and name == "val":
                 kind, namespace = FIELD_IDENTIFIER, "document"
+            elif (
+                str(element.tag).rsplit("}", 1)[-1] in ("docPr", "cNvPr")
+                and name == "name"
+            ):
+                kind, namespace = FIELD_IDENTIFIER, "document-label"
             yield (
                 NativeRecord(
                     values=(value,),
@@ -410,14 +496,17 @@ def read_docx(
     images: list[NativeImage] = []
     subject_parts: set[str] = set()
     with ZipFile(path) as archive:
+        thumbnails = optional_thumbnails(archive)
+        remaining = set(archive.namelist()) - thumbnails
         for part in archive.namelist():
-            if part.endswith("/"):
+            if part.endswith("/") or part in thumbnails:
                 continue
             if not re.fullmatch(DOCX_PACKAGE_PART_PATTERN, part):
                 raise ValueError(ERROR_COVERAGE)
             content = archive.read(part)
             if part.endswith(XML_SUFFIXES):
                 root = parse_word_xml(content)
+                remove_thumbnail_references(root, part, thumbnails, remaining)
                 subject = str(root.tag).rsplit("}", 1)[-1]
                 if part.startswith("customXml/") and re.sub(
                     r"[_ -]", "", subject.casefold()
@@ -455,10 +544,15 @@ def write_docx(
         ZipFile(original) as source,
         ZipFile(output, "w", compression=ZIP_DEFLATED) as target,
     ):
+        thumbnails = optional_thumbnails(source)
+        remaining = set(source.namelist()) - thumbnails
         for part in source.namelist():
+            if part in thumbnails:
+                continue
             content = source.read(part)
             if part.endswith(XML_SUFFIXES):
                 root = parse_word_xml(content)
+                remove_thumbnail_references(root, part, thumbnails, remaining)
                 # Freeze locations before a changed scalar can alter classification.
                 for record, nodes, attribute in tuple(word_surfaces(root, part)):
                     changes = {

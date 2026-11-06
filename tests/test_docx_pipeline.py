@@ -230,3 +230,60 @@ def test_word_document_subject_requires_declared_corroborated_context(
         assert body.evidence and body.evidence.patient
         assert bool(body.evidence.patient.identifier) is linked
         assert bool(body.evidence.patient.birth_date) is linked
+
+
+def test_word_drops_optional_private_thumbnail_and_keeps_document_image(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "with-preview.docx"
+    output = tmp_path / "without-preview.docx"
+    _package(
+        source,
+        f'<w:document xmlns:w="{DOCX_WORD_NAMESPACE}"><w:body>'
+        "<w:p><w:r><w:t>Clinical text.</w:t></w:r></w:p>"
+        "</w:body></w:document>",
+        {
+            "docProps/thumbnail.jpeg": b"Private preview: patient Amina Keller",
+            "word/media/image1.png": b"Main image stays on the image assessment path",
+            "word/_rels/document.xml.rels": (
+                b'<Relationships xmlns="http://schemas.openxmlformats.org/'
+                b'package/2006/relationships"><Relationship Id="rId1" '
+                b'Type="http://schemas.openxmlformats.org/officeDocument/2006/'
+                b'relationships/image" Target="media/image1.png"/></Relationships>'
+            ),
+        },
+    )
+    with ZipFile(source) as archive:
+        parts = {name: archive.read(name) for name in archive.namelist()}
+    parts["_rels/.rels"] = parts["_rels/.rels"].replace(
+        b"</Relationships>",
+        b'<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/'
+        b'package/2006/relationships/metadata/thumbnail" '
+        b'Target="docProps/thumbnail.jpeg"/></Relationships>',
+    )
+    parts["[Content_Types].xml"] = parts["[Content_Types].xml"].replace(
+        b"</Types>", b'<Default Extension="jpeg" ContentType="image/jpeg"/></Types>'
+    )
+    with ZipFile(source, "w") as archive:
+        for name, content in parts.items():
+            archive.writestr(name, content)
+    document = read_docx(source, ResourceSettings())
+    assert [image.location for image in document.images] == [
+        ("image", "word/media/image1.png")
+    ]
+    write_docx(source, output, {}, {})
+    check_docx_structure(source, output)
+    with ZipFile(output) as archive:
+        assert "docProps/thumbnail.jpeg" not in archive.namelist()
+        assert b"thumbnail" not in archive.read("_rels/.rels")
+        assert b'Extension="jpeg"' not in archive.read("[Content_Types].xml")
+        assert archive.read("word/media/image1.png") == parts["word/media/image1.png"]
+    altered = tmp_path / "lost-image.docx"
+    with ZipFile(output) as source_archive, ZipFile(altered, "w") as archive:
+        for name in source_archive.namelist():
+            if name != "word/media/image1.png":
+                archive.writestr(name, source_archive.read(name))
+    normalized = tmp_path / "lost-image-clean.docx"
+    write_docx(altered, normalized, {}, {})
+    with pytest.raises(ValueError, match="incomplete_surface_coverage"):
+        check_docx_structure(source, normalized)
