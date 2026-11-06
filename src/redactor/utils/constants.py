@@ -259,3 +259,53 @@ NPI_NAMESPACE: Final = "provider-npi"
 NPI_BASE_DIGITS: Final = 9
 NPI_PREFIX_CHOICES: Final = ("1", "2")
 NPI_LUHN_PREFIX_SUM: Final = 24
+
+# Calendar-date spelling and older-age generalization
+DATE_OFFSET_NAMESPACE: Final = "patient-date-offset"
+DATE_STYLE_YMD: Final = "ymd"
+DATE_STYLE_MDY: Final = "mdy"
+DATE_STYLE_COMPACT: Final = "compact"
+DATE_ZONE_PATTERN: Final = r"(?:[+-](?:[01][0-9]|2[0-3]):?[0-5][0-9])"
+DATE_CLOCK_PATTERN: Final = (
+    r"(?P<clock>[ T][0-9]{2}:[0-9]{2}(?::[0-9]{2}(?:\.[0-9]{1,6})?)?"
+    r"(?:Z|" + DATE_ZONE_PATTERN + r")?)?"
+)
+DATE_YMD_PATTERN: Final = (
+    r"(?P<year>[0-9]{4})(?P<separator>[-/])(?P<month>[0-9]{1,2})"
+    r"(?P=separator)(?P<day>[0-9]{1,2})" + DATE_CLOCK_PATTERN
+)
+DATE_MDY_PATTERN: Final = (
+    r"(?P<month>[0-9]{1,2})(?P<separator>/)(?P<day>[0-9]{1,2})/"
+    r"(?P<year>[0-9]{4})" + DATE_CLOCK_PATTERN
+)
+DATE_COMPACT_PATTERN: Final = (
+    r"(?P<year>[0-9]{4})(?P<month>[0-9]{2})(?P<day>[0-9]{2})"
+    r"(?P<clock>[0-9]{2}(?:[0-9]{2}(?:[0-9]{2}(?:\.[0-9]{1,6})?)?)?"
+    r"(?:[+-](?:[01][0-9]|2[0-3])[0-5][0-9])?)?"
+)
+AGE_GROUP_MINIMUM: Final = 90
+AGE_GROUP_LABEL: Final = "90+"
+BIRTH_BOUND_TEMPLATE: Final = "on or before {year}"
+
+# ZIP3 suppression list published in HHS de-identification guidance
+ZIP_CODE_PATTERN: Final = r"[0-9]{3}(?:[0-9]{2}(?:-?[0-9]{4})?)?"
+ZIP_REDACTED_PREFIX: Final = "000"
+RESTRICTED_ZIP_PREFIXES: Final = (
+    "036",
+    "059",
+    "063",
+    "102",
+    "203",
+    "556",
+    "692",
+    "790",
+    "821",
+    "823",
+    "830",
+    "831",
+    "878",
+    "879",
+    "884",
+    "890",
+    "893",
+)

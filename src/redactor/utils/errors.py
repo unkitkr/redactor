@@ -68,6 +68,10 @@ ERROR_RESOURCE_LIMIT: Final = "native_resource_limit_exceeded"
 ERROR_ENCRYPTED_INPUT: Final = "encrypted_input_unsupported"
 ERROR_IDENTIFIER: Final = "unassessed_identifier_value"
 ERROR_REPLACEMENT_COLLISION: Final = "surrogate_collision"
+ERROR_DATE: Final = "unassessed_date_value"
+ERROR_AGE: Final = "invalid_age_value"
+ERROR_AGE_REFERENCE: Final = "unresolved_age_reference"
+ERROR_AGE_REPRESENTATION: Final = "unsupported_birth_date_generalization"
 
 INSPECTION_REASON_CODES: Final = (
     ERROR_FORMAT_UNSUPPORTED,
@@ -129,6 +133,10 @@ COORDINATOR_FAILURE_CODES: Final = (
 )
 
 FAILURE_CODES: Final = (
+    ERROR_DATE,
+    ERROR_AGE,
+    ERROR_AGE_REFERENCE,
+    ERROR_AGE_REPRESENTATION,
     ERROR_IDENTIFIER,
     ERROR_REPLACEMENT_COLLISION,
     *INSPECTION_REASON_CODES,
