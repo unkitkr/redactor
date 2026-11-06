@@ -97,13 +97,19 @@ def parse_tsv(
         confidence = float(row["conf"])
         if (
             row["level"] != TESSERACT_WORD_LEVEL
-            or not row["text"].strip()
             or not math.isfinite(confidence)
             or not 0 <= confidence <= TESSERACT_MAXIMUM_CONFIDENCE
             or len(regions) >= OCR_MAXIMUM_REGIONS
         ):
             raise ValueError(ERROR_LOCAL_INFERENCE)
         left, top = float(row["left"]), float(row["top"])
+        if not row["text"].strip():
+            width, height = float(row["width"]), float(row["height"])
+            if not all(
+                math.isfinite(value) for value in (left, top, width, height)
+            ) or (min(left, top) < 0 or min(width, height) <= 0):
+                raise ValueError(ERROR_LOCAL_INFERENCE)
+            continue
         regions.append(
             OcrRegion(
                 text=row["text"],

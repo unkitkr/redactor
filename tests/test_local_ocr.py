@@ -116,7 +116,9 @@ def test_tesseract_subprocess_errors_timeout_and_invalid_tsv_are_safe(
         "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\t"
         "width\theight\tconf\ttext\n"
         "5\t1\t1\t1\t1\t1\t20\t20\t100\t40\t99\tPatient\n"
+        "5\t1\t2\t1\t1\t1\t80\t70\t400\t70\t95\t \n"
     )
+    blank_only_tsv = "".join(tsv.splitlines(keepends=True)[::2])
     executable.write_text(
         f"#!{sys.executable}\n"
         "import pathlib, sys, time\n"
@@ -126,6 +128,7 @@ def test_tesseract_subprocess_errors_timeout_and_invalid_tsv_are_safe(
         "    print('sensitive backend diagnostic', file=sys.stderr)\n"
         "    sys.exit(1)\n"
         f"content = {tsv!r} if mode == 'valid' else 'malformed TSV'\n"
+        f"if mode == 'blankonly': content = {blank_only_tsv!r}\n"
         "pathlib.Path(sys.argv[2]).with_suffix('.tsv').write_text(content)\n"
     )
     executable.chmod(0o700)
@@ -135,7 +138,7 @@ def test_tesseract_subprocess_errors_timeout_and_invalid_tsv_are_safe(
     )
     mode.write_text("valid")
     assert [region.text for region in adapter(image)] == ["Patient"]
-    for value in ("malformed", "failure", "timeout"):
+    for value in ("malformed", "blankonly", "failure", "timeout"):
         mode.write_text(value)
         if value == "timeout":
             monkeypatch.setattr(tesseract, "OCR_TIMEOUT_SECONDS", 0.02)
@@ -245,3 +248,32 @@ def test_installed_tesseract_reads_a_real_image_when_available(tmp_path: Path) -
         LocalSettings(ocr="tesseract", ocr_directory=directory), ResourceSettings()
     )
     assert "72" in " ".join(region.text for region in adapter(image))
+
+
+def test_saved_ocr_label_cues_leave_following_values_assessed(tmp_path: Path) -> None:
+    from redactor.inference.model_loader import load_local_ner
+    from redactor.policy.pixels import located_words, scan_image_text
+    from redactor.schemas.ocr import OcrResponse
+
+    path = tmp_path / "ocr.json"
+    path.write_text(
+        OcrResponse(
+            regions=tuple(
+                OcrRegion(text=label, box=(0, index * 20, 100, index * 20 + 15))
+                for index, label in enumerate(("MRN", "DOB", "NPI", "SSN"))
+            )
+        ).model_dump_json()
+    )
+    records = OcrResponse.model_validate_json(path.read_text())
+    ner = load_local_ner(LocalSettings())
+    text, _ = located_words(records.regions)
+    scan_image_text(text, (), ner)
+    for value in (
+        "DOB 1934-05-16",
+        "MRN: 9012345",
+        "SSN: 123-45-6789",
+        "NPI: 1234567893",
+        "DOB Amina Keller",
+    ):
+        with pytest.raises(ValueError):
+            scan_image_text(value, (), ner)
