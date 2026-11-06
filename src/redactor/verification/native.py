@@ -21,9 +21,14 @@ from redactor.schemas.native import NativeDocument
 from redactor.schemas.persistence import Artifact, Task
 from redactor.schemas.verification import VerificationCheck
 from redactor.utils.constants import (
+    CHECK_PIXELS,
     FIELD_TEXT,
+    FORMAT_DICOM,
+    FORMAT_DOCX,
+    FORMAT_FHIR,
     FORMAT_HL7,
     FORMAT_JSON,
+    FORMAT_PDF,
     FORMAT_XLSX,
     REQUIRED_VERIFICATION_CHECKS,
     STEP_ANALYZE,
@@ -36,8 +41,13 @@ from redactor.utils.errors import (
     ERROR_STRUCTURE,
 )
 from redactor.verification.archive import check_saved_archive
+from redactor.verification.dicom import check_dicom_structure
+from redactor.verification.docx import check_docx_structure
+from redactor.verification.embedded_images import verify_embedded_images
+from redactor.verification.fhir import check_fhir_structure
 from redactor.verification.hl7 import check_hl7_surfaces
 from redactor.verification.json import check_json_surfaces
+from redactor.verification.pdf import check_pdf_structure
 from redactor.verification.text import verify_text_changes
 from redactor.verification.xlsx import check_xlsx_surfaces
 from redactor.verification.xlsx_preservation import check_xlsx_preservation
@@ -75,6 +85,16 @@ def verify_native(
     )
     _validate_locations(original)
     _validate_locations(output)
+    if inspection.file_type == FORMAT_PDF:
+        check_pdf_structure(task.input_path, artifact.path, original)
+    if inspection.file_type == FORMAT_FHIR:
+        check_fhir_structure(
+            task.input_path, artifact.path, original, settings.resources
+        )
+    if inspection.file_type == FORMAT_DICOM:
+        check_dicom_structure(task.input_path, artifact.path, original)
+    if inspection.file_type == FORMAT_DOCX:
+        check_docx_structure(task.input_path, artifact.path)
     if inspection.file_type == FORMAT_XLSX:
         check_saved_archive(artifact.path)
         check_xlsx_source_surfaces(task.input_path, original)
@@ -109,6 +129,11 @@ def verify_native(
         local_ner=local_ner,
     )
     counts: Counter[str] = Counter()
+    image_frames = verify_embedded_images(
+        original, output, analysis.embedded_images, settings, local_ner
+    )
+    for image in analysis.embedded_images:
+        counts.update(image.counts)
     cells = 0
     for number, (before, after) in enumerate(
         zip(original.records, output.records, strict=True), start=1
@@ -157,12 +182,22 @@ def verify_native(
         inspect_artifact(artifact.path, persist=False) != artifact
     ):
         raise ValueError(ERROR_ARTIFACT_CORRUPT)
-    return tuple(
+    checks = tuple(
         VerificationCheck(
             kind=kind, status=VERIFICATION_PASS, expected=cells, checked=cells
         )
         for kind in REQUIRED_VERIFICATION_CHECKS
     )
+    if image_frames:
+        checks += (
+            VerificationCheck(
+                kind=CHECK_PIXELS,
+                status=VERIFICATION_PASS,
+                expected=image_frames,
+                checked=image_frames,
+            ),
+        )
+    return checks
 
 
 def _validate_locations(document: NativeDocument) -> None:
