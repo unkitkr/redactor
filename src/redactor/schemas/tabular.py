@@ -1,8 +1,10 @@
 """Native CSV layout and complete-record resume positions."""
 
-from typing import Literal
+from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, NonNegativeInt, PositiveInt
+
+CsvRowPair: TypeAlias = tuple[tuple[str, ...], tuple[str, ...]]
 
 
 class CsvLayout(BaseModel, frozen=True, extra="forbid"):

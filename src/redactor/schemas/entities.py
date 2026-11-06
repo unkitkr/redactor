@@ -44,3 +44,4 @@ class PreparedTextAssessment(BaseModel, frozen=True, extra="forbid"):
 
 
 NerAdapter = Callable[[str], tuple[TextEntity, ...]]
+NerBatchAdapter = Callable[[tuple[str, ...]], tuple[tuple[TextEntity, ...], ...]]

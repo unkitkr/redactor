@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v26"
+PIPELINE_VERSION: Final = "pipeline-v28"
 RUNTIME_SOURCE_SUFFIXES: Final = (".py", ".sql")
 RUNTIME_IGNORED_SUFFIXES: Final = (".pyc", ".pyo")
 RUNTIME_MISSING_ARTIFACT: Final = "missing"
@@ -120,8 +120,13 @@ DEFAULT_NER_MAX_CHARACTERS: Final = 16_384
 DEFAULT_NER_CACHE_ENTRIES: Final = 512
 DEFAULT_NER_CACHE_CHARACTERS: Final = 1024
 NER_FIELD_LABEL_SEPARATOR: Final = ": "
+MAX_NATIVE_TEXT_CONTEXT_CHARACTERS: Final = 1024
 MAX_TEXT_ENTITIES: Final = 512
 SPACY_NER_COMPONENT: Final = "ner"
+SPACY_BATCH_SIZE: Final = 64
+VERIFICATION_BATCH_RECORDS: Final = 64
+VERIFICATION_BATCH_BYTES: Final = 64 * 1024
+VERIFICATION_BATCH_CHARACTERS: Final = 8192
 SPACY_EXCLUDED_COMPONENTS: Final = (
     "tagger",
     "parser",
@@ -174,7 +179,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v20"
+VERIFIER_VERSION: Final = "verifier-v22"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -209,6 +214,27 @@ VERIFIER_CONTACT_CANDIDATE_PATTERN: Final = (
     r"(?:[ \t]*(?i:ext(?:ension)?\.?|x|#)[ \t]*[:=]?[ \t]*\d+)?(?!\w)"
 )
 VERIFIER_CONTACT_MINIMUM_DIGITS: Final = 7
+VERIFIER_PHONE_CUE_PATTERN: Final = (
+    r"(?im)(?:^|(?<=[;|]))[ \t]*(?:call|phone|telephone|tel\.?|fax)"
+    r"(?:[ \t]*[:=][ \t]*|[ \t]+)$"
+)
+VERIFIER_EMAIL_CUE_PATTERN: Final = (
+    r"(?im)(?:^|(?<=[;|]))[ \t]*(?:e-?mail(?:ed)?|email address)"
+    r"(?:[ \t]*[:=][ \t]*|[ \t]+)$"
+)
+VERIFIER_DATE_CUE_PATTERN: Final = (
+    r"(?im)(?:^|(?<=[;|]))[ \t]*"
+    r"(?:printed|generated|created|updated|modified|exported|signed)"
+    r"(?:[ \t]*[:=][ \t]*|[ \t]+)$"
+)
+VERIFIER_CONTACT_DATE_JOIN_PATTERN: Final = (
+    r"(?i)[ \t]+(?:before|after|on|by|until|since)[ \t]+"
+)
+VERIFIER_DOCUMENT_HEADING_PREFIX_PATTERN: Final = (
+    r"(?i)^[ \t]*(?:progress note|discharge summary|referral (?:letter|packet)|"
+    r"clinical note|history of present illness|assessment and plan)"
+    r"[ \t]*[:\-\u2013\u2014][ \t]*$"
+)
 VERIFIER_CONTACT_INTERNATIONAL_PREFIXES: Final = ("+", "00")
 VERIFIER_SIGNED_DECIMAL_PATTERN: Final = r"\+[0-9]+\.[0-9]+"
 VERIFIER_RELATIVE_TIME_PATTERN: Final = (
@@ -603,6 +629,43 @@ DOCX_TEXT_TAGS: Final = (
     f"{{{DOCX_WORD_NAMESPACE}}}delText",
 )
 DOCX_PARAGRAPH_TAG: Final = f"{{{DOCX_WORD_NAMESPACE}}}p"
+DOCX_TABLE_TAG: Final = f"{{{DOCX_WORD_NAMESPACE}}}tbl"
+DOCX_TABLE_ROW_TAG: Final = f"{{{DOCX_WORD_NAMESPACE}}}tr"
+DOCX_TABLE_CELL_TAG: Final = f"{{{DOCX_WORD_NAMESPACE}}}tc"
+DOCX_TABLE_MERGE_TAGS: Final = tuple(
+    f"{{{DOCX_WORD_NAMESPACE}}}{name}" for name in ("gridSpan", "vMerge", "hMerge")
+)
+DOCX_SCHEME_COLOR_VALUES: Final = (
+    "bg1",
+    "tx1",
+    "bg2",
+    "tx2",
+    "accent1",
+    "accent2",
+    "accent3",
+    "accent4",
+    "accent5",
+    "accent6",
+    "hlink",
+    "folHlink",
+    "phClr",
+    "dk1",
+    "lt1",
+    "dk2",
+    "lt2",
+)
+DOCX_BIBLIOGRAPHY_SOURCES_TAG: Final = (
+    "{http://schemas.openxmlformats.org/officeDocument/2006/bibliography}Sources"
+)
+DOCX_BIBLIOGRAPHY_STYLES: Final = ("APA", "MLA", "Chicago", "IEEE", "ISO 690", "GOST")
+DOCX_IMAGE_DESCRIPTION_TAGS: Final = (
+    "{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}docPr",
+    "{http://schemas.openxmlformats.org/drawingml/2006/picture}cNvPr",
+)
+IMAGE_DESCRIPTION_FIELD_LABEL: Final = "Image alternative text"
+VERIFIER_IMAGE_DESCRIPTOR_PATTERN: Final = (
+    r"(?i)(?:photo(?:graph)?|image|portrait|picture)(?:[ \t]+ID)?[ \t]+of[ \t]+"
+)
 DOCX_INSTRUCTION_TAG: Final = f"{{{DOCX_WORD_NAMESPACE}}}instrText"
 DOCX_IMAGE_SUFFIXES: Final = (".png", ".jpg", ".jpeg", ".tif", ".tiff")
 DOCX_TECHNICAL_ATTRIBUTES: Final = (
@@ -623,6 +686,7 @@ DICOM_UID_PREFIX: Final = "2.25."
 DICOM_IDENTITY_FIELDS: Final = (
     ("ImplementationVersionName", "identifier", "dicom_implementation"),
     ("InstitutionName", "organization", "organization"),
+    ("IssuerOfPatientID", "organization", "organization"),
     ("PatientName", "patient_name", ""),
     ("PatientID", "patient_id", "mrn"),
     ("PatientBirthDate", "birth_date", ""),
@@ -1569,6 +1633,8 @@ VERHOEFF_PERMUTATIONS: Final = (
     (7, 0, 4, 6, 9, 1, 3, 2, 5, 8),
 )
 TEXT_CLINICAL_PATTERNS: Final = (
+    r"(?i)\bGlasgow[ \t]+Coma[ \t]+Scale\b(?:[ \t]*(?:score[ \t]*)?[:=]?[ \t]*"
+    r"(?:[3-9]|1[0-5])(?:[ \t]*/[ \t]*15)?(?![\w./]))?",
     r"(?i)\b(?:spoke|discussed|reviewed)\s+w/",
     r"(?im)^(?:progress note|discharge summary|referral (?:letter|packet)|"
     r"clinical note|history of present illness|assessment and plan)\s*$",
@@ -1577,7 +1643,7 @@ TEXT_CLINICAL_PATTERNS: Final = (
     r"(?i)\b(?:T|temp(?:erature)?)\s*[:=]?\s*[0-9]+(?:\.[0-9]+)?\s*°?[CF]\b",
     r"(?i)\b(?:A1c|HbA1c|GCS|LDL|HDL|HR|BP|pulse|heart rate|blood pressure)\s*[:=]?\s*"
     r"[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?\s*(?:%|mg/dL|mmol/L|mmHg|bpm)?",
-    r"\b(?:MRN|DOB|NPI|SSN)(?=[ :\t])",
+    r"\b(?:MRN|DOB|NPI|SSN)(?=[ :\t]|$)",
     r"\b(?:MD|RN)\b",
     r"(?i)\b(?:renal|diabetic|cardiac|low[- ]sodium|low[- ]fat|clear[- ]liquid)"
     r"\s+diet\b",
@@ -2369,7 +2435,7 @@ DOCX_BUILTIN_STYLE_PATTERN: Final = (
     r"No\s*List|Heading\s*[1-9]|TOC\s*Heading|Title|Subtitle|Caption|Header|Footer|"
     r"Body\s*Text\s*[23]?|List\s*(?:Bullet|Number|Continue|Paragraph)?\s*[1-9]?|"
     r"(?:Intense|Subtle)?\s*(?:Emphasis|Reference)|Strong|(?:Intense\s*)?Quote|"
-    r"Macro\s*Text|Book\s*Title|Comment\s*(?:Text|Reference|Subject)|"
+    r"Macro\s*Text|Book\s*Title|Placeholder\s*Text|Comment\s*(?:Text|Reference|Subject)|"
     r"(?:Light|Medium|Dark|Colorful)\s*(?:Shading|List|Grid)\s*[1-3]?"
     r"(?:\s*[- ]\s*Accent\s*[1-6])?)(?:\s*Char)?"
 )
@@ -2962,3 +3028,23 @@ ORGANIZATION_FIELD_PATTERN: Final = (
 )
 
 LOCAL_ENVIRONMENT_FILENAME: Final = ".env.local"
+
+# Native DICOM age generalization uses valid empty DA/AS plus an LO annotation.
+DICOM_AGE_METHOD_PREFIX: Final = "Redactor age 90+; "
+DICOM_BIRTH_BOUND_METHOD: Final = "Redactor age 90+; birth date on or before {year}"
+DICOM_AGE_BAND_METHOD: Final = "Redactor age 90+; patient age withheld"
+DICOM_BIRTH_BOUND_PATTERN: Final = r"on or before ([0-9]{1,4})"
+DICOM_BIRTH_METHOD_PATTERN: Final = (
+    r"Redactor age 90\+; birth date on or before ([0-9]{1,4})"
+)
+
+# Typed medication displays extend already proved strengths with exact dose forms.
+MEDICATION_DISPLAY_NAMESPACE: Final = "medication_display"
+MEDICATION_DOSE_FORM_PATTERN: Final = (
+    r"(?i)(?P<medication>.+\s+[0-9]+(?:[./][0-9]+)?\s*"
+    r"(?:mg|mcg|µg|g|mL|units?|mmol|mEq))\s+"
+    r"(?:(?:oral|topical|sublingual|buccal|rectal|vaginal|ophthalmic|otic|"
+    r"nasal|inhalation|injectable|transdermal)\s+)?"
+    r"(?:tablet|capsule|solution|suspension|cream|ointment|gel|patch|powder|"
+    r"spray|drop|injection)s?"
+)
