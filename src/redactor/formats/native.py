@@ -40,7 +40,7 @@ def read_native(
     if inspection.file_type == FORMAT_FHIR:
         return read_fhir(path, resources, extract_evidence=extract_evidence)
     if inspection.file_type == FORMAT_PDF:
-        return read_pdf(path, resources)
+        return read_pdf(path, resources, extract_evidence=extract_evidence)
     if inspection.file_type == FORMAT_DICOM:
         return read_dicom(path, resources, extract_evidence=extract_evidence)
     if inspection.file_type == FORMAT_XLSX:

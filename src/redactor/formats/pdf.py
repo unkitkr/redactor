@@ -5,9 +5,10 @@ content operators before replacement text is inserted; a fresh save removes old
 objects and prior revisions.
 """
 
+import csv
 import re
 import xml.etree.ElementTree as ElementTree
-from io import BytesIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from typing import Any, cast
 
@@ -15,12 +16,16 @@ import pymupdf
 from defusedxml.ElementTree import fromstring
 from PIL import Image
 
+from redactor.formats.tabular_fields import column_policies
 from redactor.formats.text import replace_text_fields, text_record
+from redactor.identity.tabular import row_evidence
 from redactor.schemas.configuration import ResourceSettings
 from redactor.schemas.native import NativeDocument, NativeImage, NativeRecord
-from redactor.schemas.redaction import ColumnPolicy
+from redactor.schemas.redaction import ColumnPolicy, RowEvidence
 from redactor.utils.constants import (
     FIELD_IDENTIFIER,
+    FIELD_PROVIDER_ID,
+    FIELD_PROVIDER_NAME,
     FIELD_TEXT,
     PDF_ANNOTATION_PART,
     PDF_ATTACHMENT_PART,
@@ -190,7 +195,10 @@ def _attachment_records(document: pymupdf.Document) -> list[NativeRecord]:
         if "\x00" in body:
             raise ValueError(ERROR_COVERAGE)
         prefix = f"{PDF_ATTACHMENT_PART}:{number}"
-        records.append(text_record(body, prefix))
+        if Path(info["filename"]).suffix.casefold() == ".csv":
+            records.extend(_csv_attachment_records(body, prefix))
+        else:
+            records.append(text_record(body, prefix))
         fields = ("name", "filename", "ufilename", "description")
         records.append(
             NativeRecord(
@@ -205,7 +213,9 @@ def _attachment_records(document: pymupdf.Document) -> list[NativeRecord]:
     return records
 
 
-def read_pdf(path: Path, resources: ResourceSettings) -> NativeDocument:
+def read_pdf(
+    path: Path, resources: ResourceSettings, *, extract_evidence: bool = True
+) -> NativeDocument:
     if path.stat().st_size > resources.max_native_file_bytes:
         raise ValueError(ERROR_RESOURCE_LIMIT)
     with pymupdf.open(path) as document:
@@ -218,11 +228,9 @@ def read_pdf(path: Path, resources: ResourceSettings) -> NativeDocument:
         if expanded > resources.max_archive_bytes:
             raise ValueError(ERROR_RESOURCE_LIMIT)
         records = [
-            text_record(
-                "\n".join(line["text"] for line in pdf_lines(page)),
-                f"{PDF_TEXT_PART}:{number}",
-            )
+            record
             for number, page in enumerate(document.pages())
+            for record in _page_records(page, number, extract_evidence=extract_evidence)
         ]
         records.append(_metadata_record(document))
         records.extend(_attachment_records(document))
@@ -251,12 +259,13 @@ def read_pdf(path: Path, resources: ResourceSettings) -> NativeDocument:
 
 def _write_page(page: pymupdf.Page, replacements: dict[tuple[str, ...], str]) -> None:
     lines = pdf_lines(page)
-    original = "\n".join(line["text"] for line in lines)
-    replacement = replace_text_fields(
-        original, replacements, f"{PDF_TEXT_PART}:{page.number}"
-    )
-    changed = replacement.split("\n") if lines else []
-    if len(changed) != len(lines):
+    changed = [
+        replace_text_fields(
+            line["text"], replacements, f"{PDF_TEXT_PART}:{page.number}:{number}"
+        )
+        for number, line in enumerate(lines)
+    ]
+    if any("\n" in text or "\r" in text for text in changed):
         raise ValueError(ERROR_COVERAGE)
     inserts: list[tuple[dict[str, Any], str, float]] = []
     for line, text in zip(lines, changed, strict=True):
@@ -332,9 +341,15 @@ def write_pdf(
         for number in range(document.embfile_count()):
             info = document.embfile_info(number)
             prefix = f"{PDF_ATTACHMENT_PART}:{number}"
-            content = replace_text_fields(
-                document.embfile_get(number).decode(TEXT_ENCODING), replacements, prefix
-            ).encode(TEXT_ENCODING)
+            body = document.embfile_get(number).decode(TEXT_ENCODING)
+            if Path(info["filename"]).suffix.casefold() == ".csv":
+                content = _write_csv_attachment(body, prefix, replacements).encode(
+                    TEXT_ENCODING
+                )
+            else:
+                content = replace_text_fields(body, replacements, prefix).encode(
+                    TEXT_ENCODING
+                )
             values = {
                 key: replacements.get((prefix, key), str(info.get(key, "")))
                 for key in ("name", "filename", "ufilename", "description")
@@ -666,3 +681,111 @@ def _associated_relationships(document: pymupdf.Document) -> list[str]:
         ) != document.embfile_get(index):
             raise ValueError(ERROR_COVERAGE)
     return [relationships[name] for name in names]
+
+
+def _page_records(
+    page: pymupdf.Page, number: int, *, extract_evidence: bool
+) -> list[NativeRecord]:
+    """Keep providers separate while sharing unambiguous page demographics."""
+    scope = f"{PDF_TEXT_PART}:{number}"
+    records = [
+        text_record(line["text"], f"{scope}:{index}")
+        for index, line in enumerate(pdf_lines(page))
+    ]
+    if not extract_evidence:
+        return records
+    values = tuple(value for record in records for value in record.values)
+    policies = tuple(
+        policy.model_copy(update={"index": index})
+        for index, policy in enumerate(
+            policy for record in records for policy in record.policies
+        )
+    )
+    patient_policies = tuple(
+        policy
+        for policy in policies
+        if policy.kind not in (FIELD_PROVIDER_NAME, FIELD_PROVIDER_ID)
+    )
+    patient = row_evidence(values, patient_policies, scope, 0).patient
+    result: list[NativeRecord] = []
+    for index, record in enumerate(records):
+        provider_policies = tuple(
+            policy
+            for policy in record.policies
+            if policy.kind in (FIELD_PROVIDER_NAME, FIELD_PROVIDER_ID)
+        )
+        provider = row_evidence(record.values, provider_policies, scope, index).provider
+        result.append(
+            record.model_copy(
+                update={
+                    "evidence": RowEvidence(patient=patient, provider=provider),
+                    "context_scope": scope,
+                }
+            )
+        )
+    return result
+
+
+def pdf_csv_attachment(body: str) -> tuple[list[list[str]], str]:
+    try:
+        dialect = csv.Sniffer().sniff(body, delimiters=",\t;")
+        rows = list(csv.reader(StringIO(body, newline=""), dialect, strict=True))
+    except csv.Error as error:
+        raise ValueError(ERROR_COVERAGE) from error
+    if (
+        not rows
+        or len(rows[0]) < 2
+        or not all(rows[0])
+        or len(set(rows[0])) != len(rows[0])
+        or any(len(row) != len(rows[0]) for row in rows)
+    ):
+        raise ValueError(ERROR_COVERAGE)
+    return rows, dialect.delimiter
+
+
+def _csv_attachment_records(body: str, prefix: str) -> list[NativeRecord]:
+    rows, _ = pdf_csv_attachment(body)
+    policies = column_policies(tuple(rows[0]))
+    unknown = tuple(policy.index for policy in policies if policy.kind == FIELD_TEXT)
+    records = [
+        _plain_record(
+            tuple(rows[0][index] for index in unknown),
+            tuple((prefix, "column", str(index)) for index in unknown),
+        )
+    ]
+    for number, row in enumerate(rows[1:]):
+        records.append(
+            NativeRecord(
+                values=tuple(row),
+                policies=policies,
+                locations=tuple(
+                    (prefix, "row", str(number), str(index))
+                    for index in range(len(row))
+                ),
+            )
+        )
+    return records
+
+
+def _write_csv_attachment(
+    body: str, prefix: str, replacements: dict[tuple[str, ...], str]
+) -> str:
+    rows, delimiter = pdf_csv_attachment(body)
+    ending = "\r\n" if "\r\n" in body else "\n"
+    result = StringIO(newline="")
+    writer = csv.writer(result, delimiter=delimiter, lineterminator=ending)
+    writer.writerow(
+        [
+            replacements.get((prefix, "column", str(index)), value)
+            for index, value in enumerate(rows[0])
+        ]
+    )
+    for number, row in enumerate(rows[1:]):
+        writer.writerow(
+            [
+                replacements.get((prefix, "row", str(number), str(index)), value)
+                for index, value in enumerate(row)
+            ]
+        )
+    text = result.getvalue()
+    return text if body.endswith(("\r", "\n")) else text.removesuffix(ending)

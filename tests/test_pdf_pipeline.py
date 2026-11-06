@@ -25,6 +25,8 @@ def test_pdf_native_rewrite_removes_source_text_and_preserves_geometry(
         page.insert_text((50, 60), "Patient: Alice Example", fontsize=11)
         page.insert_text((50, 90), "Glucose 42 mg/dL", fontsize=11)
         page.draw_line((50, 110), (250, 110))
+        page.insert_text((50, 280), "Attending: Avery Lane (NPI 1234567893)")
+        page.insert_text((50, 310), "Attending: Jordan Vale (NPI 1245319599)")
         page.insert_image(
             pymupdf.Rect(50, 130, 130, 170), stream=pixel_stream.getvalue()
         )
@@ -53,9 +55,18 @@ def test_pdf_native_rewrite_removes_source_text_and_preserves_geometry(
             b"Patient: Alice Example\nGlucose 42 mg/dL",
             desc="Alice Example",
         )
+        pdf.embfile_add(
+            "structured.csv", b"patient_name,mrn,glucose\nAlice Example,12345,42\n"
+        )
         pdf.save(source)
     original_bytes = source.read_bytes()
     document = read_pdf(source, ResourceSettings())
+    providers = [
+        record.evidence.provider.identifier
+        for record in document.records
+        if record.evidence and record.evidence.provider
+    ]
+    assert set(providers) == {"1234567893", "1245319599"}
     replacements = {
         location: value.replace("Alice Example", "Morgan Rowan")
         for record in document.records
