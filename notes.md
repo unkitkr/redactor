@@ -38,6 +38,7 @@
 - Keyed replacements use environment secrets; retained identifying evidence and model responses require encryption and private storage.
 - Record identifiers use 18-digit keyed surrogates to reduce collisions; native length limits and collisions must be checked before publication, and provider NPIs retain a valid check digit.
 - Private evidence uses AES-GCM with fresh nonces and context-bound keys; only opaque references and safe counters belong in queue metadata.
+- HL7 uses its declared delimiters and field semantics; unknown populated fields and unsupported component structures fail closed.
 - Valid mislabeled files retain their actual native format and original output name; corrupt, unsupported, or unverifiable content is quarantined without silent repair.
 - Native parser inputs and individual archive members default to 32 MiB, expanded archives to 256 MiB, and images to 16 million pixels; streaming CSV, JSON, and text have separate record limits.
 - Nested input paths are preserved under the output root to avoid collisions between files with the same basename.

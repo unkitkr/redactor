@@ -24,6 +24,7 @@ FieldKind = Literal[
     "text",
     "location",
     "ssn",
+    "relative_name",
     "network",
     "web",
 ]
@@ -33,6 +34,7 @@ class ColumnPolicy(BaseModel, frozen=True, extra="forbid"):
     index: NonNegativeInt
     kind: FieldKind
     namespace: str = ""
+    supports_date_bounds: bool = True
 
 
 class RowEvidence(BaseModel, frozen=True, extra="forbid"):

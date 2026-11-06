@@ -1,6 +1,7 @@
 """Use row identities where corroborated and separate contextual relatives/providers."""
 
 from redactor.policy.keys import evidence_key
+from redactor.policy.name_matching import compatible_name_spelling
 from redactor.policy.names import format_person_name, person_name
 from redactor.policy.normalization import normalize_name
 from redactor.schemas.redaction import TextContext
@@ -25,7 +26,7 @@ def mention_name(
         not relative
         and identity is not None
         and (
-            normalized == " ".join(known)
+            compatible_name_spelling(value, known_name)
             or (
                 provider
                 and len(normalized.split()) == 1

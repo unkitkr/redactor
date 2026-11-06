@@ -602,6 +602,10 @@ TABULAR_FIELD_ALIASES: Final = (
 )
 CLINICAL_FIELD_PATTERNS: Final = (
     (
+        "kinship",
+        r"(?:ASC|BRO|CGV|CHD|DEP|DOM|EMC|EME|EXF|FCH|FND|FTH|GCH|GRD|GRP|MTH|NCH|NON|OAD|OTH|OWN|PAR|SCH|SEL|SIB|SIS|SPO|TRA|UNK|WRD|DAU|SON)",
+    ),
+    (
         "application",
         r"(?:Microsoft Excel|Microsoft Excel Compatible / Openpyxl [0-9.]+)",
     ),
@@ -859,4 +863,128 @@ FIELD_SSN: Final = "ssn"
 
 TEXT_DOCUMENT_HEADER_PATTERN: Final = (
     r"(?i)^(?:patient|attending|DOB|MRN|admit(?:ted)?):"
+)
+
+
+# Supported HL7 ADT fields use one-based standard field positions.
+HL7_SEGMENT_ENDINGS: Final = r"(\r\n|\r|\n)"
+HL7_ESCAPE_CODES: Final = ("F", "S", "R", "E", "T")
+HL7_NAME_MODE: Final = "name"
+HL7_PHONE_MODE: Final = "phone"
+HL7_VALUE_MODE: Final = "value"
+FIELD_RELATIVE_NAME: Final = "relative_name"
+HL7_STRUCTURAL_FIELDS: Final = (
+    ("MSH", 9, r"ADT{component}A[0-9]{2}(?:{component}ADT_A[0-9]{2})?"),
+    ("MSH", 11, r"[PTD]"),
+    ("MSH", 12, r"2\.[3456789](?:\.[0-9]+)?"),
+    ("MSH", 18, r"UNICODE UTF-8|ASCII|8859/1"),
+    ("EVN", 1, r"A[0-9]{2}"),
+    ("PID", 1, r"[0-9]+"),
+    ("PID", 8, r"[MFOUA]"),
+    ("NK1", 1, r"[0-9]+"),
+    ("PV1", 1, r"[0-9]+"),
+    ("PV1", 2, r"[BEIOPRNU]"),
+    ("DG1", 1, r"[0-9]+"),
+    ("DG1", 6, r"[AFW]"),
+    ("OBX", 1, r"[0-9]+"),
+    ("OBX", 2, r"NM|TX|ST|FT"),
+    ("OBX", 7, r"[0-9.<>=+\-]+"),
+    ("OBX", 8, r"[HLAN]{1,2}"),
+    ("OBX", 11, r"[CFIPRXSUWD]"),
+    ("NTE", 1, r"[0-9]+"),
+    ("NTE", 2, r"[LOP]"),
+)
+HL7_DATE_FIELDS: Final = (
+    ("MSH", 7),
+    ("EVN", 2),
+    ("EVN", 6),
+    ("PID", 7),
+    ("PID", 29),
+    ("PV1", 44),
+    ("PV1", 45),
+    ("DG1", 5),
+    ("OBX", 14),
+)
+HL7_IDENTIFIER_FIELDS: Final = (
+    ("MSH", 3),
+    ("MSH", 4),
+    ("MSH", 5),
+    ("MSH", 6),
+    ("MSH", 10),
+    ("PV1", 19),
+)
+HL7_ADDRESS_FIELDS: Final = (("PID", 11), ("NK1", 4))
+HL7_PHONE_FIELDS: Final = (("PID", 13), ("PID", 14), ("NK1", 5), ("NK1", 6))
+
+
+# Conservative vocabulary for coded laboratory display names, not patient text.
+LAB_DESCRIPTION_NAMESPACE: Final = "laboratory-description"
+LAB_DESCRIPTION_TERMS: Final = (
+    "a1c",
+    "hb",
+    "hba1c",
+    "hemoglobin",
+    "haemoglobin",
+    "hematocrit",
+    "haematocrit",
+    "glucose",
+    "creatinine",
+    "urea",
+    "nitrogen",
+    "sodium",
+    "potassium",
+    "chloride",
+    "bicarbonate",
+    "calcium",
+    "magnesium",
+    "phosphate",
+    "albumin",
+    "protein",
+    "bilirubin",
+    "alkaline",
+    "phosphatase",
+    "aminotransferase",
+    "aspartate",
+    "alanine",
+    "cholesterol",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "wbc",
+    "rbc",
+    "platelets",
+    "leukocytes",
+    "erythrocytes",
+    "neutrophils",
+    "lymphocytes",
+    "monocytes",
+    "eosinophils",
+    "basophils",
+    "blood",
+    "serum",
+    "plasma",
+    "urine",
+    "whole",
+    "mass",
+    "volume",
+    "moles",
+    "substance",
+    "number",
+    "count",
+    "fraction",
+    "ratio",
+    "total",
+    "concentration",
+    "in",
+    "of",
+    "or",
+    "and",
+    "to",
+    "by",
+    "automated",
+    "manual",
+    "estimated",
+    "glomerular",
+    "filtration",
+    "rate",
 )

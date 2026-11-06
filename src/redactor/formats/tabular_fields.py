@@ -7,6 +7,8 @@ from redactor.utils.constants import (
     CLINICAL_CODE_SEPARATOR_PATTERN,
     CLINICAL_FIELD_PATTERNS,
     FIELD_TEXT,
+    LAB_DESCRIPTION_NAMESPACE,
+    LAB_DESCRIPTION_TERMS,
     TABULAR_FIELD_ALIASES,
 )
 from redactor.utils.errors import ERROR_CLINICAL_CHANGED
@@ -28,6 +30,11 @@ def column_policies(columns: tuple[str, ...]) -> tuple[ColumnPolicy, ...]:
 
 def validate_clinical_field(value: str, namespace: str) -> None:
     if not value.strip():
+        return
+    if namespace == LAB_DESCRIPTION_NAMESPACE:
+        tokens = re.findall(r"[A-Za-z0-9]+|[^A-Za-z0-9\s./\[\]()-]", value.casefold())
+        if not tokens or any(token not in LAB_DESCRIPTION_TERMS for token in tokens):
+            raise ValueError(ERROR_CLINICAL_CHANGED)
         return
     patterns = dict(CLINICAL_FIELD_PATTERNS)
     pattern = patterns.get(namespace)

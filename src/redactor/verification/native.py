@@ -20,9 +20,11 @@ from redactor.schemas.persistence import Artifact, Task
 from redactor.schemas.verification import VerificationCheck
 from redactor.utils.constants import (
     FIELD_TEXT,
+    FORMAT_HL7,
     FORMAT_XLSX,
     REQUIRED_VERIFICATION_CHECKS,
     STEP_ANALYZE,
+    TEXT_ENCODING,
     VERIFICATION_PASS,
 )
 from redactor.utils.errors import (
@@ -30,6 +32,7 @@ from redactor.utils.errors import (
     ERROR_COVERAGE,
     ERROR_STRUCTURE,
 )
+from redactor.verification.hl7 import check_hl7_surfaces
 from redactor.verification.text import verify_text_changes
 from redactor.verification.xlsx import check_xlsx_surfaces
 
@@ -62,6 +65,13 @@ def verify_native(
     output = read_native(artifact.path, written_inspection, settings.resources)
     if inspection.file_type == FORMAT_XLSX:
         check_xlsx_surfaces(artifact.path, output)
+    if inspection.file_type == FORMAT_HL7:
+        check_hl7_surfaces(
+            task.input_path,
+            artifact.path,
+            original,
+            inspection.encoding or TEXT_ENCODING,
+        )
     if len(original.records) != len(output.records):
         raise ValueError(ERROR_COVERAGE)
     snapshot, lookup = load_identity_lookup(connection, resolution_task_id, mapping_key)

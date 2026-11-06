@@ -15,7 +15,9 @@ from redactor.policy.identifiers import (
 )
 from redactor.policy.keys import evidence_key
 from redactor.policy.names import format_person_name, person_name
+from redactor.policy.network import replace_network_address, replace_web_address
 from redactor.policy.text import text_edits
+from redactor.policy.text_names import mention_name
 from redactor.schemas.entities import NerAdapter
 from redactor.schemas.redaction import ColumnPolicy, TextContext, TextEdit, TextFinding
 from redactor.utils.constants import (
@@ -29,12 +31,16 @@ from redactor.utils.constants import (
     FIELD_IDENTIFIER,
     FIELD_LOCATION,
     FIELD_LOT,
+    FIELD_NETWORK,
     FIELD_PATIENT_ID,
     FIELD_PATIENT_NAME,
     FIELD_PHONE,
     FIELD_PROVIDER_ID,
     FIELD_PROVIDER_NAME,
+    FIELD_RELATIVE_NAME,
+    FIELD_SSN,
     FIELD_TEXT,
+    FIELD_WEB,
     FIELD_ZIP,
     SSN_NAMESPACE,
 )
@@ -93,6 +99,16 @@ def cell_edits(
         if identity is None:
             raise ValueError(ERROR_IDENTITY_EVIDENCE)
         replacement = format_person_name(value, identity.surrogate_name)
+    elif policy.kind == FIELD_RELATIVE_NAME:
+        replacement = format_person_name(
+            value, mention_name(value, context, key, provider=False, relative=True)
+        )
+    elif policy.kind == FIELD_SSN:
+        replacement = replace_ssn(value, key)
+    elif policy.kind == FIELD_NETWORK:
+        replacement = replace_network_address(value, key)
+    elif policy.kind == FIELD_WEB:
+        replacement = replace_web_address(value, key)
     elif policy.kind == FIELD_PROVIDER_ID:
         replacement = replace_npi(value, key)
     elif policy.kind == FIELD_IDENTIFIER and policy.namespace == SSN_NAMESPACE:
@@ -121,7 +137,7 @@ def cell_edits(
                 offset,
                 older_age_group=context.patient.older_age_group,
                 cohort_reference=context.patient.reference_date,
-                supports_bounds=True,
+                supports_bounds=policy.supports_date_bounds,
             )
         else:
             replacement = shift_date(value.strip(), offset)

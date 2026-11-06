@@ -6,7 +6,7 @@ from ipaddress import ip_address
 from redactor.inference.evidence import validate_entity_evidence
 from redactor.inference.masking import mask_assessed_ranges, restore_entity
 from redactor.policy.dates import parse_date
-from redactor.policy.normalization import normalize_name
+from redactor.policy.name_matching import compatible_name_spelling
 from redactor.policy.text_patterns import age_mentions, clinical_ranges
 from redactor.schemas.entities import NerAdapter, TextEntities
 from redactor.schemas.redaction import TextFinding, TextRange
@@ -127,10 +127,9 @@ def find_text_phi(
             continue
         entity_kind = None
         if entity.entity_type == ENTITY_PERSON:
-            name = normalize_name(entity.text)
-            if patient_name and name == normalize_name(patient_name):
+            if patient_name and compatible_name_spelling(entity.text, patient_name):
                 entity_kind = FIELD_PATIENT_NAME
-            elif provider_name and name == normalize_name(provider_name):
+            elif provider_name and compatible_name_spelling(entity.text, provider_name):
                 entity_kind = FIELD_PROVIDER_NAME
         elif entity.entity_type == ENTITY_LOCATION:
             if any(
