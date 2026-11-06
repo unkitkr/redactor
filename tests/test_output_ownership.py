@@ -18,7 +18,14 @@ def test_output_directory_is_bound_before_work_and_replays_only_its_run(
     source = tmp_path / "input"
     source.mkdir()
     (source / "records.csv").write_text("patient,mrn\nLena Moreau,00019\n")
+    weights = tmp_path / "model"
+    weights.mkdir()
+    model_file = weights / "weights.bin"
+    model_file.write_bytes(b"model version one")
     settings = PipelineSettings()
+    settings = settings.model_copy(
+        update={"local": settings.local.model_copy(update={"ner_directory": weights})}
+    )
     key = bytes(range(32))
     first = prepare_run(connection, source, settings, key)
     bind_output_directory(connection, first.manifest)
@@ -37,6 +44,17 @@ def test_output_directory_is_bound_before_work_and_replays_only_its_run(
         bind_output_directory(connection, manifest)
     assert published.read_bytes() == b"older result must remain unchanged"
     assert not (output / "report.json").exists()
+
+    # The path and configuration are unchanged; replacing the bytes is still a
+    # new processing environment and must not reuse already published results.
+    model_file.write_bytes(b"model version two")
+    different_model = prepare_run(connection, source, settings, key)
+    assert different_model.manifest.sha256 != first.manifest.sha256
+    with pytest.raises(ValueError, match=ERROR_OUTPUT_CONFLICT):
+        bind_output_directory(connection, different_model.manifest)
+    assert published.read_bytes() == b"older result must remain unchanged"
+    model_file.write_bytes(b"model version one")
+    assert prepare_run(connection, source, settings, key) == first
 
     # Output predating this ownership contract cannot silently acquire a new
     # policy identity. An explicit fresh workspace is required.

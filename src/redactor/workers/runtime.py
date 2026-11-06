@@ -2,6 +2,7 @@
 
 from contextlib import closing
 
+from redactor.inference.fingerprint import runtime_fingerprint
 from redactor.inference.model_loader import load_local_ner
 from redactor.persistence.database import open_database
 from redactor.persistence.queue.tasks import get_task
@@ -11,7 +12,7 @@ from redactor.schemas.persistence import Artifact
 from redactor.schemas.worker import WorkerConfig
 from redactor.utils.configuration import key_fingerprint, read_mapping_key
 from redactor.utils.constants import INFERENCE_STEPS
-from redactor.utils.errors import ERROR_LOCAL_UNAVAILABLE
+from redactor.utils.errors import ERROR_LOCAL_UNAVAILABLE, ERROR_RUN_CONTEXT
 from redactor.workers.handlers import pipeline_handlers
 from redactor.workers.run import consume_tasks
 
@@ -29,6 +30,8 @@ def consume_pipeline(config: WorkerConfig) -> None:
             path=task.input_path, sha256=task.input_sha256, size=task.input_size
         )
         manifest = read_manifest(artifact, key_fingerprint(key))
+    if runtime_fingerprint(manifest.settings.local) != manifest.runtime_fingerprint:
+        raise ValueError(ERROR_RUN_CONTEXT)
     settings = manifest.settings.model_copy(
         update={
             "remote": manifest.settings.remote.model_copy(

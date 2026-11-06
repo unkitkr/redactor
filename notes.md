@@ -2,7 +2,7 @@
 
 - Work follows one path: inspect, analyze, freeze identities, rewrite, verify the saved output, publish or quarantine, then reconcile reports.
 - SQLite keeps the queue and step history; workers claim tasks and record progress, while a shared run lock prevents recovery until earlier workers exit.
-- Each run is tied to its input bytes, configuration and secret-key identity; durable checkpoints, rejection of stale attempts and atomic step transitions support replay.
+- Each run freezes input, code and model hashes, dependency versions, configuration and secret-key identity; changed runtimes require fresh state, and checkpoints support replay of the same run.
 - Large artifacts stay on private disk, and CSV checkpoints end at complete records; one inference worker and one light worker limit model duplication.
 - Production and evaluation share local adapters: NER checks text spans and caches bounded inputs, while OCR checks image limits and coordinates against source pixels.
 - Analysis freezes encrypted detector observations; rewriting replays those observations, while verification independently scans the source and saved output.

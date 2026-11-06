@@ -21,6 +21,7 @@ class RunManifest(BaseModel, frozen=True, extra="forbid"):
     files: tuple[InventoryFile, ...]
     settings: PipelineSettings
     key_fingerprint: str = Field(pattern=SHA256_PATTERN)
+    runtime_fingerprint: str = Field(pattern=SHA256_PATTERN)
     pipeline_version: str = PIPELINE_VERSION
 
 

@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 
 from redactor.coordinator.inventory import iter_input_files
+from redactor.inference.fingerprint import runtime_fingerprint
 from redactor.persistence.files.registration import prepare_successor, prepare_task
 from redactor.persistence.queue.tasks import enqueue_task
 from redactor.persistence.runs.inventory import file_step
@@ -73,4 +74,5 @@ def collect_inventory(
         files=tuple(sorted(files, key=lambda source: source.relative_path.as_posix())),
         settings=frozen_settings,
         key_fingerprint=key_fingerprint(mapping_key),
+        runtime_fingerprint=runtime_fingerprint(settings.local),
     )

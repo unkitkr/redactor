@@ -76,7 +76,27 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v14"
+PIPELINE_VERSION: Final = "pipeline-v15"
+RUNTIME_SOURCE_SUFFIXES: Final = (".py", ".sql")
+RUNTIME_IGNORED_SUFFIXES: Final = (".pyc", ".pyo")
+RUNTIME_MISSING_ARTIFACT: Final = "missing"
+RUNTIME_PACKAGES: Final = (
+    "cryptography",
+    "defusedxml",
+    "httpx",
+    "ijson",
+    "numpy",
+    "onnxruntime",
+    "openai",
+    "openpyxl",
+    "pillow",
+    "pydantic",
+    "pydicom",
+    "pymupdf",
+    "rapidocr",
+    "spacy",
+    "tokenizers",
+)
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
