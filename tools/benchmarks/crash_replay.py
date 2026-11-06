@@ -173,7 +173,9 @@ def main() -> None:
                 os.killpg(group, signal.SIGKILL)
             process.wait()
             for _ in range(100):
-                if not any(live_group_members(group) for group in groups):
+                if not any(
+                    live_group_members(group) for group in groups
+                ) and lock_available(arguments.state):
                     break
                 sleep(0.01)
             crashes.append(
@@ -268,6 +270,9 @@ def main() -> None:
             }
         )
     )
+
+    if not result["passed"]:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
