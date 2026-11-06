@@ -13,12 +13,13 @@ from pathlib import Path
 from time import perf_counter
 
 from redactor.evaluation.text import evaluate_text_examples
-from redactor.inference.ner import load_local_ner
+from redactor.inference.model_loader import load_local_ner, prepare_ner
 from redactor.schemas.configuration import LocalSettings
 from redactor.schemas.evaluation import TextExample
 from redactor.utils.constants import (
     DEFAULT_SPACY_MODEL,
     EVALUATION_TEXT_CORPUS,
+    NER_GLINER,
     VERIFIER_VERSION,
 )
 
@@ -37,14 +38,14 @@ def main() -> None:
     if len({example.case_id for example in examples}) != len(examples):
         raise ValueError("Duplicate evaluation case identifiers")
     started = perf_counter()
-    if arguments.backend == "gliner":
-        from redactor.evaluation.gliner import load_gliner
-
-        adapter = load_gliner(Path(arguments.model))
-    elif arguments.backend == "openmed":
+    if arguments.backend == "openmed":
         from redactor.evaluation.openmed import load_openmed
 
-        adapter = load_openmed(Path(arguments.model))
+        adapter = prepare_ner(load_openmed(Path(arguments.model)), LocalSettings())
+    elif arguments.backend == NER_GLINER:
+        adapter = load_local_ner(
+            LocalSettings(ner=NER_GLINER, ner_directory=Path(arguments.model))
+        )
     else:
         adapter = load_local_ner(LocalSettings(spacy_model=arguments.model))
     load_seconds = perf_counter() - started

@@ -1,4 +1,2 @@
-# Optional CPU evaluation dependencies; production dependencies remain in uv.lock.
-onnxruntime==1.31.1
-tokenizers==0.23.3
+# Optional OCR evaluation dependency; NER runtimes are locked in uv.lock.
 rapidocr==3.10.0

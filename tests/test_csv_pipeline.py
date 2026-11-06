@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from redactor.coordinator.bootstrap import prepare_run
-from redactor.inference.ner import load_local_ner
+from redactor.inference.model_loader import load_local_ner
 from redactor.persistence.files.artifacts import inspect_artifact
 from redactor.persistence.files.results import read_step_result
 from redactor.persistence.queue.tasks import (

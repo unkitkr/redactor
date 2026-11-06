@@ -13,6 +13,10 @@ from redactor.policy.normalization import normalize_name
 
 
 def test_clinical_cli_publishes_verifies_and_replays(tmp_path: Path) -> None:
+    # This cross-format regression exercises the established spaCy path. Model
+    # selection has its own integration test, with the checked-in configuration.
+    configuration = tmp_path / "spacy.toml"
+    configuration.write_text('[local]\nner = "spacy"\n[remote]\nenabled = false\n')
     source = tmp_path / "input"
     source.mkdir()
     fixtures = Path(__file__).parents[1] / "input"
@@ -40,6 +44,8 @@ def test_clinical_cli_publishes_verifies_and_replays(tmp_path: Path) -> None:
         str(source),
         "--state",
         str(tmp_path / ".redactor"),
+        "--config",
+        str(configuration),
     ]
     first = subprocess.run(
         command, env=environment, capture_output=True, text=True, timeout=30

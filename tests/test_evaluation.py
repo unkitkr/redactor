@@ -5,7 +5,7 @@ from pathlib import Path
 
 from redactor.evaluation.metrics import reference_spans, span_counts
 from redactor.evaluation.text import evaluate_text_examples
-from redactor.inference.ner import load_local_ner
+from redactor.inference.model_loader import load_local_ner
 from redactor.schemas.configuration import LocalSettings
 from redactor.schemas.evaluation import EvaluationSpan, TextExample
 from redactor.utils.constants import EVALUATION_TEXT_CORPUS

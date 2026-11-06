@@ -11,7 +11,7 @@ import pytest
 
 from redactor.coordinator.bootstrap import prepare_run
 from redactor.formats.xlsx import read_xlsx, write_xlsx
-from redactor.inference.ner import load_local_ner
+from redactor.inference.model_loader import load_local_ner
 from redactor.persistence.queue.tasks import claim_task
 from redactor.schemas.configuration import PipelineSettings, ResourceSettings
 from redactor.utils.constants import XLSX_NAMESPACE

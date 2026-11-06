@@ -70,7 +70,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v3"
+PIPELINE_VERSION: Final = "pipeline-v4"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -1483,10 +1483,26 @@ EVALUATION_FINDING_TYPES: Final = (
     (FIELD_ADDRESS, "location"),
     (FIELD_ZIP, "location"),
 )
-EVALUATION_ONNX_THREADS: Final = 1
-EVALUATION_GLINER_THRESHOLD: Final = 0.3
-EVALUATION_WORD_PATTERN: Final = r"\w+(?:[-_]\w+)*|\S"
-EVALUATION_GLINER_LABELS: Final = (
+# Local CPU model exports and inference contracts
+ONNX_THREADS: Final = 1
+ONNX_CPU_PROVIDER: Final = "CPUExecutionProvider"
+ONNX_INTEGER_TYPE: Final = "tensor(int64)"
+ONNX_FLOAT_TYPE: Final = "tensor(float)"
+TOKENIZER_FILENAME: Final = "tokenizer.json"
+GLINER_CONFIG: Final = "gliner_config.json"
+GLINER_WEIGHTS: Final = "onnx/model_quint8.onnx"
+GLINER_MAXIMUM_TOKENS: Final = 2048
+GLINER_MAXIMUM_CANDIDATES: Final = 16384
+GLINER_LOGIT_BOUND: Final = 80
+GLINER_INPUT_NAMES: Final = (
+    "input_ids",
+    "attention_mask",
+    "words_mask",
+    "text_lengths",
+)
+GLINER_THRESHOLD: Final = 0.3
+GLINER_WORD_PATTERN: Final = r"\w+(?:[-_]\w+)*|\S"
+GLINER_LABELS: Final = (
     ("name", "person"),
     ("organization medical facility", "organization"),
     ("location address", "location"),
@@ -1505,6 +1521,7 @@ EVALUATION_GLINER_LABELS: Final = (
     ("device identifier", "identifier"),
     ("driver license", "identifier"),
 )
+# Optional model evaluation candidates
 EVALUATION_OPENMED_TYPES: Final = (
     ("person", ("first_name", "last_name")),
     ("organization", ("company_name",)),
@@ -1578,9 +1595,6 @@ EVALUATION_VISION_OUTPUT_TOKENS: Final = 4096
 EVALUATION_VISION_INPUT_PRICE: Final = "0.4"
 EVALUATION_VISION_OUTPUT_PRICE: Final = "1.5"
 EVALUATION_REMOTE_ATTEMPTS: Final = 2
-EVALUATION_GLINER_CONFIG: Final = "gliner_config.json"
-EVALUATION_GLINER_WEIGHTS: Final = "onnx/model_quint8.onnx"
-EVALUATION_TOKENIZER: Final = "tokenizer.json"
 EVALUATION_OPENMED_CONFIG: Final = "config.json"
 EVALUATION_OPENMED_LABELS: Final = "id2label.json"
 EVALUATION_OPENMED_WEIGHTS: Final = "model_int8.onnx"

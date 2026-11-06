@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from redactor.inference.ner import load_local_ner
+from redactor.inference.model_loader import load_local_ner
 from redactor.inference.text import find_text_phi
 from redactor.policy.text import apply_text_edits, text_edits
 from redactor.schemas.configuration import LocalSettings

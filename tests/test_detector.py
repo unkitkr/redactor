@@ -9,7 +9,7 @@ import httpx
 import pytest
 
 from redactor.agents.detector.detect import detect_text
-from redactor.inference.ner import load_local_ner
+from redactor.inference.model_loader import load_local_ner
 from redactor.persistence.files.registration import register_file
 from redactor.persistence.models.budget import accounted_cost
 from redactor.persistence.queue.tasks import claim_task, recover_interrupted

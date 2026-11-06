@@ -1,7 +1,7 @@
 # Secrets are read only from LLM_API_KEY and REDACTOR_SECRET_KEY.
 # Set LLM_ENABLED=0 to disable remote detection and judging together.
-# Selected models from benchmarks/README.md; production integration is incomplete.
-# GLiNER currently fails closed when NER is required; PP-OCR is evaluation-only.
+# Selected models from benchmarks/README.md; local weights must be staged first.
+# GLiNER is supported; PP-OCR and hosted detection are still evaluation-only.
 [remote]
 enabled = true
 base_url = "https://openrouter.ai/api/v1"

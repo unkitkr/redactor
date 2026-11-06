@@ -2,7 +2,7 @@
 
 from contextlib import closing
 
-from redactor.inference.ner import load_local_ner
+from redactor.inference.model_loader import load_local_ner
 from redactor.persistence.database import open_database
 from redactor.persistence.queue.tasks import get_task
 from redactor.persistence.runs.manifests import read_manifest

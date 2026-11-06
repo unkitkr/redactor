@@ -8,7 +8,7 @@ import pytest
 
 from redactor.formats.tabular_fields import column_policies, validate_clinical_field
 from redactor.identity.tabular import row_evidence
-from redactor.inference.ner import load_local_ner
+from redactor.inference.model_loader import load_local_ner
 from redactor.inference.text import find_text_phi
 from redactor.policy.text import apply_text_edits, text_edits
 from redactor.schemas.configuration import LocalSettings

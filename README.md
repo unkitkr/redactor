@@ -8,9 +8,20 @@ quarantine. See [notes.md](notes.md) for measured limitations.
 ## Run the pipeline
 
 Set `REDACTOR_SECRET_KEY` to a base64-encoded 32-byte secret and retain it for
-replay. The checked-in model selection currently requires unfinished GLiNER
-production integration and fails closed when inference is needed. For the
-implemented local path, use a separate TOML configuration containing:
+replay. The checked-in configuration uses GLiNER PII Edge UINT8. Stage its pinned
+`gliner_config.json`, `tokenizer.json` and `onnx/model_quint8.onnx` under
+`.models/gliner-pii-edge-v1.0/` before running. Checksums and download URLs are in
+[the model manifest](benchmarks/model-artifacts.json); the setup helper
+`uv run python tools/benchmarks/fetch_models.py` fetches all benchmark artifacts.
+Runtime loading never downloads models. In a container, mount the staged directory
+read-only at `/work/.models` and retain the same weights for replay.
+
+The shared functional loader supports GLiNER and spaCy with input bounds,
+validated spans and per-worker caching. Missing or incompatible weights and failed
+inference prevent publication when a model is required. GLiNER also rejects inputs
+outside its token window without truncating them. Its additional detections can
+trigger conservative quarantine when rewriting cannot establish safe coverage.
+For the established spaCy path, use a separate TOML configuration containing:
 
 ```toml
 [local]

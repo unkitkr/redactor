@@ -17,7 +17,7 @@ from redactor.evaluation.remote import (
 from redactor.evaluation.replay import load_replay_ner, replay_state
 from redactor.evaluation.state import evaluation_state
 from redactor.evaluation.text import evaluate_text_examples
-from redactor.inference.ner import load_local_ner
+from redactor.inference.model_loader import load_local_ner
 from redactor.persistence.models.budget import accounted_cost
 from redactor.schemas.configuration import LocalSettings
 from redactor.schemas.evaluation import TextExample

@@ -11,11 +11,12 @@ import importlib.metadata
 import json
 from pathlib import Path
 
-from redactor.evaluation.gliner import load_gliner
 from redactor.evaluation.text import evaluate_text_examples
+from redactor.inference.model_loader import load_local_ner
+from redactor.schemas.configuration import LocalSettings
 from redactor.schemas.entities import TextEntity
 from redactor.schemas.evaluation import TextExample
-from redactor.utils.constants import EVALUATION_GLINER_LABELS, EVALUATION_TEXT_CORPUS
+from redactor.utils.constants import EVALUATION_TEXT_CORPUS, GLINER_LABELS
 
 
 def compare(directory: Path, examples: tuple[TextExample, ...]) -> dict[str, object]:
@@ -27,7 +28,7 @@ def compare(directory: Path, examples: tuple[TextExample, ...]) -> dict[str, obj
         onnx_model_file="onnx/model_quint8.onnx",
         local_files_only=True,
     )
-    adapter = load_gliner(directory)
+    adapter = load_local_ner(LocalSettings(ner="gliner", ner_directory=directory))
     observed = {example.text: example.case_id for example in examples}
 
     def record(text: str) -> tuple[TextEntity, ...]:
@@ -37,8 +38,8 @@ def compare(directory: Path, examples: tuple[TextExample, ...]) -> dict[str, obj
         return adapter(text)
 
     evaluate_text_examples(examples, record, combined=True)
-    labels = [label for label, _ in EVALUATION_GLINER_LABELS]
-    mapping = dict(EVALUATION_GLINER_LABELS)
+    labels = [label for label, _ in GLINER_LABELS]
+    mapping = dict(GLINER_LABELS)
     mismatches = []
     for text, case_id in observed.items():
         expected = reference.predict_entities(
