@@ -5,7 +5,7 @@ from functools import partial
 import httpx
 
 from redactor.schemas.configuration import PipelineSettings
-from redactor.schemas.entities import NerAdapter
+from redactor.schemas.entities import NerAdapter, NerBatchAdapter
 from redactor.schemas.ocr import OcrAdapter
 from redactor.schemas.pipeline import StepHandler
 from redactor.utils.constants import (
@@ -35,6 +35,7 @@ def pipeline_handlers(
     model_transport: httpx.AsyncBaseTransport | None = None,
     local_ocr: OcrAdapter | None = None,
     verifier_ner: NerAdapter | None = None,
+    verification_batch: NerBatchAdapter | None = None,
 ) -> dict[str, StepHandler]:
     return {
         STEP_INSPECT: partial(
@@ -63,6 +64,7 @@ def pipeline_handlers(
             settings=settings,
             mapping_key=mapping_key,
             local_ner=verifier_ner or local_ner,
+            verification_batch=verification_batch,
             resolution_task_id=resolution_task_id,
         ),
         STEP_PUBLISH: partial(

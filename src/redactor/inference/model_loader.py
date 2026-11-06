@@ -4,7 +4,12 @@ from redactor.inference.cache import cache_ner
 from redactor.inference.evidence import validate_entity_evidence
 from redactor.inference.ocr_loader import load_local_ocr as load_local_ocr
 from redactor.schemas.configuration import LocalSettings
-from redactor.schemas.entities import NerAdapter, TextEntities, TextEntity
+from redactor.schemas.entities import (
+    NerAdapter,
+    NerBatchAdapter,
+    TextEntities,
+    TextEntity,
+)
 from redactor.utils.constants import NER_GLINER, NER_SPACY
 from redactor.utils.errors import (
     ERROR_ENTITY_EVIDENCE,
@@ -16,11 +21,19 @@ from redactor.utils.errors import (
 
 def load_local_ner(settings: LocalSettings) -> NerAdapter:
     """Load once per inference worker, without downloads or a silent model switch."""
+    recognize, _ = load_local_ner_adapters(settings)
+    return recognize
+
+
+def load_local_ner_adapters(
+    settings: LocalSettings,
+) -> tuple[NerAdapter, NerBatchAdapter | None]:
+    batch_adapter: NerBatchAdapter | None = None
     try:
         if settings.ner == NER_SPACY:
-            from redactor.inference.adapters.spacy import load_spacy
+            from redactor.inference.adapters.spacy import load_spacy_adapters
 
-            adapter = load_spacy(settings)
+            adapter, batch_adapter = load_spacy_adapters(settings)
         elif settings.ner == NER_GLINER and settings.ner_directory is not None:
             from redactor.inference.adapters.gliner import load_gliner
 
@@ -30,7 +43,11 @@ def load_local_ner(settings: LocalSettings) -> NerAdapter:
     except Exception:
         # Library exceptions can contain file paths or model data.
         raise ValueError(ERROR_LOCAL_UNAVAILABLE) from None
-    return prepare_ner(adapter, settings)
+    return prepare_ner(adapter, settings), (
+        prepare_ner_batch(batch_adapter, settings)
+        if batch_adapter is not None
+        else None
+    )
 
 
 def prepare_ner(adapter: NerAdapter, settings: LocalSettings) -> NerAdapter:
@@ -60,3 +77,35 @@ def prepare_ner(adapter: NerAdapter, settings: LocalSettings) -> NerAdapter:
         maximum_entries=settings.ner_cache_entries,
         maximum_text_characters=settings.ner_cache_characters,
     )
+
+
+def prepare_ner_batch(
+    adapter: NerBatchAdapter, settings: LocalSettings
+) -> NerBatchAdapter:
+    """Validate every result against its own input; partial batches fail closed."""
+
+    def recognize(texts: tuple[str, ...]) -> tuple[tuple[TextEntity, ...], ...]:
+        if any(len(text) > settings.ner_max_characters for text in texts):
+            raise ValueError(ERROR_LOCAL_INPUT)
+        try:
+            results = adapter(texts)
+        except Exception as error:
+            for code in (
+                ERROR_LOCAL_INPUT,
+                ERROR_LOCAL_UNAVAILABLE,
+                ERROR_ENTITY_EVIDENCE,
+            ):
+                if error.args == (code,):
+                    raise ValueError(code) from None
+            raise ValueError(ERROR_LOCAL_INFERENCE) from None
+        try:
+            if len(results) != len(texts):
+                raise ValueError(ERROR_ENTITY_EVIDENCE)
+            return tuple(
+                validate_entity_evidence(text, TextEntities(entities=entities))
+                for text, entities in zip(texts, results, strict=True)
+            )
+        except Exception:
+            raise ValueError(ERROR_ENTITY_EVIDENCE) from None
+
+    return recognize

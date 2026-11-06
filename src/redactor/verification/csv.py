@@ -2,6 +2,7 @@
 
 import sqlite3
 from collections import Counter
+from collections.abc import Iterator
 from contextlib import closing
 from itertools import zip_longest
 
@@ -16,9 +17,10 @@ from redactor.persistence.identities.snapshots import load_identity_lookup
 from redactor.policy.tabular import cell_edits, cell_findings
 from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.configuration import PipelineSettings
-from redactor.schemas.entities import NerAdapter
+from redactor.schemas.entities import NerAdapter, NerBatchAdapter
 from redactor.schemas.formats import FileInspection
 from redactor.schemas.persistence import Artifact, Task
+from redactor.schemas.tabular import CsvRowPair
 from redactor.schemas.verification import VerificationCheck
 from redactor.utils.constants import (
     FIELD_TEXT,
@@ -32,6 +34,7 @@ from redactor.utils.errors import (
     ERROR_COVERAGE,
     ERROR_STRUCTURE,
 )
+from redactor.verification.batches import batch_verifier, row_batches
 from redactor.verification.headers import verify_column_headers
 from redactor.verification.reader import read_csv_rows
 from redactor.verification.text import verify_text_changes
@@ -46,6 +49,7 @@ def verify_csv(
     mapping_key: bytes,
     local_ner: NerAdapter,
     resolution_task_id: str,
+    verification_batch: NerBatchAdapter | None = None,
 ) -> tuple[VerificationCheck, ...]:
     source = inspect_artifact(task.input_path, persist=False)
     staged = inspect_artifact(artifact.path, persist=False)
@@ -90,46 +94,43 @@ def verify_csv(
         ):
             raise ValueError(ERROR_STRUCTURE)
         verify_column_headers(layout.columns, local_ner)
-        for number, pair in enumerate(zip_longest(original, rewritten), start=1):
-            before, after = pair
-            if (
-                before is None
-                or after is None
-                or not (len(before) == len(after) == len(policies))
-            ):
-                raise ValueError(ERROR_COVERAGE)
-            evidence = row_evidence(before, policies, task.input_sha256, number)
-            context = row_context(
-                evidence,
-                lookup,
-                analysis_id,
-                task.input_sha256,
-                number,
-                mapping_key,
-                snapshot.maximum_date_shift_days,
-            )
-            for column in policies:
-                value = before[column.index]
-                findings = cell_findings(
-                    value,
-                    column,
-                    detector,
-                    patient_name=context.patient_name,
-                    provider_name=context.provider_name,
+        pairs = _matching_rows(original, rewritten, len(policies))
+        for batch in row_batches(pairs):
+            verifier = batch_verifier(batch, policies, local_ner, verification_batch)
+            for before, after in batch:
+                number = records + 1
+                evidence = row_evidence(before, policies, task.input_sha256, number)
+                context = row_context(
+                    evidence,
+                    lookup,
+                    analysis_id,
+                    task.input_sha256,
+                    number,
+                    mapping_key,
+                    snapshot.maximum_date_shift_days,
                 )
-                expected = cell_edits(value, column, findings, context, mapping_key)
-                verify_text_changes(
-                    value,
-                    after[column.index],
-                    expected,
-                    local_ner,
-                    free_text=column.kind == FIELD_TEXT,
-                    patient_name=context.patient_name,
-                    provider_name=context.provider_name,
-                )
-                counts.update(edit.kind for edit in expected)
-                cells += 1
-            records = number
+                for column in policies:
+                    value = before[column.index]
+                    findings = cell_findings(
+                        value,
+                        column,
+                        detector,
+                        patient_name=context.patient_name,
+                        provider_name=context.provider_name,
+                    )
+                    expected = cell_edits(value, column, findings, context, mapping_key)
+                    verify_text_changes(
+                        value,
+                        after[column.index],
+                        expected,
+                        verifier,
+                        free_text=column.kind == FIELD_TEXT,
+                        patient_name=context.patient_name,
+                        provider_name=context.provider_name,
+                    )
+                    counts.update(edit.kind for edit in expected)
+                    cells += 1
+                records = number
     if records != analysis.record_count or counts != analysis.counts:
         raise ValueError(ERROR_COVERAGE)
     # Hash again after parsing to bind the verdict to bytes checked throughout.
@@ -146,3 +147,14 @@ def verify_csv(
         )
         for kind in REQUIRED_VERIFICATION_CHECKS
     )
+
+
+def _matching_rows(
+    original: Iterator[tuple[str, ...]],
+    rewritten: Iterator[tuple[str, ...]],
+    width: int,
+) -> Iterator[CsvRowPair]:
+    for before, after in zip_longest(original, rewritten):
+        if before is None or after is None or not len(before) == len(after) == width:
+            raise ValueError(ERROR_COVERAGE)
+        yield before, after

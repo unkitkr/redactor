@@ -3,7 +3,7 @@
 from contextlib import closing
 
 from redactor.inference.fingerprint import runtime_fingerprint
-from redactor.inference.runtime import runtime_adapters
+from redactor.inference.runtime import runtime_model_adapters
 from redactor.persistence.database import open_database
 from redactor.persistence.queue.tasks import get_task
 from redactor.persistence.runs.manifests import read_manifest
@@ -42,8 +42,11 @@ def consume_pipeline(config: WorkerConfig) -> None:
     ner: NerAdapter = unavailable_ner
     ocr = None
     verifier_ner = None
+    verification_batch = None
     if config.inference:
-        ner, ocr, verifier_ner = runtime_adapters(settings.local, settings.resources)
+        ner, ocr, verifier_ner, verification_batch = runtime_model_adapters(
+            settings.local, settings.resources
+        )
     handlers = pipeline_handlers(
         settings,
         key,
@@ -51,6 +54,7 @@ def consume_pipeline(config: WorkerConfig) -> None:
         config.resolution_task_id,
         local_ocr=ocr,
         verifier_ner=verifier_ner,
+        verification_batch=verification_batch,
     )
     steps = tuple(
         step

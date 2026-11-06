@@ -9,7 +9,7 @@ from redactor.persistence.files.results import (
     write_step_result,
 )
 from redactor.schemas.configuration import PipelineSettings
-from redactor.schemas.entities import NerAdapter
+from redactor.schemas.entities import NerAdapter, NerBatchAdapter
 from redactor.schemas.formats import FileInspection
 from redactor.schemas.persistence import Task
 from redactor.schemas.pipeline import StepResult
@@ -41,6 +41,7 @@ def verify_task(
     mapping_key: bytes,
     local_ner: NerAdapter,
     resolution_task_id: str,
+    verification_batch: NerBatchAdapter | None = None,
 ) -> StepResult:
     producer = prepare_successor(connection, task, STEP_REWRITE)
     artifact = accepted_artifact(connection, producer.task_id)
@@ -70,6 +71,7 @@ def verify_task(
                 mapping_key=mapping_key,
                 local_ner=local_ner,
                 resolution_task_id=resolution_task_id,
+                verification_batch=verification_batch,
             )
         else:
             checks = verify_native(
