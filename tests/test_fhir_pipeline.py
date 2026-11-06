@@ -13,8 +13,9 @@ from PIL import Image
 
 from redactor.formats.fhir import read_fhir
 from redactor.schemas.configuration import ResourceSettings
-from redactor.utils.errors import ERROR_AGE_REPRESENTATION
+from redactor.schemas.redaction import TextEdit
 from redactor.verification.fhir import check_fhir_structure
+from redactor.verification.text import verify_text_changes
 
 
 def test_fhir_pipeline_references_narrative_attachment_and_tampering(
@@ -92,12 +93,7 @@ def test_fhir_pipeline_references_narrative_attachment_and_tampering(
         )
         assert result.returncode == 0, result.stderr
         report = json.loads((run / "output/report.json").read_text())
-        assert report["published"] == 1 and report["quarantined"] == 1, report
-        assert [
-            record["reason"]
-            for record in report["files"]
-            if record["status"] == "quarantined"
-        ] == [ERROR_AGE_REPRESENTATION]
+        assert report["published"] == 2 and report["quarantined"] == 0, report
         snapshots.append((run / "output/published/bundle.json").read_bytes())
     assert snapshots[0] == snapshots[1] == snapshots[2]
     saved = tmp_path / "first/output/published/bundle.json"
@@ -130,6 +126,70 @@ def test_fhir_pipeline_references_narrative_attachment_and_tampering(
         damaged.write_text(mutated)
         with pytest.raises(ValueError):
             check_fhir_structure(original, damaged, extracted, resources)
+    older_saved = tmp_path / "first/output/published/older.json"
+    older_data = json.loads(older_saved.read_text())
+    older_patient = older_data["entry"][0]["resource"]
+    assert "birthDate" not in older_patient
+    extensions = older_patient["_birthDate"]["extension"]
+    assert extensions[0]["valueCode"] == "masked"
+    assert extensions[1]["valueString"] == "90+"
+    assert len(extensions[2]["valueDate"]) == 4
+    assert "1900-01-01" not in older_saved.read_text()
+    older_original = source / "older.json"
+    older_extracted = read_fhir(older_original, resources)
+    check_fhir_structure(older_original, older_saved, older_extracted, resources)
+    logical = read_fhir(older_saved, resources, extract_evidence=False)
+    logical_bound = next(
+        record.values[0]
+        for record in logical.records
+        if record.policies[0].kind == "birth_date"
+    )
+    assert logical_bound == "on or before " + extensions[2]["valueDate"]
+    for field, value in (
+        ("valueCode", "unknown"),
+        ("valueString", "89+"),
+        ("valueDate", "1900-01-01"),
+    ):
+        corrupted = older_saved.read_text().replace(
+            json.dumps(field)
+            + ": "
+            + json.dumps(
+                next(extension[field] for extension in extensions if field in extension)
+            ),
+            json.dumps(field) + ": " + json.dumps(value),
+        )
+        damaged = tmp_path / "damaged-bound.json"
+        damaged.write_text(corrupted)
+        with pytest.raises(ValueError):
+            check_fhir_structure(older_original, damaged, older_extracted, resources)
+
+    altered_year = str(int(extensions[2]["valueDate"]) - 1)
+    extensions[2]["valueDate"] = altered_year
+    damaged = tmp_path / "wrong-bound-year.json"
+    damaged.write_text(json.dumps(older_data))
+    altered_document = read_fhir(damaged, resources, extract_evidence=False)
+    altered_bound = next(
+        record.values[0]
+        for record in altered_document.records
+        if record.policies[0].kind == "birth_date"
+    )
+    with pytest.raises(ValueError):
+        verify_text_changes(
+            "1900-01-01",
+            altered_bound,
+            (
+                TextEdit(
+                    start=0,
+                    end=10,
+                    original="1900-01-01",
+                    kind="birth_date",
+                    replacement=logical_bound,
+                ),
+            ),
+            lambda _text: (),
+            free_text=False,
+        )
+
     unsafe = tmp_path / "unsafe.json"
     for replacement in (
         raw.replace('"type":"collection"', '"unknownSecret":"hidden"'),

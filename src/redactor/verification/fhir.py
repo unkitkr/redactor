@@ -10,6 +10,7 @@ from redactor.formats.fhir import (
     fhir_narrative_groups,
     fhir_nodes,
     fhir_reference_slots,
+    normalize_fhir_birth_bounds,
     parse_fhir_narrative,
     read_fhir_attachment,
 )
@@ -17,7 +18,7 @@ from redactor.formats.json_syntax import member, member_text, parse_json_text
 from redactor.schemas.configuration import ResourceSettings
 from redactor.schemas.json import JsonNode
 from redactor.schemas.native import NativeDocument
-from redactor.utils.constants import FIELD_CLINICAL, UTF8_BOM_ENCODING
+from redactor.utils.constants import FIELD_BIRTH_DATE, FIELD_CLINICAL, UTF8_BOM_ENCODING
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_STRUCTURE
 
 
@@ -32,6 +33,15 @@ def check_fhir_structure(
     json.loads(after_text, parse_float=Decimal, parse_constant=_reject_constant)
     before = parse_json_text(before_text, resources)
     after = parse_json_text(after_text, resources)
+    after, generalized = normalize_fhir_birth_bounds(after)
+    birth_locations = {
+        location
+        for record in original_document.records
+        for location, policy in zip(record.locations, record.policies, strict=True)
+        if policy.kind == FIELD_BIRTH_DATE and policy.supports_date_bounds
+    }
+    if not set(generalized) <= birth_locations:
+        raise ValueError(ERROR_COVERAGE)
     source_nodes, saved_nodes = dict(fhir_nodes(before)), dict(fhir_nodes(after))
     if source_nodes.keys() != saved_nodes.keys():
         raise ValueError(ERROR_STRUCTURE)

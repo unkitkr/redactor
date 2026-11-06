@@ -31,6 +31,11 @@ from redactor.schemas.json import JsonNode
 from redactor.schemas.native import NativeDocument, NativeImage, NativeRecord
 from redactor.schemas.redaction import ColumnPolicy, RowEvidence
 from redactor.utils.constants import (
+    AGE_GROUP_LABEL,
+    BIRTH_BOUND_TEMPLATE,
+    FHIR_AGE_BAND_URL,
+    FHIR_BIRTH_BOUND_URL,
+    FHIR_DATA_ABSENT_REASON_URL,
     FIELD_ADDRESS,
     FIELD_BIRTH_DATE,
     FIELD_CLINICAL,
@@ -60,6 +65,101 @@ from redactor.utils.constants import (
     UTF8_BOM_ENCODING,
 )
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_RESOURCE_LIMIT, ERROR_STRUCTURE
+
+
+def fhir_birth_bound_metadata(value: str) -> dict[str, object]:
+    """Suppress exact DOB, recording an inclusive upper-bound year and 90+ band.
+
+    Custom extension URLs are local canonical identifiers. valueDate retains only
+    year precision; its meaning is an inclusive upper bound, never a known DOB.
+    The standard masked reason marks the omitted birthDate primitive itself.
+    """
+    match = re.fullmatch(BIRTH_BOUND_TEMPLATE.format(year=r"(?P<year>[0-9]{4})"), value)
+    if match is None or int(match["year"]) < 1:
+        raise ValueError(ERROR_COVERAGE)
+    return {
+        "extension": [
+            {"url": FHIR_DATA_ABSENT_REASON_URL, "valueCode": "masked"},
+            {"url": FHIR_AGE_BAND_URL, "valueString": AGE_GROUP_LABEL},
+            {"url": FHIR_BIRTH_BOUND_URL, "valueDate": match["year"]},
+        ]
+    }
+
+
+def normalize_fhir_birth_bounds(
+    root: JsonNode,
+) -> tuple[JsonNode, tuple[tuple[str, ...], ...]]:
+    """Expose only the exact saved masking representation as a logical DOB slot.
+
+    This normalization permits one structural substitution. The native verifier
+    still compares its logical value to the expected identity-bound date edit.
+    """
+    transformed: list[tuple[str, ...]] = []
+
+    def visit(node: JsonNode, path: tuple[str, ...]) -> JsonNode:
+        if node.kind == "array":
+            return node.model_copy(
+                update={
+                    "children": tuple(
+                        visit(child, (*path, str(index)))
+                        for index, child in enumerate(node.children)
+                    )
+                }
+            )
+        if node.kind != "object":
+            return node
+        children: list[JsonNode] = []
+        for _, key, child in object_members(node):
+            if key.value != "_birthDate":
+                children.extend((key, visit(child, (*path, key.value))))
+                continue
+            if (
+                member_text(node, "resourceType") != "Patient"
+                or member(node, "birthDate") is not None
+            ):
+                raise ValueError(ERROR_COVERAGE)
+            extensions = member(child, "extension")
+            if (
+                child.kind != "object"
+                or len(child.children) != 2
+                or extensions is None
+                or extensions.kind != "array"
+                or len(extensions.children) != 3
+            ):
+                raise ValueError(ERROR_COVERAGE)
+            year = member_text(extensions.children[2], "valueDate")
+            logical = BIRTH_BOUND_TEMPLATE.format(year=year)
+            expected = fhir_birth_bound_metadata(logical)
+            for actual, template in zip(
+                extensions.children,
+                cast(list[dict[str, str]], expected["extension"]),
+                strict=True,
+            ):
+                if (
+                    actual.kind != "object"
+                    or len(actual.children) != 4
+                    or {
+                        name.value: value.value
+                        for _, name, value in object_members(actual)
+                    }
+                    != template
+                    or any(
+                        value.kind != "string" for _, _, value in object_members(actual)
+                    )
+                ):
+                    raise ValueError(ERROR_COVERAGE)
+            transformed.append((*path, "birthDate"))
+            children.extend(
+                (
+                    key.model_copy(update={"value": "birthDate"}),
+                    JsonNode(
+                        kind="string", start=child.start, end=child.end, value=logical
+                    ),
+                )
+            )
+        return node.model_copy(update={"children": tuple(children)})
+
+    return visit(root, (FORMAT_FHIR,)), tuple(transformed)
 
 
 def fhir_nodes(
@@ -390,7 +490,7 @@ def read_fhir_attachment(
         if content_type == "application/pdf":
             from redactor.formats.pdf import read_pdf
 
-            return read_pdf(path, resources)
+            return read_pdf(path, resources, extract_evidence=extract_evidence)
         if content_type == "application/json":
             from redactor.formats.json_document import read_json_document
 
@@ -406,6 +506,11 @@ def read_fhir(
     if path.stat().st_size > resources.max_native_file_bytes:
         raise ValueError(ERROR_RESOURCE_LIMIT)
     root = parse_json_text(path.read_text(encoding=UTF8_BOM_ENCODING), resources)
+    root, generalized = normalize_fhir_birth_bounds(root)
+    if extract_evidence and generalized:
+        raise ValueError(
+            ERROR_COVERAGE
+        )  # Already generalized inputs are not original DOB evidence.
     resource_nodes = fhir_resources(root)
     slots = fhir_reference_slots(root)
     contexts = fhir_contexts(root) if extract_evidence else {}
@@ -832,7 +937,7 @@ def read_fhir(
                 kind=FIELD_BIRTH_DATE
                 if member_text(resource_nodes[scope], "resourceType") == "Patient"
                 else FIELD_DATE,
-                supports_date_bounds=False,
+                supports_date_bounds=True,
             )
         elif _is_date(semantic_key):
             policy = ColumnPolicy(index=0, kind=FIELD_DATE)
@@ -927,6 +1032,24 @@ def write_fhir(
             if node.kind != "string":
                 raise ValueError(ERROR_STRUCTURE)
             value = replacements[location]
+            if location[-1] == "birthDate" and value.startswith(
+                BIRTH_BOUND_TEMPLATE.split("{", 1)[0]
+            ):
+                parent = dict(fhir_nodes(root))[location[:-1]]
+                if (
+                    member_text(parent, "resourceType") != "Patient"
+                    or member(parent, "_birthDate") is not None
+                ):
+                    raise ValueError(ERROR_COVERAGE)
+                birth_key = next(
+                    field for _, field, child in object_members(parent) if child is node
+                )
+                edits.append((birth_key.start, birth_key.end, json.dumps("_birthDate")))
+                edits.append(
+                    (node.start, node.end, json.dumps(fhir_birth_bound_metadata(value)))
+                )
+                used.add(location)
+                continue
             if location in slots:
                 value = slots[location][1] + value
             edits.append((node.start, node.end, json.dumps(value, ensure_ascii=False)))
