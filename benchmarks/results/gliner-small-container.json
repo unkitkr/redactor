@@ -1,0 +1,22 @@
+{
+  "image_id": "sha256:cfea66555ef1114bc71922d7e62403484dc34c5f2f3cbf3e05e85187f69ea3c2",
+  "revision": "93edbd68617683b00227e74c6542fc0c2c0383b6",
+  "dirty_tree": true,
+  "python_source_sha256": "7b5409efdaceb3fa9f60609c26cbd9c20b7b04a916789dda13ad19c94bfe4523",
+  "command": [
+    "tools/evaluate_text.py",
+    "--backend",
+    "gliner",
+    "--model",
+    ".models/gliner-pii-small-v1.0",
+    "--output",
+    "benchmarks/results/gliner-small.json"
+  ],
+  "cpus": 2,
+  "memory_bytes": 1073741824,
+  "memory_swap_bytes": 1073741824,
+  "network": "none",
+  "wall_seconds_including_container_start": 6.040285791968927,
+  "exit_code": 0,
+  "oom_killed": false
+}

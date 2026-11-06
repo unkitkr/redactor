@@ -1,0 +1,1484 @@
+{
+  "scope": "Manually annotated synthetic challenge set, not a population recall estimate or a full-document verification benchmark.",
+  "model": ".models/gliner-pii-small-v1.0",
+  "model_version": "see model-artifacts.json",
+  "spacy_version": "3.8.18",
+  "python": "3.12.16",
+  "platform": "Linux-6.12.54-linuxkit-aarch64-with-glibc2.41",
+  "revision": "93edbd68617683b00227e74c6542fc0c2c0383b6",
+  "dirty_tree": true,
+  "corpus_sha256": "505eba742bd5b07087cbe69988073754150a38a8556329edfce8c7f956453ee5",
+  "remote_models_enabled": false,
+  "model_load_seconds": 0.6768535419832915,
+  "evaluations": [
+    {
+      "mode": "raw_ner",
+      "case_count": 40,
+      "seconds": 1.6507692100130953,
+      "exact_typed_span_counts": {
+        "true_positive": 26,
+        "false_positive": 39,
+        "false_negative": 13,
+        "precision": 0.4,
+        "recall": 0.6666666666666666,
+        "f1": 0.5
+      },
+      "totals": {
+        "true_positive": 26,
+        "false_positive": 39,
+        "false_negative": 13,
+        "reference_mentions": 39,
+        "fully_covered_mentions": 29,
+        "clinical_span_false_positives": 16
+      },
+      "per_kind": {
+        "age": {
+          "true_positive": 2,
+          "false_positive": 4,
+          "false_negative": 1,
+          "precision": 0.3333333333333333,
+          "recall": 0.6666666666666666,
+          "f1": 0.4444444444444444
+        },
+        "contact": {
+          "true_positive": 1,
+          "false_positive": 3,
+          "false_negative": 6,
+          "precision": 0.25,
+          "recall": 0.14285714285714285,
+          "f1": 0.18181818181818182
+        },
+        "date": {
+          "true_positive": 5,
+          "false_positive": 0,
+          "false_negative": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "identifier": {
+          "true_positive": 5,
+          "false_positive": 10,
+          "false_negative": 0,
+          "precision": 0.3333333333333333,
+          "recall": 1.0,
+          "f1": 0.5
+        },
+        "location": {
+          "true_positive": 2,
+          "false_positive": 0,
+          "false_negative": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "organization": {
+          "true_positive": 0,
+          "false_positive": 3,
+          "false_negative": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "person": {
+          "true_positive": 10,
+          "false_positive": 14,
+          "false_negative": 5,
+          "precision": 0.4166666666666667,
+          "recall": 0.6666666666666666,
+          "f1": 0.5128205128205128
+        },
+        "time": {
+          "true_positive": 1,
+          "false_positive": 5,
+          "false_negative": 0,
+          "precision": 0.16666666666666666,
+          "recall": 1.0,
+          "f1": 0.2857142857142857
+        }
+      },
+      "cases": [
+        {
+          "case_id": "patient-basic",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 1,
+            "false_negative": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "patient-uppercase",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 2,
+            "false_negative": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "patient-unicode",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "patient-initial",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "unknown-person",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 1,
+            "false_negative": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "provider-basic",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "relative-basic",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "relative-same-name",
+          "counts": {
+            "true_positive": 2,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.6666666666666666,
+            "recall": 1.0,
+            "f1": 0.8
+          },
+          "covered_mentions": 2,
+          "reference_mentions": 2,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "provider-initial",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 1,
+            "false_negative": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "name-hyphen",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 2,
+            "false_negative": 0,
+            "precision": 0.3333333333333333,
+            "recall": 1.0,
+            "f1": 0.5
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "date-iso",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "date-us",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "date-written",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "date-day-first",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "date-short-year",
+          "counts": {
+            "true_positive": 2,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 2,
+          "reference_mentions": 2,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "email",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "phone",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 2,
+            "false_negative": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "phone-international",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "ssn",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "mrn",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "account",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "device",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "license",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 2,
+            "false_negative": 0,
+            "precision": 0.3333333333333333,
+            "recall": 1.0,
+            "f1": 0.5
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "ip4",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 1,
+            "false_negative": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "ip6",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 2,
+            "false_negative": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "url",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 2,
+            "false_negative": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "address",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "zip",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "facility",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "age-89",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 2,
+            "false_negative": 0,
+            "precision": 0.0,
+            "recall": null,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 0,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "age-90",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "age-91",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "age-written",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 1,
+            "false_negative": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "eponyms",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 2,
+            "false_negative": 0,
+            "precision": 0.0,
+            "recall": null,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 0,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "clinical-values",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.0,
+            "recall": null,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 0,
+          "clinical_span_false_positives": 1,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "medications",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 0,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "clinical-codes",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 3,
+            "false_negative": 0,
+            "precision": 0.0,
+            "recall": null,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 0,
+          "clinical_span_false_positives": 3,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "prompt-injection",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "unicode-offsets",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 2,
+            "false_negative": 1,
+            "precision": 0.3333333333333333,
+            "recall": 0.5,
+            "f1": 0.4
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 2,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        },
+        {
+          "case_id": "identity-ambiguity",
+          "counts": {
+            "true_positive": 2,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 2,
+          "reference_mentions": 2,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": null
+        }
+      ]
+    },
+    {
+      "mode": "combined_text_policy",
+      "case_count": 40,
+      "seconds": 3.225359876989387,
+      "exact_typed_span_counts": {
+        "true_positive": 16,
+        "false_positive": 2,
+        "false_negative": 23,
+        "precision": 0.8888888888888888,
+        "recall": 0.41025641025641024,
+        "f1": 0.5614035087719298
+      },
+      "totals": {
+        "true_positive": 16,
+        "false_positive": 2,
+        "false_negative": 23,
+        "reference_mentions": 39,
+        "fully_covered_mentions": 17,
+        "clinical_span_false_positives": 0,
+        "verifier_checked_cases": 20,
+        "verifier_false_accepts": 2,
+        "verifier_false_rejects": 1,
+        "abstentions": 20
+      },
+      "per_kind": {
+        "age": {
+          "true_positive": 2,
+          "false_positive": 0,
+          "false_negative": 1,
+          "precision": 1.0,
+          "recall": 0.6666666666666666,
+          "f1": 0.8
+        },
+        "contact": {
+          "true_positive": 5,
+          "false_positive": 0,
+          "false_negative": 2,
+          "precision": 1.0,
+          "recall": 0.7142857142857143,
+          "f1": 0.8333333333333334
+        },
+        "date": {
+          "true_positive": 2,
+          "false_positive": 0,
+          "false_negative": 3,
+          "precision": 1.0,
+          "recall": 0.4,
+          "f1": 0.5714285714285714
+        },
+        "identifier": {
+          "true_positive": 3,
+          "false_positive": 1,
+          "false_negative": 2,
+          "precision": 0.75,
+          "recall": 0.6,
+          "f1": 0.6666666666666666
+        },
+        "location": {
+          "true_positive": 0,
+          "false_positive": 1,
+          "false_negative": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "organization": {
+          "true_positive": 0,
+          "false_positive": 0,
+          "false_negative": 1,
+          "precision": null,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "person": {
+          "true_positive": 4,
+          "false_positive": 0,
+          "false_negative": 11,
+          "precision": 1.0,
+          "recall": 0.26666666666666666,
+          "f1": 0.42105263157894735
+        },
+        "time": {
+          "true_positive": 0,
+          "false_positive": 0,
+          "false_negative": 1,
+          "precision": null,
+          "recall": 0.0,
+          "f1": 0.0
+        }
+      },
+      "cases": [
+        {
+          "case_id": "patient-basic",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "patient-uppercase",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "patient-unicode",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "patient-initial",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "unknown-person",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "provider-basic",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "relative-basic",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "relative-same-name",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 2,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 2,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "provider-initial",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "name-hyphen",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "date-iso",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 1,
+            "false_negative": 0,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "date-us",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "date-written",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "date-day-first",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "date-short-year",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 2,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 2,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "email",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "phone",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "phone-international",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "ssn",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "mrn",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "account",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "device",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "license",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "ip4",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "ip6",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "url",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "address",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 1,
+            "false_negative": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "zip",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "facility",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "age-89",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 0,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "age-90",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": false
+        },
+        {
+          "case_id": "age-91",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "age-written",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "eponyms",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 0,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "clinical-values",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 0,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "medications",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 0,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "clinical-codes",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 0,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        },
+        {
+          "case_id": "prompt-injection",
+          "counts": {
+            "true_positive": 1,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 1,
+          "reference_mentions": 1,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "unicode-offsets",
+          "counts": {
+            "true_positive": 2,
+            "false_positive": 0,
+            "false_negative": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "covered_mentions": 2,
+          "reference_mentions": 2,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": null,
+          "verifier_passed": true
+        },
+        {
+          "case_id": "identity-ambiguity",
+          "counts": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "false_negative": 2,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "covered_mentions": 0,
+          "reference_mentions": 2,
+          "clinical_span_false_positives": 0,
+          "abstention_reason": "incomplete_surface_coverage",
+          "verifier_passed": null
+        }
+      ]
+    }
+  ],
+  "peak_process_rss_bytes": 241164288,
+  "backend": "gliner",
+  "peak_cgroup_bytes": 288182272,
+  "runtime_dependencies": {
+    "onnxruntime": "1.31.1",
+    "tokenizers": "0.23.3"
+  }
+}

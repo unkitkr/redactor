@@ -1,0 +1,22 @@
+{
+  "image_id": "sha256:cfea66555ef1114bc71922d7e62403484dc34c5f2f3cbf3e05e85187f69ea3c2",
+  "revision": "2f6ae9e01054d975304ded10d8fc3775fd133968",
+  "dirty_tree": true,
+  "python_source_sha256": "2b3467061b24ce4dbffa9bd0cf29771e5ca3e5d5884883d5796ffb4a60724690",
+  "command": [
+    "tools/evaluate_text.py",
+    "--backend",
+    "openmed",
+    "--model",
+    ".models/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android",
+    "--output",
+    "benchmarks/results/openmed.json"
+  ],
+  "cpus": 2,
+  "memory_bytes": 1073741824,
+  "memory_swap_bytes": 1073741824,
+  "network": "none",
+  "wall_seconds_including_container_start": 3.921823750017211,
+  "exit_code": 0,
+  "oom_killed": false
+}

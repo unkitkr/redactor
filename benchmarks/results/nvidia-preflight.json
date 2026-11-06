@@ -1,0 +1,12 @@
+{
+  "model": "nvidia/gliner-PII",
+  "revision": "bd23e8ef4425fd04e34c5204ab49ffaa706eae79",
+  "status": "excluded_by_resource_preflight",
+  "accuracy_measured": false,
+  "load_attempted": false,
+  "weight_bytes": 1782000995,
+  "weight_sha256": "a4dfd0dcbd718acc86dca65fa99f1097d2796c8d7a681e1bc42f40f946c03802",
+  "memory_limit_bytes": 1073741824,
+  "reason": "The published full-precision weights alone exceed the entire container memory budget; no smaller export was proposed or benchmarked. This is a preflight exclusion, not an observed OOM.",
+  "source": "https://huggingface.co/api/models/nvidia/gliner-PII/tree/bd23e8ef4425fd04e34c5204ab49ffaa706eae79?recursive=true&expand=false"
+}

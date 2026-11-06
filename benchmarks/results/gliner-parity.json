@@ -1,0 +1,16 @@
+[
+  {
+    "model": ".models/gliner-pii-edge-v1.0",
+    "reference_package": "gliner 0.2.30",
+    "case_count_including_derived_inputs": 71,
+    "matching_cases": 71,
+    "mismatches": []
+  },
+  {
+    "model": ".models/gliner-pii-small-v1.0",
+    "reference_package": "gliner 0.2.30",
+    "case_count_including_derived_inputs": 69,
+    "matching_cases": 69,
+    "mismatches": []
+  }
+]
