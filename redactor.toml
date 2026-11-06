@@ -1,9 +1,11 @@
 # Secrets are read only from LLM_API_KEY and REDACTOR_SECRET_KEY.
 # Set LLM_ENABLED=0 to disable remote detection and judging together.
+# Selected models from benchmarks/README.md; production integration is incomplete.
+# GLiNER currently fails closed when NER is required; PP-OCR is evaluation-only.
 [remote]
 enabled = true
-base_url = ""
-model = ""
+base_url = "https://openrouter.ai/api/v1"
+model = "z-ai/glm-5.3-flash"
 vision = false
 json_mode = true
 budget_usd = "3.00"
@@ -22,20 +24,21 @@ max_output_tokens = 1024
 max_input_bytes = 16384
 
 [local]
-ner = "spacy"
-ocr = "tesseract"
+ner = "gliner"
+ocr = "ppocr"
 spacy_model = "en_core_web_sm"
 ner_max_characters = 16384
 ner_cache_entries = 512
 ner_cache_characters = 1024
 model_directory = ".models"
-ocr_language = "eng"
-# ner_directory = ".models/gliner-edge"
-# ocr_directory = ".models/ppocr-mobile"
+ocr_language = "en"
+ner_directory = ".models/gliner-pii-edge-v1.0"
+ocr_directory = ".models/ppocr-v5"
 
 [verification]
 judge_enabled = true
 # Judge selection is independent of the detection model. Blank disables remote judging.
+# Detection scores do not validate a judge; no judge was benchmarked.
 judge_model = ""
 judge_vision = false
 # Judge prices are separate because its model may have different rates.

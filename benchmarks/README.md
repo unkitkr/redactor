@@ -89,7 +89,7 @@ uv run --no-sync --env-file .env python tools/evaluate_remote_ocr.py \
 
 The actual container runs used the existing production dependency image because a fresh build timed out downloading the spaCy wheel. Current source was mounted into the evaluation container. Each container receipt records the exact image ID, source hash, command, limits and OOM status. The measurements therefore do not validate a fresh production image build.
 
-The configured spaCy/Tesseract defaults are unchanged; experimental benchmark adapters are not integrated into the publication path.
+Configuration now selects GLiNER PII Edge UINT8, PP-OCRv5 mobile English and `z-ai/glm-5.3-flash`. These selections are based on this comparison, not an end-to-end validation. The production NER loader still supports only spaCy, so selecting GLiNER currently fails closed when inference is needed; PP-OCR and hosted detection are not integrated into the publication path. No remote judge is selected because judging was not benchmarked.
 
 The corpus is small, synthetic and partly assignment-derived. Published model-card scores were not mixed with these measurements. Detection, identity resolution, document rewriting, image masking, the optional remote judge, SIGKILL recovery and the large-CSV acceptance test remain distinct validation tasks.
 

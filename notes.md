@@ -9,7 +9,9 @@
 
 - SQLite WAL and short transactions avoid external services; writes still serialize, and state grows with identity evidence.
 - Pydantic validates contracts, TOML holds configuration, and AES-GCM protects identifying state using environment-supplied secrets.
-- spaCy small and Tesseract remain configured defaults; experimental model adapters are benchmark-only and weights require no runtime downloads.
+- GLiNER PII Edge UINT8 is selected for local NER: 69.2% exact recall at 195.6 MiB in isolation, outperforming the measured small local alternatives on recall and memory balance.
+- PP-OCRv5 mobile English is selected for local OCR: 44/52 identifiers localized versus Tesseract's 36/52, with 343.7 MiB isolated peak memory.
+- GLM 5.3 Flash is selected for optional hosted text: the highest measured exact-span F1 (75%), with greater latency; NER scores do not validate an LLM judge.
 - The OpenAI SDK wrapper provides encrypted response replay, bounded backoff, circuit state and shared cost reservations; PyMuPDF is selected under its AGPL license.
 
 ## Choices
@@ -34,6 +36,7 @@
 - Current publication covers CSV/TSV, bounded labelled text, supported XLSX and HL7 ADT; other formats and unsupported populated surfaces quarantine.
 - Native files default to 32 MiB, expanded archives to 256 MiB and images to 16 million pixels; only CSV rewriting streams beyond the native-file limit.
 - The labelled cases exposed verifier false accepts involving initialled names, international phones and model-specific misses; shared writer/verifier detection still permits correlated errors.
+- The config-only selection leaves GLiNER unsupported by the production loader: the CLI test published 0 instead of 4 files (124 tests passed, 1 failed); PP-OCR and hosted detection remain benchmark-only.
 - OpenMed reached 1 GiB in isolation; NVIDIA full weights were excluded before inference. GLiNER matched upstream on 140 inputs; OpenMed BIO grouping remains experimental.
 - Hosted publication integration, remote judging, pixel verification, cross-issuer linkage, collision auditing, the shared-medication-batch exception and full-run crash equivalence remain incomplete or unvalidated; legacy XLS is unsupported.
 - Atomic installation requires one filesystem; replay requires both state and the original secret, and conflicting existing outputs are never overwritten.
