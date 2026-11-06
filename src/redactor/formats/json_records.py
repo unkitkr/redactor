@@ -57,11 +57,16 @@ def json_records(
     provider: bool = False,
     name_part: str = "",
     scope: str = "",
+    extract_evidence: bool = True,
 ) -> Iterator[NativeRecord]:
     evidence = inherited or RowEvidence(patient=None, provider=None)
     scope = scope or "/".join(location)
     if node.kind == "object":
-        context = record_evidence(node, evidence, "/".join(location), provider=provider)
+        context = (
+            record_evidence(node, evidence, "/".join(location), provider=provider)
+            if extract_evidence
+            else evidence
+        )
         encoded = attachment_text(node)
         for index, field, value in object_members(node):
             base = (*location, str(index))
@@ -86,6 +91,7 @@ def json_records(
                     inherited=context,
                     provider=provider,
                     scope=scope,
+                    extract_evidence=extract_evidence,
                 )
             elif encoded and field.value in ("encoding", "content_type", "contentType"):
                 continue  # Validated as exact supported codec constants above.
@@ -105,6 +111,7 @@ def json_records(
                     provider=provider or field_name in JSON_PROVIDER_CONTAINERS,
                     name_part=part,
                     scope=scope,
+                    extract_evidence=extract_evidence,
                 )
     elif node.kind == "array":
         for index, value in enumerate(node.children):
@@ -118,6 +125,7 @@ def json_records(
                 provider=provider,
                 name_part="initial" if name_part == "given" and index else name_part,
                 scope="/".join(child_location) if value.kind == "object" else scope,
+                extract_evidence=extract_evidence,
             )
     elif node.kind in ("string", "number"):
         yield _record(

@@ -21,7 +21,11 @@ from redactor.utils.errors import ERROR_FORMAT_UNSUPPORTED, ERROR_RESOURCE_LIMIT
 
 
 def read_native(
-    path: Path, inspection: FileInspection, resources: ResourceSettings
+    path: Path,
+    inspection: FileInspection,
+    resources: ResourceSettings,
+    *,
+    extract_evidence: bool = True,
 ) -> NativeDocument:
     if path.stat().st_size > resources.max_native_file_bytes:
         raise ValueError(ERROR_RESOURCE_LIMIT)
@@ -32,7 +36,7 @@ def read_native(
     if inspection.file_type == FORMAT_TEXT:
         return read_text(path, inspection.encoding or TEXT_ENCODING)
     if inspection.file_type == FORMAT_JSON:
-        return read_json_document(path, resources)
+        return read_json_document(path, resources, extract_evidence=extract_evidence)
     raise ValueError(ERROR_FORMAT_UNSUPPORTED)
 
 

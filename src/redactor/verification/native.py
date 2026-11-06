@@ -70,7 +70,9 @@ def verify_native(
     ):
         raise ValueError(ERROR_STRUCTURE)
     original = read_native(task.input_path, inspection, settings.resources)
-    output = read_native(artifact.path, written_inspection, settings.resources)
+    output = read_native(
+        artifact.path, written_inspection, settings.resources, extract_evidence=False
+    )
     _validate_locations(original)
     _validate_locations(output)
     if inspection.file_type == FORMAT_XLSX:

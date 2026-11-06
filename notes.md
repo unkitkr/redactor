@@ -28,6 +28,7 @@
 - **Clinical content:** typed fields use deterministic transformations, while clinical codes, values, units, medications and diseases retain their content.
 - **Units:** compound medical units are validated against a UCUM symbol subset without changing their spelling; unknown symbols and free-text annotations quarantine.
 - **Dates and ages:** linked patients share a date offset; ages at or above 90 become 90+, revealing birth dates are generalized, and formats that cannot represent the required bounds quarantine.
+- **Age reference:** use the patient's latest clinical date, falling back to the inventory's latest clinical date when none is linked; the frozen date avoids dependence on the machine clock.
 - **Short dates:** two-digit years use the fixed 1969–2068 window; shifting outside that window writes a four-digit year so reparsing cannot change the century.
 - **Locations:** ZIP codes retain only permitted three-digit prefixes, otherwise 000.
 - **Device and batch identifiers:** the policy pseudonymizes device production identifiers and ambiguous lots, while preserving known shared medication batches unless patient linkage is evident, following the [HHS distinction](https://www.hhs.gov/hipaa/for-professionals/faq/can-device-identifier-di-portion-unique-device-identifier-udi-be-part-limited-or-de-identified/index.html); the shared-batch exception remains incomplete or unvalidated.

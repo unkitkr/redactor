@@ -68,6 +68,7 @@ class IdentitySnapshot(BaseModel, frozen=True, extra="forbid"):
     observation_count: NonNegativeInt
     identity_count: NonNegativeInt
     maximum_date_shift_days: PositiveInt
+    reference_date: date | None = None
 
 
 class ResolvedIdentity(BaseModel, frozen=True, extra="forbid"):

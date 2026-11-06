@@ -80,6 +80,7 @@ def build_identity_snapshot(
     ):
         raise ValueError(ERROR_IDENTITY_SNAPSHOT)
     identity_count = 0
+    reference_date = None
     with closing(
         connection.execute(
             "SELECT identity_key FROM identity_cohorts "
@@ -91,6 +92,10 @@ def build_identity_snapshot(
             cohort = read_cohort(connection, claimed.task_id, row[0], key)
             if cohort is None:
                 raise ValueError(ERROR_IDENTITY_SNAPSHOT)
+            if cohort.reference_date is not None:
+                reference_date = max(
+                    reference_date or cohort.reference_date, cohort.reference_date
+                )
             payload = cohort.model_dump_json().encode()
             digest.update(len(payload).to_bytes(8, "big"))
             digest.update(payload)
@@ -101,6 +106,7 @@ def build_identity_snapshot(
         observation_count=observation_count,
         identity_count=identity_count,
         maximum_date_shift_days=maximum_date_shift_days,
+        reference_date=reference_date,
     )
 
 
@@ -131,6 +137,10 @@ def load_identity_lookup(
         cohort = read_cohort(connection, task_id, match.identity_key, key)
         if cohort is None:
             raise ValueError(ERROR_IDENTITY_SNAPSHOT)
+        if cohort.reference_date is None:
+            cohort = cohort.model_copy(
+                update={"reference_date": snapshot.reference_date}
+            )
         return resolve_cohort(cohort, match, key, snapshot.maximum_date_shift_days)
 
     return snapshot, lookup

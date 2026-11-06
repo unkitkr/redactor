@@ -26,7 +26,7 @@ def test_json_native_round_trip_replay_and_saved_surface_checks(tmp_path: Path) 
     original.write_text(
         '{"patients":[{"mrn":"74208",'
         '"name":{"given":["Amina","J"],"family":"Keller"},'
-        '"birthDate":"1972-03-04","encounter_date":"2024-03-12",'
+        '"encounter_date":"2024-03-12",'
         '"provider":{"name":"Terry Jones","npi":"1234567893"},'
         '"address":{"line":["52 Hawthorn Road"],"city":"Westview",'
         '"state":"CA","postalCode":"94107"},'
@@ -40,6 +40,9 @@ def test_json_native_round_trip_replay_and_saved_surface_checks(tmp_path: Path) 
     (source / "same-person.csv").write_text(
         "patient,mrn,birth_date,encounter_date,attending,npi\n"
         "Amina J Keller,74208,1972-03-04,2024-03-12,Terry Jones,1234567893\n"
+    )
+    (source / "birth-only.json").write_text(
+        '{"name":"Nadia Velez","mrn":"90123","birth_date":"1934-03-12"}'
     )
     for name, payload in (
         ("duplicate.json", '{"phone":"415-555-0152","phone":"415-555-0153"}'),
@@ -81,12 +84,14 @@ def test_json_native_round_trip_replay_and_saved_surface_checks(tmp_path: Path) 
         assert result.returncode == 0, result.stderr
         output = run / "output"
         report = json.loads((output / "report.json").read_text())
-        assert report["published"] == 2 and report["quarantined"] == 3, report
+        assert report["published"] == 3 and report["quarantined"] == 3, report
         assert all(record["cost_bound_nanos"] == 0 for record in report["files"])
         snapshots.append(
             {path.name: path.read_bytes() for path in (output / "published").iterdir()}
         )
     assert snapshots[0] == snapshots[1] == snapshots[2]
+    bounded = json.loads(snapshots[0]["birth-only.json"])
+    assert bounded["birth_date"].startswith("on or before ")
     saved = tmp_path / "first/output/published/nested.json"
     raw = saved.read_text()
     assert "1.23000000000000000000000001e-4" in raw
@@ -97,12 +102,11 @@ def test_json_native_round_trip_replay_and_saved_surface_checks(tmp_path: Path) 
     ) as stream:
         row = next(csv.DictReader(stream))
     assert patient["mrn"] == row["mrn"]
-    assert patient["birthDate"] == row["birth_date"]
     assert patient["encounter_date"] == row["encounter_date"]
     assert patient["name"]["given"][0] == row["patient"].split()[0]
     assert patient["name"]["family"] == row["patient"].split()[-1]
     nested = json.loads(base64.b64decode(patient["attachments"][0]["data"]))
-    assert nested["dob"] == patient["birthDate"]
+    assert nested["dob"] == row["birth_date"]
     assert nested["ssn"] != "326-42-7814" and nested["verified"] is True
     assert data["optional"] is None and data["confirmed"] is True
     assert data["last_login_ipv6"] != "2001:db8:1234::7"

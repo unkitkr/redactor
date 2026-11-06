@@ -7,6 +7,7 @@ from pathlib import Path
 
 from redactor.formats.json_records import attachment_text, json_records
 from redactor.formats.json_syntax import object_members, parse_json_text
+from redactor.identity.native import coalesce_native_context
 from redactor.schemas.configuration import ResourceSettings
 from redactor.schemas.json import JsonNode
 from redactor.schemas.native import NativeDocument
@@ -22,10 +23,15 @@ from redactor.utils.constants import (
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_STRUCTURE
 
 
-def read_json_document(path: Path, resources: ResourceSettings) -> NativeDocument:
+def read_json_document(
+    path: Path, resources: ResourceSettings, *, extract_evidence: bool = True
+) -> NativeDocument:
     text = path.read_text(encoding=UTF8_BOM_ENCODING)
     node = parse_json_text(text, resources)
-    return NativeDocument(records=tuple(json_records(node, resources)))
+    document = NativeDocument(
+        records=tuple(json_records(node, resources, extract_evidence=extract_evidence))
+    )
+    return coalesce_native_context(document) if extract_evidence else document
 
 
 def write_json_document(
