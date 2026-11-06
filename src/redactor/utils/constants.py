@@ -247,3 +247,14 @@ JSON_START_ARRAY: Final = "start_array"
 JSON_END_ARRAY: Final = "end_array"
 JSON_STRING: Final = "string"
 JSON_SCALAR_DELIMITERS: Final = b" \t\r\n,:{}[]"
+
+# Scoped pseudonyms and conservative identity normalization
+PSEUDONYM_KEY_CONTEXT: Final = b"redactor-pseudonym-v1:"
+UNICODE_NORMAL_FORM: Final = "NFKC"
+NAME_TITLES: Final = ("dr", "doctor", "mr", "mrs", "ms", "miss", "prof", "professor")
+IDENTIFIER_DIGITS: Final = 18
+PRODUCT_LOT_NAMESPACE: Final = "product-lot"
+NPI_NAMESPACE: Final = "provider-npi"
+NPI_BASE_DIGITS: Final = 9
+NPI_PREFIX_CHOICES: Final = ("1", "2")
+NPI_LUHN_PREFIX_SUM: Final = 24

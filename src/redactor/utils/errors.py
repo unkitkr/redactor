@@ -66,6 +66,8 @@ ERROR_FORMAT_UNSUPPORTED: Final = "unsupported_native_format"
 ERROR_CONTAINER: Final = "invalid_container_structure"
 ERROR_RESOURCE_LIMIT: Final = "native_resource_limit_exceeded"
 ERROR_ENCRYPTED_INPUT: Final = "encrypted_input_unsupported"
+ERROR_IDENTIFIER: Final = "unassessed_identifier_value"
+ERROR_REPLACEMENT_COLLISION: Final = "surrogate_collision"
 
 INSPECTION_REASON_CODES: Final = (
     ERROR_FORMAT_UNSUPPORTED,
@@ -127,6 +129,8 @@ COORDINATOR_FAILURE_CODES: Final = (
 )
 
 FAILURE_CODES: Final = (
+    ERROR_IDENTIFIER,
+    ERROR_REPLACEMENT_COLLISION,
     *INSPECTION_REASON_CODES,
     ERROR_CSV_STRUCTURE,
     ERROR_CSV_RECORD_LIMIT,

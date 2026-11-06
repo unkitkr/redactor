@@ -30,6 +30,7 @@
 - Ages of 90 or more become 90+; ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications, and diseases are preserved.
 - Device production identifiers and ambiguous lot fields are pseudonymized; known shared medication batches remain unless patient linkage is evident, following the [HHS distinction between model and production identifiers](https://www.hhs.gov/hipaa/for-professionals/faq/can-device-identifier-di-portion-unique-device-identifier-udi-be-part-limited-or-de-identified/index.html).
 - Keyed replacements use environment secrets; retained identifying evidence and model responses require encryption and private storage.
+- Record identifiers use 18-digit keyed surrogates to reduce collisions; native length limits and collisions must be checked before publication, and provider NPIs retain a valid check digit.
 - Private evidence uses AES-GCM with fresh nonces and context-bound keys; only opaque references and safe counters belong in queue metadata.
 - Valid mislabeled files retain their actual native format and original output name; corrupt, unsupported, or unverifiable content is quarantined without silent repair.
 - Native parser inputs and individual archive members default to 32 MiB, expanded archives to 256 MiB, and images to 16 million pixels; streaming CSV, JSON, and text have separate record limits.
