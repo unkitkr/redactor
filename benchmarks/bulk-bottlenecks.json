@@ -1,0 +1,36 @@
+{
+  "scope": "Diagnosis of the failed full 2 GiB v18 run; historical host profiling is separate and not a current acceptance benchmark.",
+  "full_run_evidence": "large-csv-2g-v18.json",
+  "full_run": {
+    "rows": 11200000,
+    "deadline_seconds": 1800,
+    "analysis_checkpoint_rows": 1820000,
+    "analysis_rows_per_second": 1010.9688322552635,
+    "minimum_complete_rows_per_second": 6222.222222222223,
+    "rewritten_rows": 0,
+    "published_rows": 0,
+    "state_bytes": 3074230297,
+    "memory_limit_events": 51319,
+    "oom_kills": 0,
+    "external_model_attempts": 0
+  },
+  "implemented_workflow": {
+    "single_file_parallelism": "One analysis task; inference worker owns analysis, rewriting and verification, while the second worker handles light steps.",
+    "rewrite_barrier": "Rewriting starts only after every analysis task and identity resolution complete.",
+    "per_record_work": "Field policy checks, identity normalization, serialization and encrypted durable evidence; batch storage already exists but cardinality and per-row work remain substantial."
+  },
+  "historical_host_profile": {
+    "rows": 5000,
+    "source_revision": "Not captured; retained diagnostic labelled v18, not current v25 timing.",
+    "total_seconds": 160.672,
+    "analysis_seconds": 5.446,
+    "resolution_seconds": 0.667,
+    "rewrite_seconds": 4.35,
+    "verification_seconds": 150.194,
+    "gliner_inferences": 6137,
+    "onnx_inference_seconds": 139.325,
+    "scope": "Profile overhead included; not resource-constrained container throughput."
+  },
+  "current_change": "Production verification uses separate spaCy inference in v25. No full 2 GiB v25 rerun establishes its effect.",
+  "limits": "The full run did not collect a wall-time profile. State growth and memory pressure are observed; their exact contribution to elapsed time is not isolated."
+}

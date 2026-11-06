@@ -7,7 +7,7 @@
 - [Native integration](native-integration-v25.json): 14 passed, no skips, offline under two CPUs / 1 GB / no swap. Includes real OCR and saved-image tampering.
 - [Text regression](accuracy-v25.json): 40 held-in labelled cases, precision 83.78%, recall 79.49%, F1 81.58%; zero observed false accepts and one false reject. These are text-unit scores, not full-file recall.
 - [Exact committed output manifest](output-v25-manifest.json) binds every artifact byte to the measured default-local run.
-- [Full 2 GiB diagnostic](large-csv-2g-v18.json) failed the 30-minute gate. No completed bulk throughput is claimed.
+- [Full 2 GiB diagnostic](large-csv-2g-v18.json) failed the 30-minute gate. [Bottleneck evidence](bulk-bottlenecks.json) distinguishes the analysis timeout, state growth and memory pressure from an earlier repeated-inference profile. No completed bulk throughput is claimed.
 - [Prior local failure analysis](diagnostic-local-v24.json) distinguishes unresolved model/verifier evidence from corrupt containers. [Earlier fixture runs](history/) remain historical measurements.
 
 Host validation: 198 passed, two host OCR-dependent skips; Ruff and mypy passed. The preceding 197-test coverage run measured 82%; the newly added composed structured-format integration also passes. Controlled subprocess tests kill workers at analysis, checkpoint, rewrite, verification and publication boundaries. A separate [full supplied-set crash check](crash-replay-v25.json) killed coordinator, workers and dashboard twice at seeded timings during analysis; all 19 published/quarantine artifacts and semantic results matched the clean run, with zero duplicate successes. These two timings do not establish exhaustive crash coverage.
