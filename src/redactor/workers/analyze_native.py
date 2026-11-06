@@ -4,7 +4,7 @@ import sqlite3
 from collections import Counter
 
 from redactor.formats.native import read_native
-from redactor.identity.tabular import row_evidence
+from redactor.identity.native import native_evidence
 from redactor.persistence.files.artifacts import inspect_artifact
 from redactor.persistence.files.results import write_step_result
 from redactor.persistence.identities.observations import (
@@ -42,9 +42,7 @@ def analyze_native_task(
         document = read_native(task.input_path, inspection, resources)
         facts: list[IdentityEvidence] = []
         for number, record in enumerate(document.records, start=1):
-            evidence = row_evidence(
-                record.values, record.policies, task.input_sha256, number
-            )
+            evidence = native_evidence(record, task.input_sha256, number)
             facts.extend(
                 fact
                 for fact in (evidence.patient, evidence.provider)

@@ -6,8 +6,8 @@ from collections import Counter
 from redactor.agents.detector.adapter import detection_adapter
 from redactor.formats.inspection import inspect_file
 from redactor.formats.native import read_native
+from redactor.identity.native import native_evidence
 from redactor.identity.rows import row_context
-from redactor.identity.tabular import row_evidence
 from redactor.persistence.files.artifacts import inspect_artifact
 from redactor.persistence.files.registration import prepare_successor
 from redactor.persistence.files.results import read_step_result
@@ -23,6 +23,7 @@ from redactor.schemas.verification import VerificationCheck
 from redactor.utils.constants import (
     FIELD_TEXT,
     FORMAT_HL7,
+    FORMAT_JSON,
     FORMAT_XLSX,
     REQUIRED_VERIFICATION_CHECKS,
     STEP_ANALYZE,
@@ -36,6 +37,7 @@ from redactor.utils.errors import (
 )
 from redactor.verification.archive import check_saved_archive
 from redactor.verification.hl7 import check_hl7_surfaces
+from redactor.verification.json import check_json_surfaces
 from redactor.verification.text import verify_text_changes
 from redactor.verification.xlsx import check_xlsx_surfaces
 from redactor.verification.xlsx_preservation import check_xlsx_preservation
@@ -84,6 +86,10 @@ def verify_native(
             original,
             inspection.encoding or TEXT_ENCODING,
         )
+    if inspection.file_type == FORMAT_JSON:
+        check_json_surfaces(
+            task.input_path, artifact.path, original, settings.resources
+        )
     if len(original.records) != len(output.records):
         raise ValueError(ERROR_COVERAGE)
     snapshot, lookup = load_identity_lookup(connection, resolution_task_id, mapping_key)
@@ -111,9 +117,7 @@ def verify_native(
             or len(before.values) != len(after.values)
         ):
             raise ValueError(ERROR_COVERAGE)
-        evidence = row_evidence(
-            before.values, before.policies, task.input_sha256, number
-        )
+        evidence = native_evidence(before, task.input_sha256, number)
         context = row_context(
             evidence,
             lookup,
@@ -122,6 +126,7 @@ def verify_native(
             number,
             mapping_key,
             snapshot.maximum_date_shift_days,
+            context_scope=before.context_scope,
         )
         for column in before.policies:
             value = before.values[column.index]

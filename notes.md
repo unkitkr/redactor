@@ -34,6 +34,7 @@
 - **Verification:** intact and Unicode-normalized source and saved text are checked, including unknown column labels; identifying evidence must fit a complete edit span, and failed or incomplete checks quarantine.
 - **XLSX verification:** checks cover XML names, metadata and ZIP contents, reject ambiguous cells, and compare unedited layout and styles with the source.
 - **Workbook references:** comments are assessed across runs; authors, custom range names and package labels are replaced while preserving targets and styles; unsupported drawing content and computed names quarantine.
+- **JSON:** nested records inherit identity context, number spellings and scalar types are preserved, and declared base64 JSON attachments are recursively assessed; duplicate keys and unsupported payloads quarantine.
 - **Model policy:** local processing is the default; `LLM_ENABLED=1` enables hosted detection with local fallback, while `LLM_ENABLED=0` prevents all remote calls and verification always runs.
 - **Hosted limits:** GLM uses a shared $3 run budget, three attempts, a 65-second request deadline and routing caps of $0.15/$0.50 per million input/output tokens; reasoning uses the output allowance ([rates](https://openrouter.ai/api/v1/models/z-ai/glm-5.3-flash/endpoints)).
 - **Remote replay:** saved responses are reused; a crash before persistence can require another bounded request, with a different answer or another charge.
@@ -51,7 +52,7 @@
 
 ## Known limitations
 
-- **Publication coverage:** CSV/TSV, bounded labelled text, supported XLSX and HL7 ADT have publication paths; other formats, including legacy XLS, and unsupported populated surfaces quarantine.
+- **Publication coverage:** CSV/TSV, bounded labelled text, native JSON, supported XLSX and HL7 ADT have publication paths; other formats, including legacy XLS, and unsupported populated surfaces quarantine.
 - **GLiNER coverage:** fresh contextual CSV/text cases publish and replay; full mixed-format acceptance and a new accuracy measurement remain outstanding.
 - **Detection limits:** observed name/contact escapes are blocked, but unfamiliar entities can evade shared statistical NER and overextended model spans can reject clean text.
 - **Verifier precision:** datatype checks address the recorded title misclassification; other statistical false positives remain possible ([historical diagnostic](benchmarks/verifier-metadata-diagnostic.json)).

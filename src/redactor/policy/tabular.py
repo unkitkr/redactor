@@ -44,10 +44,12 @@ from redactor.utils.constants import (
     FIELD_WEB,
     FIELD_ZIP,
     SSN_NAMESPACE,
+    SURROGATE_INITIAL_ALPHABET,
 )
 from redactor.utils.errors import (
     ERROR_AGE_REFERENCE,
     ERROR_COVERAGE,
+    ERROR_IDENTIFIER,
     ERROR_IDENTITY_EVIDENCE,
 )
 
@@ -158,4 +160,18 @@ def cell_edits(
         ).split()[-1]
     else:
         raise ValueError(ERROR_COVERAGE)
+    if policy.name_part:
+        words = replacement.split()
+        replacement = words[-1] if policy.name_part == "family" else words[0]
+        if policy.name_part == "initial":
+            replacement = replacement[0]
+            if replacement.casefold() == value.strip().rstrip(".").casefold():
+                position = SURROGATE_INITIAL_ALPHABET.index(replacement.upper())
+                replacement = SURROGATE_INITIAL_ALPHABET[
+                    (position + 1) % len(SURROGATE_INITIAL_ALPHABET)
+                ]
+    if policy.numeric:
+        if not value.isascii() or not value.isdigit() or not replacement.isdigit():
+            raise ValueError(ERROR_IDENTIFIER)
+        replacement = str(int(replacement))
     return (TextEdit(**findings[0].model_dump(), replacement=replacement),)

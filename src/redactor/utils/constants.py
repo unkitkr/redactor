@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v11"
+PIPELINE_VERSION: Final = "pipeline-v12"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -148,7 +148,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v9"
+VERIFIER_VERSION: Final = "verifier-v10"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -364,6 +364,65 @@ JSON_START_ARRAY: Final = "start_array"
 JSON_END_ARRAY: Final = "end_array"
 JSON_STRING: Final = "string"
 JSON_SCALAR_DELIMITERS: Final = b" \t\r\n,:{}[]"
+JSON_NUMBER_PATTERN: Final = r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?"
+JSON_ROOT_LOCATION: Final = ("json",)
+JSON_KEY_LOCATION: Final = "key"
+JSON_VALUE_LOCATION: Final = "value"
+JSON_EMBEDDED_LOCATION: Final = "embedded"
+JSON_BASE64_ENCODING: Final = "base64"
+JSON_MEDIA_TYPE: Final = "application/json"
+JSON_PROVIDER_CONTAINERS: Final = (
+    "provider",
+    "rendering_provider",
+    "attending",
+    "practitioner",
+    "physician",
+)
+JSON_PATIENT_CONTAINERS: Final = ("patient", "subscriber", "member")
+JSON_NAME_COMPONENTS: Final = ("family", "given", "prefix", "suffix")
+JSON_FIELD_ALIASES: Final = (
+    ("birthdate", "birth_date"),
+    ("dob", "birth_date"),
+    ("postalcode", "postal_code"),
+    ("postal_code", "zip"),
+    ("service_date", "date"),
+    ("last_login_ip", "ip_address"),
+    ("last_login_ipv6", "ip_address"),
+    ("session_url", "url"),
+    ("line", "address"),
+    ("city", "city"),
+)
+JSON_IDENTIFIER_KEYS: Final = (
+    "id",
+    "claim_id",
+    "member_id",
+    "subscriber_id",
+    "account_id",
+    "record_id",
+    "encounter_id",
+    "policy_number",
+    "accession_number",
+)
+JSON_QUANTITY_KEYS: Final = (
+    "amount",
+    "record_count",
+    "count",
+    "quantity",
+    "total",
+    "price",
+    "charge",
+)
+SURROGATE_INITIAL_ALPHABET: Final = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+JSON_DATE_KEYS: Final = (
+    "date",
+    "service_date",
+    "admit_ts",
+    "discharge_ts",
+    "encounter_date",
+    "timestamp",
+    "admit_date",
+    "discharge_date",
+)
 
 # Scoped pseudonyms and conservative identity normalization
 PSEUDONYM_KEY_CONTEXT: Final = b"redactor-pseudonym-v1:"
@@ -522,7 +581,7 @@ OFFICE_LEGACY_NAMESPACE: Final = "urn:schemas-microsoft-com:office:office"
 OFFICE_EXCEL_NAMESPACE: Final = "urn:schemas-microsoft-com:office:excel"
 OFFICE_XML_TEXT_MODE: Final = "text"
 ZIP_FIXED_TIMESTAMP: Final = (1980, 1, 1, 0, 0, 0)
-NATIVE_ADAPTER_VERSION: Final = "native-v3"
+NATIVE_ADAPTER_VERSION: Final = "native-v4"
 OFFICE_PUBLIC_FONTS: Final = (
     "",
     "Arial",

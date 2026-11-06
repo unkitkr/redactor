@@ -4,8 +4,8 @@ import sqlite3
 from collections import Counter
 
 from redactor.formats.native import read_native, write_native
+from redactor.identity.native import native_evidence
 from redactor.identity.rows import row_context
-from redactor.identity.tabular import row_evidence
 from redactor.persistence.files.artifacts import (
     create_temporary_file,
     seal_temporary_file,
@@ -42,9 +42,7 @@ def rewrite_native_task(
     replacements: dict[tuple[str, ...], str] = {}
     counts: Counter[str] = Counter()
     for number, record in enumerate(document.records, start=1):
-        evidence = row_evidence(
-            record.values, record.policies, task.input_sha256, number
-        )
+        evidence = native_evidence(record, task.input_sha256, number)
         context = row_context(
             evidence,
             lookup,
@@ -53,6 +51,7 @@ def rewrite_native_task(
             number,
             mapping_key,
             snapshot.maximum_date_shift_days,
+            context_scope=record.context_scope,
         )
         for column in record.policies:
             value = record.values[column.index]
@@ -72,7 +71,7 @@ def rewrite_native_task(
     if counts != analysis.counts or len(document.records) != analysis.record_count:
         raise ValueError(ERROR_COVERAGE)
     path = create_temporary_file(connection, task)
-    write_native(task.input_path, path, inspection, replacements)
+    write_native(task.input_path, path, inspection, replacements, settings.resources)
     artifact = seal_temporary_file(connection, task)
     previous = latest_checkpoint(connection, task.task_id)
     save_checkpoint(
