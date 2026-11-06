@@ -42,5 +42,5 @@
 - Nested input paths are preserved under the output root to avoid collisions between files with the same basename.
 - Initial coverage targets the supplied file families plus CSV/TSV; legacy binary XLS is explicitly unsupported, and pixel PHI may be masked.
 - Large structured files must cover every row and complete verification without hosted calls; local-model quality and the container resource targets remain unmeasured.
-- Persisted remote decisions are replayed, but a crash before saving a response can change a retry or repeat billing; strict A5 equivalence needs endpoint replay support.
+- Remote results may drive processing; saved responses replay, while a crash before saving can require a bounded retry with a different answer or another charge.
 - The clinical pipeline and its verifier are being implemented; this log describes chosen behavior, not a claim of completed format coverage.
