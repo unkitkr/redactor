@@ -28,7 +28,7 @@ def classify_model_error(error: Exception) -> ModelFailure:
             if status in (408, 409, 429) or status >= 500:
                 return ModelFailure(
                     reason_code=ERROR_MODEL_TRANSIENT,
-                    retry_after_seconds=_retry_delay(cause.response),
+                    retry_after_seconds=_retry_after_seconds(cause.response),
                 )
             return ModelFailure(reason_code=ERROR_MODEL_REQUEST)
         return ModelFailure(reason_code=ERROR_MODEL_TRANSIENT)
@@ -37,7 +37,8 @@ def classify_model_error(error: Exception) -> ModelFailure:
     return ModelFailure(reason_code=ERROR_MODEL_RESPONSE)
 
 
-def _retry_delay(response: httpx.Response) -> float:
+def _retry_after_seconds(response: httpx.Response) -> float:
+    """Read the server's minimum wait; the retry loop applies exponential backoff."""
     value = response.headers.get(HTTP_RETRY_AFTER_HEADER)
     if value is None:
         return 0

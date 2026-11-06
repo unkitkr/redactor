@@ -24,6 +24,8 @@ from redactor.utils.constants import (
     DEFAULT_NESTING_DEPTH,
     DEFAULT_OCR_LANGUAGE,
     DEFAULT_RECORD_BYTES,
+    DEFAULT_RETRY_INITIAL_SECONDS,
+    DEFAULT_RETRY_MAX_SECONDS,
     DEFAULT_SPACY_MODEL,
     MODEL_DIRECTORY,
     NER_SPACY,
@@ -41,6 +43,12 @@ class RemoteSettings(BaseModel, frozen=True, extra="forbid"):
     input_usd_per_million: Decimal | None = Field(default=None, ge=0)
     output_usd_per_million: Decimal | None = Field(default=None, ge=0)
     max_attempts: PositiveInt = DEFAULT_MODEL_ATTEMPTS
+    retry_initial_seconds: float = Field(
+        default=DEFAULT_RETRY_INITIAL_SECONDS, gt=0, allow_inf_nan=False
+    )
+    retry_max_seconds: float = Field(
+        default=DEFAULT_RETRY_MAX_SECONDS, gt=0, allow_inf_nan=False
+    )
     timeout_seconds: PositiveFloat = DEFAULT_MODEL_TIMEOUT_SECONDS
     deadline_seconds: PositiveFloat = DEFAULT_MODEL_DEADLINE_SECONDS
     circuit_failures: PositiveInt = DEFAULT_CIRCUIT_FAILURES

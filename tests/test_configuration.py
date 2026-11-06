@@ -19,6 +19,7 @@ def test_configuration_resolves_environment_without_persisting_secrets(
     configuration = tmp_path / "settings.toml"
     configuration.write_text(
         '[remote]\nenabled = true\nmodel = "detector"\n'
+        "max_attempts = 5\nretry_initial_seconds = 1.0\nretry_max_seconds = 4.0\n"
         '[verification]\njudge_model = "independent-judge"\n'
     )
     settings = load_settings(configuration, environment={})
@@ -30,6 +31,9 @@ def test_configuration_resolves_environment_without_persisting_secrets(
     assert "secret" not in offline.model_dump_json()
     assert processing_fingerprint(settings) == processing_fingerprint(offline)
     assert settings.local.model_directory == tmp_path / ".models"
+    assert settings.remote.max_attempts == 5
+    assert settings.remote.retry_initial_seconds == 1
+    assert settings.remote.retry_max_seconds == 4
 
     changed = load_settings(configuration, environment={"LLM_MODEL": "different"})
     assert processing_fingerprint(changed) != processing_fingerprint(settings)

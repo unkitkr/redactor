@@ -1,11 +1,13 @@
 """Integration through the real OpenAI SDK and a controlled HTTP boundary."""
 
 import asyncio
+import random
 import sqlite3
 from decimal import Decimal
 from pathlib import Path
 
 import httpx
+import pytest
 
 from redactor.persistence.files.registration import register_file
 from redactor.persistence.models.budget import accounted_cost, recover_model_attempts
@@ -15,6 +17,7 @@ from redactor.schemas.provider import ModelRequest, ModelUnavailable
 from redactor.utils.constants import MODEL_RESPONSE_BYTES
 from redactor.utils.errors import (
     ERROR_MODEL_AUTH,
+    ERROR_MODEL_BUDGET,
     ERROR_MODEL_DISABLED,
     ERROR_MODEL_REQUEST,
     ERROR_MODEL_RESPONSE,
@@ -167,6 +170,88 @@ def test_provider_fails_closed_for_revocation_garbage_size_timeout_and_disable(
         assert decision.backend == "local", case
         assert decision.reason_code == reason, case
         assert calls == (0 if case == "disabled" else 1), case
+
+
+def test_configured_backoff_honors_attempt_deadline_and_budget_limits(
+    connection: sqlite3.Connection,
+    source_file: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    delays: list[float] = []
+
+    async def record_sleep(delay: float) -> None:
+        delays.append(delay)
+
+    def maximum_jitter(lower: float, upper: float) -> float:
+        return upper
+
+    # Only time and randomness are controlled; SDK, HTTP handling and SQLite run.
+    monkeypatch.setattr(asyncio, "sleep", record_sleep)
+    monkeypatch.setattr(random, "uniform", maximum_jitter)
+    for scenario in ("attempts", "server_delay", "deadline", "budget"):
+        delays.clear()
+        version = f"provider-backoff-{scenario}"
+        register_file(connection, source_file, "analyze", version)
+        claimed = claim_task(connection, processing_version=version)
+        assert claimed is not None
+        settings = PipelineSettings(
+            remote=RemoteSettings(
+                base_url="https://model.example/v1",
+                model="test-model",
+                input_usd_per_million=Decimal("1"),
+                output_usd_per_million=Decimal("1"),
+                max_attempts=4,
+                retry_initial_seconds=1,
+                retry_max_seconds=2,
+                deadline_seconds=45,
+                budget_usd=Decimal("0.003" if scenario == "budget" else "3"),
+            )
+        )
+        calls = 0
+
+        async def endpoint(
+            http_request: httpx.Request, case: str = scenario
+        ) -> httpx.Response:
+            nonlocal calls
+            calls += 1
+            retry_after = (
+                "60" if case == "deadline" else "3" if case == "server_delay" else "0"
+            )
+            return httpx.Response(429, headers={"Retry-After": retry_after})
+
+        decision = request_json(
+            connection,
+            claimed,
+            settings,
+            ModelRequest(
+                purpose="detector",
+                prompt_version="test-v1",
+                system_prompt="Return JSON.",
+                input_text="Synthetic input",
+                context_id="unit-1",
+            ),
+            ModelUnavailable,
+            bytes(range(32)),
+            environment={"LLM_API_KEY": "test-key"},
+            transport=httpx.MockTransport(endpoint),
+        )
+        assert decision.backend == "local"
+        assert calls == (1 if scenario in ("deadline", "budget") else 4)
+        if scenario == "attempts":
+            assert delays == [1, 2, 2]
+        elif scenario == "server_delay":
+            assert delays == [3, 3, 3]  # The server's minimum can exceed our cap.
+        elif scenario == "deadline":
+            assert delays == []  # Never retry early to squeeze inside the deadline.
+        else:
+            assert delays == [1]
+        expected_reason = (
+            ERROR_MODEL_BUDGET if scenario == "budget" else ERROR_MODEL_TRANSIENT
+        )
+        assert decision.reason_code == expected_reason
+        assert accounted_cost(connection, version) <= int(
+            settings.remote.budget_usd * 10**9
+        )
 
 
 def _completion_response() -> httpx.Response:

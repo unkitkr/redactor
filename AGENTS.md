@@ -63,6 +63,8 @@ working clinical publication path.
   (for example, `persistence.py` for queue and checkpoint records).
 - Do not hide errors. Preserve structured, PHI-free failure codes. Do not place
   raw clinical content, identifiers, model prompts, or secrets in logs or reports.
+- Challenge choices when evidence shows a correctness or resource problem; explain
+  the consequence and propose a concrete alternative before changing agreed policy.
 
 ## Persistence and execution
 

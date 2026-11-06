@@ -1,7 +1,6 @@
 """Bound attempts, elapsed time and billing before accepting a remote answer."""
 
 import asyncio
-import random
 import sqlite3
 import time
 
@@ -25,7 +24,6 @@ from redactor.utils.constants import (
     MODEL_FINISH_STOP,
     MODEL_LOCAL,
     MODEL_REMOTE,
-    MODEL_RETRY_BASE_SECONDS,
 )
 from redactor.utils.errors import (
     ERROR_MODEL_AUTH,
@@ -41,6 +39,7 @@ from redactor.utils.model_pricing import (
     maximum_request_cost,
     token_cost,
 )
+from redactor.utils.model_retries import retry_delay_seconds
 from redactor.utils.model_transport import open_model_client, request_completion
 
 
@@ -139,10 +138,8 @@ async def run_model_request(
                 if failure.reason_code != ERROR_MODEL_TRANSIENT:
                     break
                 had_transient_failure = True
-                delay = max(
-                    failure.retry_after_seconds,
-                    MODEL_RETRY_BASE_SECONDS * (2**attempt_index)
-                    + random.random() / 10,
+                delay = retry_delay_seconds(
+                    settings, attempt_index, failure.retry_after_seconds
                 )
                 if attempt_index + 1 == settings.max_attempts or (
                     time.monotonic() + delay >= deadline

@@ -10,7 +10,10 @@ budget_usd = "3.00"
 # Supply endpoint prices before enabling paid requests. Missing prices use local inference.
 # input_usd_per_million = "0.00"
 # output_usd_per_million = "0.00"
+# Includes the initial call: 3 attempts means at most 2 retries.
 max_attempts = 3
+retry_initial_seconds = 0.5
+retry_max_seconds = 8.0
 timeout_seconds = 15.0
 deadline_seconds = 45.0
 circuit_failures = 3

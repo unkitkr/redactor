@@ -59,6 +59,13 @@ uv run pytest -q
 
 ## Durable queue
 
+Remote request settings live in `redactor.toml`. `max_attempts` includes the first
+call. Transient failures use full-jitter exponential backoff, starting with
+`retry_initial_seconds` and capped by `retry_max_seconds`. A server's `Retry-After`
+is a minimum wait, even when it exceeds that cap. The total deadline and remaining
+cost budget can stop retries sooner. Authentication failures and malformed model
+responses fall back immediately. The OpenAI SDK's additional retries are disabled.
+
 ```python
 from pathlib import Path
 
