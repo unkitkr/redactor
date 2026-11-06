@@ -99,6 +99,7 @@ def diagnostic_reports(
                         else "Not recorded",
                     ),
                 ),
+                platform="Linux container",
             ),
         )
     return None
@@ -109,6 +110,8 @@ def _diagnostic(
     model: str,
     mode: str,
     metrics: tuple[BenchmarkMetric, ...],
+    *,
+    platform: str = "Not applicable",
 ) -> BenchmarkReport:
     return BenchmarkReport(
         id=source,
@@ -117,7 +120,7 @@ def _diagnostic(
         model=model,
         mode=mode,
         context="Provenance or diagnostic; excluded from accuracy rankings",
-        platform="Not applicable",
+        platform=platform,
         scope="Not an accuracy or end-to-end safety measurement.",
         metrics=metrics,
     )

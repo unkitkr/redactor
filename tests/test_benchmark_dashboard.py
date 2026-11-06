@@ -66,6 +66,10 @@ def test_real_reports_keep_accuracy_replay_and_diagnostics_separate(
     )
     assert excluded.kind == rejected.kind == "diagnostic"
     assert not excluded.cases and not rejected.cases
+    container = next(
+        item for item in snapshot.reports if item.mode == "container_receipt"
+    )
+    assert container.platform == "Linux container"
     baseline = next(item for item in snapshot.reports if item.kind == "throughput")
     assert _metric(baseline, "Rows") == 30000
     assert "not the 2 GiB" in baseline.scope
