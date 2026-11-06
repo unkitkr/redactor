@@ -309,6 +309,84 @@ IDENTITY_BINDING_NAMESPACE: Final = "identity-binding-v1"
 IDENTITY_RESOLUTION_BATCH_SIZE: Final = 1000
 IDENTITY_LOOKUP_CACHE_ENTRIES: Final = 512
 
+# Realistic surrogate vocabulary, independent of the supplied input values
+PERSON_NAME_NAMESPACE: Final = "person-name"
+PHONE_NAMESPACE: Final = "phone"
+EMAIL_NAMESPACE: Final = "email"
+ADDRESS_NAMESPACE: Final = "street-address"
+SSN_NAMESPACE: Final = "social-security-number"
+SURROGATE_DOMAIN: Final = "example.org"
+SURROGATE_GIVEN_NAMES: Final = (
+    "Avery",
+    "Blair",
+    "Casey",
+    "Devon",
+    "Ellis",
+    "Finley",
+    "Harper",
+    "Jamie",
+    "Jordan",
+    "Kendall",
+    "Lane",
+    "Morgan",
+    "Parker",
+    "Quinn",
+    "Reese",
+    "Robin",
+    "Rowan",
+    "Sage",
+    "Shiloh",
+    "Skyler",
+    "Taylor",
+    "Terry",
+    "Toby",
+    "Wren",
+)
+SURROGATE_FAMILY_PREFIXES: Final = (
+    "Ash",
+    "Bram",
+    "Cedar",
+    "Dale",
+    "Elm",
+    "Fair",
+    "Glen",
+    "Haven",
+    "Lang",
+    "Mill",
+    "North",
+    "Oak",
+    "Pine",
+    "Raven",
+    "Rose",
+    "West",
+)
+SURROGATE_FAMILY_SUFFIXES: Final = (
+    "brook",
+    "bury",
+    "dale",
+    "field",
+    "ford",
+    "grove",
+    "ham",
+    "haven",
+    "hurst",
+    "land",
+    "ley",
+    "mont",
+    "ridge",
+    "ton",
+    "well",
+    "wood",
+)
+SURROGATE_STREET_SUFFIX: Final = "Road"
+NANP_PHONE_DIGITS: Final = 10
+NANP_COUNTRY_CODE: Final = "1"
+NANP_NUMBER_BLOCK: Final = 800
+NANP_MINIMUM_PREFIX: Final = 200
+PHONE_LINE_NUMBER_SPACE: Final = 10_000
+SURROGATE_STREET_NUMBER_SPACE: Final = 9900
+SURROGATE_STREET_NUMBER_MINIMUM: Final = 100
+
 # Calendar-date spelling and older-age generalization
 DATE_OFFSET_NAMESPACE: Final = "patient-date-offset"
 DATE_STYLE_YMD: Final = "ymd"

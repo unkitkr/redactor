@@ -2,6 +2,7 @@
 
 from redactor.policy.ages import needs_birth_date_generalization
 from redactor.policy.dates import patient_date_offset
+from redactor.policy.names import person_name
 from redactor.schemas.identity import IdentityCohort, IdentityMatch, ResolvedIdentity
 from redactor.utils.errors import ERROR_IDENTITY_EVIDENCE
 
@@ -23,6 +24,8 @@ def merge_cohorts(first: IdentityCohort, second: IdentityCohort) -> IdentityCoho
         birth_date=first.birth_date or second.birth_date,
         reference_date=max(references) if references else None,
         explicit_older_age=first.explicit_older_age or second.explicit_older_age,
+        anchor_name=first.anchor_name or second.anchor_name,
+        observed_name=min(first.observed_name, second.observed_name),
     )
 
 
@@ -47,4 +50,7 @@ def resolve_cohort(
         date_offset_days=offset,
         reference_date=cohort.reference_date,
         older_age_group=older_age,
+        surrogate_name=person_name(
+            cohort.identity_key, key, cohort.anchor_name or cohort.observed_name
+        ),
     )

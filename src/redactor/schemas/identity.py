@@ -51,6 +51,8 @@ class IdentityCohort(BaseModel, frozen=True, extra="forbid"):
     birth_date: date | None = None
     reference_date: date | None = None
     explicit_older_age: bool = False
+    anchor_name: str = ""
+    observed_name: str = ""
 
 
 class IdentityResolutionProgress(BaseModel, frozen=True, extra="forbid"):
@@ -72,6 +74,7 @@ class ResolvedIdentity(BaseModel, frozen=True, extra="forbid"):
     date_offset_days: int
     reference_date: date | None
     older_age_group: bool | None
+    surrogate_name: str
 
 
 IdentityLookup = Callable[[str, str], ResolvedIdentity]

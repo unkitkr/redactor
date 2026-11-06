@@ -11,8 +11,10 @@ from redactor.formats.csv import (
     inspect_csv,
     iter_csv_records,
 )
+from redactor.policy.contacts import replace_email, replace_phone, replace_street
 from redactor.policy.identifiers import replace_identifier, replace_lot, replace_npi
 from redactor.policy.keys import evidence_key
+from redactor.policy.names import format_person_name, person_name
 from redactor.policy.normalization import normalize_name
 from redactor.utils.constants import DEFAULT_RECORD_BYTES
 from redactor.utils.errors import ERROR_IDENTIFIER, ERROR_MAPPING_KEY
@@ -83,3 +85,27 @@ def test_identifier_policy_replays_across_files_and_preserves_clinical_fields(
         replace_npi("1234567893", b"short")
     with pytest.raises(ValueError, match=ERROR_IDENTIFIER):
         replace_npi("NPI missing", key)
+
+    name = person_name(
+        evidence_key(key, "00123", namespace="patient"), key, "Jane Smith"
+    )
+    assert not {"jane", "smith"}.intersection(name.casefold().split())
+    assert format_person_name("Smith, Jane", name) == ", ".join(reversed(name.split()))
+    assert format_person_name("Smith^Jane", name) == "^".join(reversed(name.split()))
+    phone = replace_phone("(415) 555-0100", key)
+    digits = "".join(character for character in phone if character.isdigit())
+    assert len(digits) == 10 and digits != "4155550100"
+    assert phone[0] == "(" and phone[4:6] == ") " and phone[9] == "-"
+    assert (
+        replace_phone("+1 415-555-0100", key)
+        == f"+1 {digits[:3]}-{digits[3:6]}-{digits[6:]}"
+    )
+    assert replace_phone("４１５５５５０１００", key) == digits
+    assert replace_email("Jane.Smith@sample.invalid", key) == replace_email(
+        "jane.smith@sample.invalid", key
+    )
+    assert replace_email("Jane.Smith@sample.invalid", key).endswith("@example.org")
+    assert replace_street("123 Oak Street", key) == replace_street(
+        "123  OAK Street", key
+    )
+    assert replace_street("123 Oak Street", key) != "123 Oak Street"
