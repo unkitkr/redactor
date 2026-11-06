@@ -10,11 +10,11 @@ from collections.abc import Mapping
 import httpx
 from pydantic import BaseModel
 
-from redactor.persistence.model_decisions import (
+from redactor.persistence.models.decisions import (
     read_model_decision,
     save_model_decision,
 )
-from redactor.persistence.queue import require_attempt
+from redactor.persistence.queue.tasks import require_attempt
 from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.persistence import Task
 from redactor.schemas.provider import ModelDecision, ModelRequest

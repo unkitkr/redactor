@@ -9,14 +9,14 @@ from pathlib import Path
 
 import pytest
 
-from redactor.persistence.checkpoints import (
+from redactor.persistence.database import state_directory
+from redactor.persistence.files.checkpoints import (
     latest_checkpoint,
     resume_checkpoint,
     save_checkpoint,
 )
-from redactor.persistence.database import state_directory
-from redactor.persistence.files import register_file
-from redactor.persistence.queue import claim_task, recover_interrupted
+from redactor.persistence.files.registration import register_file
+from redactor.persistence.queue.tasks import claim_task, recover_interrupted
 from redactor.utils.errors import ERROR_ARTIFACT_CORRUPT, ERROR_INVALID_CHECKPOINT
 
 

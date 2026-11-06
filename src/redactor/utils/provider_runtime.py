@@ -9,8 +9,8 @@ import httpx
 from openai import APIConnectionError
 from pydantic import BaseModel
 
-from redactor.persistence.model_budget import reserve_attempt, settle_attempt
-from redactor.persistence.model_decisions import save_model_decision
+from redactor.persistence.models.budget import reserve_attempt, settle_attempt
+from redactor.persistence.models.decisions import save_model_decision
 from redactor.schemas.configuration import RemoteSettings
 from redactor.schemas.persistence import Task
 from redactor.schemas.provider import (

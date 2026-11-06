@@ -6,9 +6,9 @@ import signal
 import sys
 from pathlib import Path
 
-from redactor.persistence.checkpoints import save_checkpoint
 from redactor.persistence.client import claim_task, open_queue
-from redactor.persistence.files import create_temporary_file
+from redactor.persistence.files.artifacts import create_temporary_file
+from redactor.persistence.files.checkpoints import save_checkpoint
 from redactor.schemas.persistence import Checkpoint
 
 

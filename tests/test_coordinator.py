@@ -7,8 +7,13 @@ import pytest
 
 from redactor.coordinator.ownership import own_run
 from redactor.persistence.database import open_database
-from redactor.persistence.files import register_file
-from redactor.persistence.queue import claim_task, get_task, iter_attempts, iter_tasks
+from redactor.persistence.files.registration import register_file
+from redactor.persistence.queue.tasks import (
+    claim_task,
+    get_task,
+    iter_attempts,
+    iter_tasks,
+)
 from redactor.schemas.worker import TaskSummary
 from redactor.utils.constants import (
     BOOTSTRAP_PROCESSING_VERSION,

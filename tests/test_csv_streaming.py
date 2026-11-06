@@ -13,9 +13,10 @@ from redactor.formats.csv import (
     inspect_csv,
     iter_csv_records,
 )
-from redactor.persistence.checkpoints import resume_checkpoint, save_checkpoint
-from redactor.persistence.files import create_temporary_file, register_file
-from redactor.persistence.queue import claim_task, recover_interrupted
+from redactor.persistence.files.artifacts import create_temporary_file
+from redactor.persistence.files.checkpoints import resume_checkpoint, save_checkpoint
+from redactor.persistence.files.registration import register_file
+from redactor.persistence.queue.tasks import claim_task, recover_interrupted
 from redactor.schemas.persistence import Checkpoint
 from redactor.utils.constants import CSV_ADAPTER_VERSION
 from redactor.utils.errors import ERROR_CSV_RECORD_LIMIT, ERROR_CSV_STRUCTURE

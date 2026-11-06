@@ -6,8 +6,8 @@ from redactor.coordinator.inventory import register_inputs, validate_directories
 from redactor.coordinator.ownership import own_run
 from redactor.coordinator.processes import run_workers
 from redactor.persistence.database import open_database
-from redactor.persistence.model_budget import recover_model_attempts
-from redactor.persistence.queue import recover_interrupted
+from redactor.persistence.models.budget import recover_model_attempts
+from redactor.persistence.queue.tasks import recover_interrupted
 from redactor.schemas.coordinator import CoordinatorConfig
 
 

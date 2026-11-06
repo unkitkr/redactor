@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 
 from redactor.persistence.client import claim_task, complete_task, open_queue
-from redactor.persistence.files import prepare_task, register_file
-from redactor.persistence.queue import get_task
+from redactor.persistence.files.registration import prepare_task, register_file
+from redactor.persistence.queue.tasks import get_task
 from redactor.schemas.persistence import Artifact
 from redactor.utils.constants import STATE_DIRECTORY, STATUS_RUNNING, STATUS_SUCCEEDED
 

@@ -6,8 +6,9 @@ import sqlite3
 from pathlib import Path
 
 from redactor.persistence.database import transaction
-from redactor.persistence.files import hash_stream, temporary_path_for
-from redactor.persistence.queue import require_attempt
+from redactor.persistence.files.artifacts import temporary_path_for
+from redactor.persistence.files.hashing import hash_stream
+from redactor.persistence.queue.tasks import require_attempt
 from redactor.schemas.persistence import Checkpoint, Task
 from redactor.utils.constants import JSON_SEPARATORS, PRIVATE_FILE_MODE
 from redactor.utils.errors import (

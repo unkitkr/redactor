@@ -8,7 +8,7 @@ from redactor.coordinator.inventory import (
     register_inputs,
     validate_directories,
 )
-from redactor.persistence.queue import iter_tasks
+from redactor.persistence.queue.tasks import iter_tasks
 from redactor.utils.constants import (
     BOOTSTRAP_PROCESSING_VERSION,
     OUTPUT_DIRECTORY,

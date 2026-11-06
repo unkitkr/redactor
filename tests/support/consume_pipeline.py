@@ -5,7 +5,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from redactor.persistence.files import prepare_successor
+from redactor.persistence.files.registration import prepare_successor
 from redactor.schemas.persistence import Task
 from redactor.schemas.pipeline import StepResult
 from redactor.workers.run import consume_tasks

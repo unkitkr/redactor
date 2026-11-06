@@ -7,8 +7,8 @@ import pytest
 from redactor import migrations
 from redactor.migrations import discover_migrations
 from redactor.persistence.database import open_database, state_directory, transaction
-from redactor.persistence.files import prepare_task
-from redactor.persistence.queue import get_task
+from redactor.persistence.files.registration import prepare_task
+from redactor.persistence.queue.tasks import get_task
 from redactor.utils.constants import (
     DATABASE_FILENAME,
     PRIVATE_DIRECTORY_MODE,

@@ -9,8 +9,8 @@ import pytest
 
 from redactor.coordinator.ownership import own_run
 from redactor.persistence.database import open_database
-from redactor.persistence.files import register_file
-from redactor.persistence.queue import get_task
+from redactor.persistence.files.registration import register_file
+from redactor.persistence.queue.tasks import get_task
 from redactor.utils.constants import (
     BOOTSTRAP_PROCESSING_VERSION,
     PRINT_TASK_STEP,

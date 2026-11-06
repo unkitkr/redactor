@@ -6,11 +6,11 @@ from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError
 
-from redactor.persistence.files import (
+from redactor.persistence.files.artifacts import (
     create_temporary_file,
     seal_temporary_file,
 )
-from redactor.persistence.queue import get_task
+from redactor.persistence.queue.tasks import get_task
 from redactor.schemas.persistence import Artifact, Task
 from redactor.utils.constants import MAX_MANIFEST_BYTES, STATUS_SUCCEEDED
 from redactor.utils.encryption import decrypt_payload, encrypt_payload

@@ -5,7 +5,7 @@ import os
 import sqlite3
 
 from redactor.persistence.database import state_directory
-from redactor.persistence.files import inspect_artifact, install_artifact
+from redactor.persistence.files.artifacts import inspect_artifact, install_artifact
 from redactor.schemas.inventory import RunManifest
 from redactor.schemas.persistence import Artifact
 from redactor.utils.constants import (

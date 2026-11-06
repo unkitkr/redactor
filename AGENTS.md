@@ -66,6 +66,10 @@ working clinical publication path.
 
 ## Persistence and execution
 
+- Group persistence by responsibility: `queue/` for task state and scheduling,
+  `files/` for registration, artifacts, checkpoints, results, and publication,
+  `runs/` for frozen inventories and manifests, and `models/` for request accounting
+  and replay. Keep connection setup and the functional worker API at the root.
 - SQLite is the authoritative queue and execution ledger. Local worker messages
   are disposable delivery, not the durable source of truth.
 - Keep schema changes in numbered SQL files under `src/redactor/migrations/`.

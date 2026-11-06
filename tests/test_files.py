@@ -12,18 +12,16 @@ from typing import BinaryIO
 
 import pytest
 
-from redactor.persistence import files
 from redactor.persistence.database import open_database, state_directory
-from redactor.persistence.files import (
+from redactor.persistence.files import registration
+from redactor.persistence.files.artifacts import (
     create_temporary_file,
     finalize_output,
-    hash_file,
-    hash_stream,
-    prepare_task,
-    register_file,
     seal_temporary_file,
 )
-from redactor.persistence.queue import (
+from redactor.persistence.files.hashing import hash_file, hash_stream
+from redactor.persistence.files.registration import prepare_task, register_file
+from redactor.persistence.queue.tasks import (
     claim_task,
     complete_task,
     enqueue_task,
@@ -159,7 +157,7 @@ def test_input_changes_during_registration_are_rejected(
         source_file.write_bytes(b"changed after hashing")
         return digest
 
-    monkeypatch.setattr(files, "hash_stream", change_input)
+    monkeypatch.setattr(registration, "hash_stream", change_input)
     with pytest.raises(ValueError, match=ERROR_INPUT_CHANGED):
         register_file(connection, source_file, "inspect", "v1")
     assert list(iter_tasks(connection)) == []

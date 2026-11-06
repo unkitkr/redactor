@@ -7,8 +7,8 @@ from contextlib import closing
 from pathlib import Path
 
 from redactor.persistence.database import open_database
-from redactor.persistence.model_budget import reserve_attempt
-from redactor.persistence.queue import claim_task
+from redactor.persistence.models.budget import reserve_attempt
+from redactor.persistence.queue.tasks import claim_task
 from redactor.schemas.configuration import RemoteSettings
 from redactor.schemas.provider import ModelReservation
 

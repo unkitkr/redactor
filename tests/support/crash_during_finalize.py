@@ -8,9 +8,9 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-from redactor.persistence import files
 from redactor.persistence.database import open_database
-from redactor.persistence.queue import get_task
+from redactor.persistence.files import artifacts
+from redactor.persistence.queue.tasks import get_task
 from redactor.utils.filesystem import sync_directory
 
 
@@ -21,7 +21,7 @@ def main(arguments: Sequence[str]) -> None:
 
     with closing(open_database(Path(state_path))) as connection:
         task = get_task(connection, task_id)
-        artifact = files.seal_temporary_file(connection, task)
+        artifact = artifacts.seal_temporary_file(connection, task)
 
         def interrupted_link(
             source: Path, target: Path, *, follow_symlinks: bool
@@ -43,9 +43,9 @@ def main(arguments: Sequence[str]) -> None:
 
         with (
             patch.object(os, "link", interrupted_link),
-            patch.object(files, "sync_directory", interrupted_sync),
+            patch.object(artifacts, "sync_directory", interrupted_sync),
         ):
-            files.finalize_output(connection, task, artifact)
+            artifacts.finalize_output(connection, task, artifact)
 
 
 if __name__ == "__main__":

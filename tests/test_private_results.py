@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 
 from redactor.persistence.database import open_database, state_directory
-from redactor.persistence.files import register_file
-from redactor.persistence.queue import claim_task, complete_task
-from redactor.persistence.results import read_step_result, write_step_result
+from redactor.persistence.files.registration import register_file
+from redactor.persistence.files.results import read_step_result, write_step_result
+from redactor.persistence.queue.tasks import claim_task, complete_task
 from redactor.schemas.configuration import PipelineSettings, RemoteSettings
 from redactor.utils.encryption import decrypt_payload, encrypt_payload
 from redactor.utils.errors import ERROR_PRIVATE_RECORD

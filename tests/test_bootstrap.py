@@ -6,13 +6,13 @@ from pathlib import Path
 import pytest
 
 from redactor.coordinator.bootstrap import prepare_run
-from redactor.persistence.manifests import read_manifest
-from redactor.persistence.queue import (
+from redactor.persistence.queue.tasks import (
     claim_task,
     complete_task,
     iter_tasks,
     recover_interrupted,
 )
+from redactor.persistence.runs.manifests import read_manifest
 from redactor.schemas.configuration import PipelineSettings
 from redactor.utils.configuration import key_fingerprint
 from redactor.utils.constants import (

@@ -4,10 +4,10 @@ import sqlite3
 from pathlib import Path
 
 from redactor.coordinator.inventory import iter_input_files
-from redactor.persistence.files import prepare_successor, prepare_task
-from redactor.persistence.inventory import file_step
-from redactor.persistence.manifests import persist_manifest
-from redactor.persistence.queue import enqueue_task
+from redactor.persistence.files.registration import prepare_successor, prepare_task
+from redactor.persistence.queue.tasks import enqueue_task
+from redactor.persistence.runs.inventory import file_step
+from redactor.persistence.runs.manifests import persist_manifest
 from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.inventory import InventoryFile, PreparedRun, RunManifest
 from redactor.utils.configuration import key_fingerprint, processing_fingerprint

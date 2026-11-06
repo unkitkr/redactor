@@ -9,14 +9,18 @@ from pathlib import Path
 import pytest
 
 from redactor.persistence.database import state_directory
-from redactor.persistence.files import (
+from redactor.persistence.files.artifacts import (
     create_temporary_file,
-    register_file,
     seal_temporary_file,
 )
-from redactor.persistence.publication import publish_verified_artifact
-from redactor.persistence.queue import claim_task, complete_task, recover_interrupted
-from redactor.persistence.results import accepted_artifact, write_step_result
+from redactor.persistence.files.publication import publish_verified_artifact
+from redactor.persistence.files.registration import register_file
+from redactor.persistence.files.results import accepted_artifact, write_step_result
+from redactor.persistence.queue.tasks import (
+    claim_task,
+    complete_task,
+    recover_interrupted,
+)
 from redactor.schemas.persistence import Task
 from redactor.schemas.verification import (
     VerificationCheck,

@@ -6,9 +6,9 @@ from contextlib import closing, contextmanager
 from pathlib import Path
 
 from redactor.persistence.database import open_database
-from redactor.persistence.queue import claim_task as claim_task
-from redactor.persistence.queue import complete_task as complete_task
-from redactor.persistence.queue import fail_task as fail_task
+from redactor.persistence.queue.tasks import claim_task as claim_task
+from redactor.persistence.queue.tasks import complete_task as complete_task
+from redactor.persistence.queue.tasks import fail_task as fail_task
 
 
 @contextmanager

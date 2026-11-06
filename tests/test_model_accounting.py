@@ -7,18 +7,18 @@ import sys
 from pathlib import Path
 
 from redactor.persistence.database import state_directory
-from redactor.persistence.files import register_file
-from redactor.persistence.model_budget import (
+from redactor.persistence.files.registration import register_file
+from redactor.persistence.models.budget import (
     accounted_cost,
     recover_model_attempts,
     reserve_attempt,
     settle_attempt,
 )
-from redactor.persistence.model_decisions import (
+from redactor.persistence.models.decisions import (
     read_model_decision,
     save_model_decision,
 )
-from redactor.persistence.queue import claim_task, recover_interrupted
+from redactor.persistence.queue.tasks import claim_task, recover_interrupted
 from redactor.schemas.configuration import RemoteSettings
 from redactor.schemas.provider import (
     ModelDecision,

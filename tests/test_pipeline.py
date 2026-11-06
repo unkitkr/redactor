@@ -9,8 +9,9 @@ from pathlib import Path
 import pytest
 
 from redactor.persistence.database import state_directory
-from redactor.persistence.files import prepare_successor, register_file
-from redactor.persistence.queue import (
+from redactor.persistence.files.registration import prepare_successor, register_file
+from redactor.persistence.queue.scheduling import work_remains
+from redactor.persistence.queue.tasks import (
     claim_task,
     complete_task,
     enqueue_task,
@@ -18,7 +19,6 @@ from redactor.persistence.queue import (
     get_task,
     iter_tasks,
 )
-from redactor.persistence.scheduling import work_remains
 from redactor.schemas.persistence import Task
 from redactor.schemas.pipeline import StepResult
 from redactor.utils.constants import STATUS_RUNNING, STATUS_SUCCEEDED

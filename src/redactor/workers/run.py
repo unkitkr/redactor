@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from redactor.persistence.client import claim_task, open_queue
-from redactor.persistence.scheduling import work_remains
+from redactor.persistence.queue.scheduling import work_remains
 from redactor.schemas.pipeline import StepHandler
 from redactor.utils.constants import (
     BOOTSTRAP_PROCESSING_VERSION,

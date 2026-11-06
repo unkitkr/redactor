@@ -63,7 +63,7 @@ uv run pytest -q
 from pathlib import Path
 
 from redactor.persistence.client import claim_task, complete_task, open_queue
-from redactor.persistence.files import register_file
+from redactor.persistence.files.registration import register_file
 
 with open_queue(Path(".redactor")) as queue:
     register_file(queue, Path("input/encounters.csv"), "inspect", "policy-v1")
@@ -86,7 +86,7 @@ come from `utils/constants.py`: temporary artifacts live under
 `<state>/tmp/<task_id>/`, and outputs target the workspace's
 `output/published/<original_name>`. Registration creates no output files.
 
-`prepare_task`, also in `persistence/files.py`, prepares metadata for callers that
+`prepare_task`, also in `persistence/files/registration.py`, prepares metadata for callers that
 need to enqueue successors atomically through `complete_task`.
 Its identity includes the input path and content, operation, and processing
 version. The caller must include relevant policy, identity-map, and key versions
@@ -169,10 +169,13 @@ in a migration must end with a semicolon on its own statement's final line.
 - `src/redactor/schemas/persistence.py`: task, attempt, checkpoint, and artifact models.
 - `src/redactor/migrations/`: SQL schema changes, discovery, and the migration runner.
 - `src/redactor/persistence/database.py`: connection setup and transaction boundaries.
-- `src/redactor/persistence/queue.py`: task transitions and attempt history.
-- `src/redactor/persistence/files.py`: file registration and artifact persistence.
+- `src/redactor/persistence/client.py`: functional worker-facing queue API.
+- `src/redactor/persistence/queue/`: task transitions, attempt history, and scheduling.
+- `src/redactor/persistence/files/`: registration, hashing, artifacts, checkpoints, results, and publication.
+- `src/redactor/persistence/runs/`: frozen inventories and run manifests.
+- `src/redactor/persistence/models/`: request budgets and encrypted model decisions.
 - `src/redactor/utils/filesystem.py`: shared private-directory and sync operations.
-- `src/redactor/coordinator/`: reserved for the later coordinator implementation.
+- `src/redactor/coordinator/`: startup, inventory, run ownership, and worker supervision.
 - `tests/`: real temporary SQLite databases and files.
 
 Agent prompts, output schemas, and runtime code will be introduced separately

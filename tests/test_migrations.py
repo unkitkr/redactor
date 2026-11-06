@@ -8,8 +8,8 @@ from redactor import migrations
 from redactor.migrations import discover_migrations
 from redactor.migrations.runner import apply_migrations
 from redactor.persistence.database import open_database
-from redactor.persistence.files import prepare_task
-from redactor.persistence.queue import enqueue_task, get_task
+from redactor.persistence.files.registration import prepare_task
+from redactor.persistence.queue.tasks import enqueue_task, get_task
 from redactor.utils.constants import STATE_DIRECTORY
 from redactor.utils.errors import (
     ERROR_INVALID_MIGRATIONS,

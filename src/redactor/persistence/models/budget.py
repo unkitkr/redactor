@@ -4,7 +4,7 @@ import sqlite3
 import time
 
 from redactor.persistence.database import transaction
-from redactor.persistence.queue import require_attempt
+from redactor.persistence.queue.tasks import require_attempt
 from redactor.schemas.configuration import RemoteSettings
 from redactor.schemas.persistence import Task
 from redactor.schemas.provider import ModelReservation, ModelUnavailable, ModelUsage

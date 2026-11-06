@@ -3,7 +3,7 @@
 import sqlite3
 
 from redactor.persistence.database import state_directory
-from redactor.persistence.files import prepare_successor
+from redactor.persistence.files.registration import prepare_successor
 from redactor.schemas.inventory import InventoryFile
 from redactor.schemas.persistence import Artifact, TaskSpec
 from redactor.utils.constants import OUTPUT_DIRECTORY, PUBLISHED_DIRECTORY

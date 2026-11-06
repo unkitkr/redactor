@@ -5,7 +5,7 @@ import sqlite3
 from collections.abc import Iterator
 from pathlib import Path
 
-from redactor.persistence.files import register_file
+from redactor.persistence.files.registration import register_file
 from redactor.utils.constants import (
     BOOTSTRAP_PROCESSING_VERSION,
     OUTPUT_DIRECTORY,

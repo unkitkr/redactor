@@ -3,7 +3,7 @@
 import sqlite3
 from collections.abc import Mapping
 
-from redactor.persistence.queue import complete_task, require_attempt
+from redactor.persistence.queue.tasks import complete_task, require_attempt
 from redactor.schemas.persistence import Task
 from redactor.schemas.pipeline import StepHandler
 from redactor.utils.errors import ERROR_UNKNOWN_STEP

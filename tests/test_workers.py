@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from redactor.persistence.files import register_file
-from redactor.persistence.queue import get_task
+from redactor.persistence.files.registration import register_file
+from redactor.persistence.queue.tasks import get_task
 from redactor.schemas.worker import TaskSummary
 from redactor.utils.constants import (
     BOOTSTRAP_PROCESSING_VERSION,

@@ -3,9 +3,9 @@
 import sqlite3
 
 from redactor.persistence.database import transaction
-from redactor.persistence.files import install_artifact
-from redactor.persistence.queue import get_task, require_attempt
-from redactor.persistence.results import accepted_artifact, read_step_result
+from redactor.persistence.files.artifacts import install_artifact
+from redactor.persistence.files.results import accepted_artifact, read_step_result
+from redactor.persistence.queue.tasks import get_task, require_attempt
 from redactor.schemas.persistence import Artifact, Task
 from redactor.schemas.verification import VerificationContext, VerificationVerdict
 from redactor.utils.constants import STEP_PUBLISH, STEP_REWRITE, STEP_VERIFY

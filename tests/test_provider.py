@@ -7,9 +7,9 @@ from pathlib import Path
 
 import httpx
 
-from redactor.persistence.files import register_file
-from redactor.persistence.model_budget import accounted_cost, recover_model_attempts
-from redactor.persistence.queue import claim_task, recover_interrupted
+from redactor.persistence.files.registration import register_file
+from redactor.persistence.models.budget import accounted_cost, recover_model_attempts
+from redactor.persistence.queue.tasks import claim_task, recover_interrupted
 from redactor.schemas.configuration import PipelineSettings, RemoteSettings
 from redactor.schemas.provider import ModelRequest, ModelUnavailable
 from redactor.utils.constants import MODEL_RESPONSE_BYTES

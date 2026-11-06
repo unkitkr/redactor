@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 
 from redactor.persistence.client import claim_task, open_queue
-from redactor.persistence.publication import publish_verified_artifact
-from redactor.persistence.results import read_step_result
+from redactor.persistence.files.publication import publish_verified_artifact
+from redactor.persistence.files.results import read_step_result
 from redactor.schemas.verification import VerificationVerdict
 from redactor.utils.constants import STEP_PUBLISH
 
