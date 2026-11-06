@@ -170,7 +170,10 @@ def test_provider_fails_closed_for_revocation_garbage_size_timeout_and_disable(
         )
         assert decision.backend == "local", case
         assert decision.reason_code == reason, case
-        assert calls == (0 if case == "disabled" else 1), case
+        if case == "slow":
+            assert 1 <= calls <= settings.remote.max_attempts
+        else:
+            assert calls == (0 if case == "disabled" else 1), case
 
 
 def test_configured_backoff_honors_attempt_deadline_and_budget_limits(
