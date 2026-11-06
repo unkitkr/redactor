@@ -45,3 +45,40 @@ def test_exact_metrics_do_not_credit_partial_or_wrong_type_spans() -> None:
             1,
         )
     assert span_counts(expected, expected).f1 == 1
+
+
+def test_ocr_metrics_distinguish_reading_from_safe_localization(tmp_path: Path) -> None:
+    from redactor.evaluation.ocr import evaluate_ocr
+    from redactor.schemas.evaluation import OcrExample, OcrReference, OcrRegion
+
+    example = OcrExample(
+        case_id="geometry",
+        image=str(tmp_path / "image.png"),
+        reference_text="MRN 12345 Metformin 500 mg",
+        regions=(
+            OcrReference(text="MRN 12345", box=(10, 10, 80, 30)),
+            OcrReference(
+                text="Metformin 500 mg", box=(10, 50, 150, 70), sensitive=False
+            ),
+        ),
+    )
+
+    def accurate_ocr(_: Path) -> tuple[OcrRegion, ...]:
+        return tuple(
+            OcrRegion(text=item.text, box=item.box) for item in example.regions
+        )
+
+    report = evaluate_ocr((example,), accurate_ocr)
+    assert report["character_error_rate"] == 0
+    totals = report["totals"]
+    assert isinstance(totals, dict)
+    assert totals["identifiers_localized"] == 1
+    assert totals["identifier_boxes_overlapping_clinical"] == 0
+
+    def broad_ocr(_: Path) -> tuple[OcrRegion, ...]:
+        return (OcrRegion(text=example.reference_text, box=(0, 0, 200, 100)),)
+
+    broad = evaluate_ocr((example,), broad_ocr)["totals"]
+    assert isinstance(broad, dict)
+    assert broad["identifiers_recovered"] == 1
+    assert broad["identifier_boxes_overlapping_clinical"] == 1
