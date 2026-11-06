@@ -7,6 +7,8 @@ from redactor.utils.constants import (
     CLINICAL_CODE_SEPARATOR_PATTERN,
     CLINICAL_FIELD_PATTERNS,
     FIELD_TEXT,
+    HL7_RELATIONSHIP_DISPLAYS,
+    KINSHIP_DISPLAY_NAMESPACE,
     LAB_DESCRIPTION_NAMESPACE,
     LAB_DESCRIPTION_TERMS,
     TABULAR_FIELD_ALIASES,
@@ -30,6 +32,15 @@ def column_policies(columns: tuple[str, ...]) -> tuple[ColumnPolicy, ...]:
 
 def validate_clinical_field(value: str, namespace: str) -> None:
     if not value.strip():
+        return
+    if namespace.startswith(KINSHIP_DISPLAY_NAMESPACE):
+        code = namespace.removeprefix(KINSHIP_DISPLAY_NAMESPACE)
+        expected = dict(HL7_RELATIONSHIP_DISPLAYS).get(code)
+        if (
+            expected is None
+            or " ".join(value.split()).casefold() != expected.casefold()
+        ):
+            raise ValueError(ERROR_CLINICAL_CHANGED)
         return
     if namespace == LAB_DESCRIPTION_NAMESPACE:
         tokens = re.findall(r"[A-Za-z0-9]+|[^A-Za-z0-9\s./\[\]()-]", value.casefold())

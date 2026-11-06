@@ -37,6 +37,7 @@ from redactor.utils.constants import (
     HL7_PHONE_MODE,
     HL7_STRUCTURAL_FIELDS,
     HL7_VALUE_MODE,
+    KINSHIP_DISPLAY_NAMESPACE,
     LAB_DESCRIPTION_NAMESPACE,
     MRN_NAMESPACE,
     NPI_NAMESPACE,
@@ -199,13 +200,16 @@ def read_hl7(path: Path, encoding: str) -> NativeDocument:
                         else "kinship",
                     )
                     if len(parts) > 1:
+                        clinical_display = name == "NK1" or (
+                            name == "OBX" and segment[2] == "NM"
+                        )
                         add(
                             1,
                             2,
-                            FIELD_CLINICAL
-                            if name == "OBX" and segment[2] == "NM"
-                            else FIELD_TEXT,
-                            LAB_DESCRIPTION_NAMESPACE
+                            FIELD_CLINICAL if clinical_display else FIELD_TEXT,
+                            KINSHIP_DISPLAY_NAMESPACE + parts[0]
+                            if name == "NK1"
+                            else LAB_DESCRIPTION_NAMESPACE
                             if name == "OBX" and segment[2] == "NM"
                             else "",
                         )

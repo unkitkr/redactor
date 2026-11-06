@@ -1412,6 +1412,45 @@ HL7_IDENTIFIER_FIELDS: Final = (
 )
 HL7_ADDRESS_FIELDS: Final = (("PID", 11), ("NK1", 4))
 HL7_PHONE_FIELDS: Final = (("PID", 13), ("PID", 14), ("NK1", 5), ("NK1", 6))
+KINSHIP_DISPLAY_NAMESPACE: Final = "kinship-display:"
+# HL7 THO v2-0063, version 3.0.0 (CC0), with explicit DAU/SON local aliases.
+# https://terminology.hl7.org/CodeSystem-v2-0063.json
+HL7_RELATIONSHIP_DISPLAYS: Final = (
+    ("SEL", "Self"),
+    ("SPO", "Spouse"),
+    ("DOM", "Life partner"),
+    ("CHD", "Child"),
+    ("GCH", "Grandchild"),
+    ("NCH", "Natural child"),
+    ("SCH", "Stepchild"),
+    ("FCH", "Foster child"),
+    ("DEP", "Handicapped dependent"),
+    ("WRD", "Ward of court"),
+    ("PAR", "Parent"),
+    ("MTH", "Mother"),
+    ("FTH", "Father"),
+    ("CGV", "Care giver"),
+    ("GRD", "Guardian"),
+    ("GRP", "Grandparent"),
+    ("EXF", "Extended family"),
+    ("SIB", "Sibling"),
+    ("BRO", "Brother"),
+    ("SIS", "Sister"),
+    ("FND", "Friend"),
+    ("OAD", "Other adult"),
+    ("EME", "Employee"),
+    ("EMR", "Employer"),
+    ("ASC", "Associate"),
+    ("EMC", "Emergency contact"),
+    ("OWN", "Owner"),
+    ("TRA", "Trainer"),
+    ("MGR", "Manager"),
+    ("NON", "None"),
+    ("UNK", "Unknown"),
+    ("OTH", "Other"),
+    ("DAU", "Daughter"),
+    ("SON", "Son"),
+)
 
 
 # Conservative vocabulary for coded laboratory display names, not patient text.
