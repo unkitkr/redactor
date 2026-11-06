@@ -1,6 +1,7 @@
 """Detect content before extensions and reject invalid or oversized containers."""
 
 import codecs
+import re
 from pathlib import Path
 
 from redactor.formats.archives import inspect_office_archive
@@ -33,6 +34,7 @@ from redactor.utils.constants import (
     PDF_SIGNATURE,
     PNG_SIGNATURE,
     TEXT_ALLOWED_CONTROLS,
+    TEXT_DOCUMENT_HEADER_PATTERN,
     TEXT_ENCODING,
     TIFF_SIGNATURES,
     UTF8_BOM,
@@ -86,7 +88,9 @@ def inspect_file(path: Path, resources: ResourceSettings) -> FileInspection:
         # Delimiters in the first physical line nominate a table. A malformed
         # table must not silently fall through to a less strict text processor.
         first_line = probe.removeprefix(UTF8_BOM).splitlines()[0] if probe else b""
-        if any(separator in first_line for separator in (b",", b"\t", b";")):
+        if not re.match(
+            TEXT_DOCUMENT_HEADER_PATTERN, first_line.decode(encoding)
+        ) and any(separator in first_line for separator in (b",", b"\t", b";")):
             layout = inspect_csv(path, resources.max_record_bytes)
             actual_type = FORMAT_TSV if layout.delimiter == "\t" else FORMAT_CSV
             return FileInspection(

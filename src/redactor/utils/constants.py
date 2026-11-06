@@ -141,14 +141,16 @@ INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
 VERIFIER_VERSION: Final = "verifier-v1"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
-    r"(?<!\d)(?:\+?1[ .-]?)?\(?\d{3}\)?[ .-]\d{3}[ .-]\d{4}(?!\d)",
+    r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
     r"\b\d{3}-\d{2}-\d{4}\b",
     r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
     r"(?i)\b(?:https?://|www\.)\S+",
     r"\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b",
     r"\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b",
-    r"(?i)\b(?:MRN|SSN|account|room|serial|license)\s*[:#]?\s*[A-Z0-9][\w-]+",
-    r"(?i)\b(?:daughter|son|husband|wife|spouse|mother|father|Dr\.)\s+[^\W\d_]",
+    r"(?i)\b(?:MRN|SSN|account|room|serial|license)\s*[:#]?\s*"
+    r"(?P<value>[A-Z0-9][\w-]+)",
+    r"(?i:\b(?:daughter|son|husband|wife|spouse|mother|father|Dr\.))\s+"
+    r"(?P<value>[A-ZÀ-ÖØ-Þ][\w'’\-]*(?:\s+[A-ZÀ-ÖØ-Þ][\w'’\-]*){0,3})",
 )
 VERIFICATION_PASS: Final = "pass"
 VERIFICATION_FAIL: Final = "fail"
@@ -684,6 +686,8 @@ AGE_YEARS_PATTERN: Final = (
 )
 TEXT_MASK_TOKEN: Final = " [REDACTED] "
 TEXT_CLINICAL_PATTERNS: Final = (
+    r"\b(?:MRN|DOB|NPI|SSN)(?=[ :\t])",
+    r"\b(?:MD|RN)\b",
     r"(?i)\b(?:renal|diabetic|cardiac|low[- ]sodium|low[- ]fat|clear[- ]liquid)"
     r"\s+diet\b",
     r"\b[A-Z][0-9][0-9A-Z](?:\.[A-Z0-9]{1,4})?\b",
@@ -803,4 +807,56 @@ RESTRICTED_ZIP_PREFIXES: Final = (
     "884",
     "890",
     "893",
+)
+
+
+# Labelled native text fields. Delimiters remain outside the sensitive value.
+TEXT_PART: Final = "body"
+TEXT_LABEL_FIELDS: Final = (
+    (
+        r"(?im)\bPatient:[ \t]*(?P<value>[^\r\n]+?)(?=[ \t]{2,}|[|]|\r?$)",
+        "patient_name",
+        "",
+    ),
+    (
+        r"(?im)\bAttending:[ \t]*(?P<value>[^\r\n]+?)"
+        r"(?=,[ \t]*MD\b|[ \t]*\(NPI|[ \t]{2,}|\r?$)",
+        "provider_name",
+        "",
+    ),
+    (r"(?im)\bDOB:[ \t]*(?P<value>[^\r\n]+?)(?=[ \t]{2,}|[|]|\r?$)", "birth_date", ""),
+    (r"(?im)\bMRN:[ \t]*(?P<value>[A-Za-z0-9-]+)", "patient_id", "mrn"),
+    (r"(?im)\bNPI[ :\t]+(?P<value>[0-9]{10})\b", "provider_id", "npi"),
+    (
+        r"(?im)\b(?:Admit(?:ted)?|Discharge(?:d)?):[ \t]*(?P<value>[^\r\n]+?)"
+        r"(?=[ \t]{2,}|[|]|\r?$)",
+        "date",
+        "",
+    ),
+)
+TEXT_IDENTIFIER_PATTERNS: Final = (
+    (r"(?i)\bMRN[ :#]+(?P<value>[A-Z0-9]+(?:-[A-Z0-9]+)*)", "mrn"),
+    (
+        r"(?i)\b(?:account|room|visit|serial|license)[ :#]+"
+        r"(?P<value>[A-Z0-9]+(?:-[A-Z0-9]+)*)",
+        "identifier",
+    ),
+    (r"(?<![0-9])(?P<value>[0-9]{3}-[0-9]{2}-[0-9]{4})(?![0-9])", SSN_NAMESPACE),
+)
+TEXT_IPV4_PATTERN: Final = r"(?<![\w.])(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?!\w|\.[0-9])"
+TEXT_URL_PATTERN: Final = r"https?://[^\s<>\"']+"
+TEXT_ZIP_PATTERN: Final = r"\b[A-Z]{2}[ \t]+(?P<value>[0-9]{5}(?:-[0-9]{4})?)\b"
+NETWORK_NAMESPACE: Final = "network-address"
+WEB_NAMESPACE: Final = "web-address"
+SSN_DIGITS: Final = 9
+SSN_AREA_LIMIT: Final = 899
+SSN_DISALLOWED_AREA: Final = 666
+SURROGATE_WEB_TEMPLATE: Final = "https://example.invalid/{identifier}"
+
+FIELD_NETWORK: Final = "network"
+FIELD_WEB: Final = "web"
+FIELD_SSN: Final = "ssn"
+
+TEXT_DOCUMENT_HEADER_PATTERN: Final = (
+    r"(?i)^(?:patient|attending|DOB|MRN|admit(?:ted)?):"
 )

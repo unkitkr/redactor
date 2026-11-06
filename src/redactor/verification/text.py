@@ -61,10 +61,8 @@ def scan_residuals(
 ) -> None:
     for pattern in VERIFIER_RESIDUAL_PATTERNS:
         for match in re.finditer(pattern, text):
-            if not any(
-                match.start() < span.end and match.end() > span.start
-                for span in exemptions
-            ):
+            start, end = match.span("value" if "value" in match.re.groupindex else 0)
+            if not any(span.start <= start and end <= span.end for span in exemptions):
                 raise ValueError(ERROR_RESIDUAL_PHI)
     ages = age_mentions(text)
     for _, number, age in ages:

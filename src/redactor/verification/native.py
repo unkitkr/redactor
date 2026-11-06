@@ -74,8 +74,10 @@ def verify_native(
     for number, (before, after) in enumerate(
         zip(original.records, output.records, strict=True), start=1
     ):
-        if before.locations != after.locations or len(before.values) != len(
-            after.values
+        if (
+            before.locations != after.locations
+            or before.policies != after.policies
+            or len(before.values) != len(after.values)
         ):
             raise ValueError(ERROR_COVERAGE)
         evidence = row_evidence(

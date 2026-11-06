@@ -23,6 +23,9 @@ FieldKind = Literal[
     "clinical",
     "text",
     "location",
+    "ssn",
+    "network",
+    "web",
 ]
 
 
@@ -47,6 +50,7 @@ class TextFinding(BaseModel, frozen=True, extra="forbid"):
     end: NonNegativeInt
     original: str
     kind: str = Field(min_length=1)
+    namespace: str = ""
 
 
 class TextEdit(TextFinding):

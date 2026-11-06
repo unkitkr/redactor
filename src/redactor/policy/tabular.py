@@ -7,7 +7,12 @@ from redactor.policy.ages import generalize_age, replace_birth_date
 from redactor.policy.contacts import replace_email, replace_phone, replace_street
 from redactor.policy.dates import parse_date, patient_date_offset, shift_date
 from redactor.policy.geography import generalize_zip
-from redactor.policy.identifiers import replace_identifier, replace_lot, replace_npi
+from redactor.policy.identifiers import (
+    replace_identifier,
+    replace_lot,
+    replace_npi,
+    replace_ssn,
+)
 from redactor.policy.keys import evidence_key
 from redactor.policy.names import format_person_name, person_name
 from redactor.policy.text import text_edits
@@ -31,6 +36,7 @@ from redactor.utils.constants import (
     FIELD_PROVIDER_NAME,
     FIELD_TEXT,
     FIELD_ZIP,
+    SSN_NAMESPACE,
 )
 from redactor.utils.errors import (
     ERROR_AGE_REFERENCE,
@@ -89,6 +95,8 @@ def cell_edits(
         replacement = format_person_name(value, identity.surrogate_name)
     elif policy.kind == FIELD_PROVIDER_ID:
         replacement = replace_npi(value, key)
+    elif policy.kind == FIELD_IDENTIFIER and policy.namespace == SSN_NAMESPACE:
+        replacement = replace_ssn(value, key)
     elif policy.kind in (FIELD_PATIENT_ID, FIELD_IDENTIFIER):
         replacement = replace_identifier(
             canonical_record_identifier(value, policy.namespace),

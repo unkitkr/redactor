@@ -12,9 +12,9 @@ from redactor.inference.ner import load_local_ner
 from redactor.inference.text import find_text_phi
 from redactor.policy.text import apply_text_edits, text_edits
 from redactor.schemas.configuration import LocalSettings
-from redactor.schemas.redaction import TextContext
+from redactor.schemas.redaction import TextContext, TextRange
 from redactor.utils.errors import ERROR_CLINICAL_CHANGED
-from redactor.verification.text import verify_text_changes
+from redactor.verification.text import scan_residuals, verify_text_changes
 
 
 def test_text_patterns_and_local_ner_preserve_clinical_content(tmp_path: Path) -> None:
@@ -119,3 +119,14 @@ def test_written_ages_and_named_dates_are_verified_without_reaging_patient() -> 
     )
     assert evidence.patient is not None
     assert not evidence.patient.explicit_older_age
+
+
+def test_verifier_does_not_exempt_a_sensitive_value_from_partial_overlap() -> None:
+    ner = load_local_ner(LocalSettings())
+    for text, start, end in (
+        ("jane.smith@example.test", 0, 4),
+        ("MRN 123456789", 4, 8),
+        ("daughter Jane Smith", 9, 13),
+    ):
+        with pytest.raises(ValueError, match="residual_phi_detected"):
+            scan_residuals(text, (TextRange(start=start, end=end),), ner)

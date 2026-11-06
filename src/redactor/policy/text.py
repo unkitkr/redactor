@@ -1,9 +1,13 @@
 """Apply explicit text findings, retaining every unedited character exactly."""
 
+from redactor.identity.tabular import canonical_record_identifier
 from redactor.policy.contacts import replace_email, replace_phone, replace_street
 from redactor.policy.dates import patient_date_offset, shift_date
+from redactor.policy.geography import generalize_zip
+from redactor.policy.identifiers import replace_identifier, replace_ssn
 from redactor.policy.keys import evidence_key
 from redactor.policy.names import person_name
+from redactor.policy.network import replace_network_address, replace_web_address
 from redactor.policy.text_names import mention_name
 from redactor.schemas.redaction import TextContext, TextEdit, TextFinding
 from redactor.utils.constants import (
@@ -13,9 +17,14 @@ from redactor.utils.constants import (
     FIELD_AGE,
     FIELD_DATE,
     FIELD_EMAIL,
+    FIELD_IDENTIFIER,
+    FIELD_NETWORK,
     FIELD_PATIENT_NAME,
     FIELD_PHONE,
     FIELD_PROVIDER_NAME,
+    FIELD_SSN,
+    FIELD_WEB,
+    FIELD_ZIP,
     IDENTITY_RELATIVE,
 )
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_ENTITY_EVIDENCE
@@ -27,7 +36,21 @@ def text_edits(
     edits: list[TextEdit] = []
     for finding in findings:
         value = finding.original
-        if finding.kind == FIELD_PHONE:
+        if finding.kind == FIELD_IDENTIFIER:
+            replacement = replace_identifier(
+                canonical_record_identifier(value, finding.namespace),
+                key,
+                namespace=finding.namespace,
+            )
+        elif finding.kind == FIELD_SSN:
+            replacement = replace_ssn(value, key)
+        elif finding.kind == FIELD_NETWORK:
+            replacement = replace_network_address(value, key)
+        elif finding.kind == FIELD_WEB:
+            replacement = replace_web_address(value, key)
+        elif finding.kind == FIELD_ZIP:
+            replacement = generalize_zip(value)
+        elif finding.kind == FIELD_PHONE:
             replacement = replace_phone(value, key)
         elif finding.kind == FIELD_EMAIL:
             replacement = replace_email(value, key)

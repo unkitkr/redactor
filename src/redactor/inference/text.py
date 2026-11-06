@@ -1,6 +1,7 @@
 """Combine grounded model observations with typed patterns and clinical context."""
 
 import re
+from ipaddress import ip_address
 
 from redactor.inference.evidence import validate_entity_evidence
 from redactor.inference.masking import mask_assessed_ranges, restore_entity
@@ -17,17 +18,27 @@ from redactor.utils.constants import (
     FIELD_AGE,
     FIELD_DATE,
     FIELD_EMAIL,
+    FIELD_IDENTIFIER,
+    FIELD_NETWORK,
     FIELD_PATIENT_NAME,
     FIELD_PHONE,
     FIELD_PROVIDER_NAME,
+    FIELD_SSN,
+    FIELD_WEB,
+    FIELD_ZIP,
     IDENTITY_RELATIVE,
+    SSN_NAMESPACE,
     TEXT_DATE_PATTERN,
     TEXT_EMAIL_PATTERN,
+    TEXT_IDENTIFIER_PATTERNS,
+    TEXT_IPV4_PATTERN,
     TEXT_NAMED_DATE_PATTERN,
     TEXT_PHONE_PATTERN,
     TEXT_PROVIDER_PATTERN,
     TEXT_RELATIVE_PATTERN,
     TEXT_STREET_PATTERN,
+    TEXT_URL_PATTERN,
+    TEXT_ZIP_PATTERN,
 )
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_ENTITY_EVIDENCE
 
@@ -43,6 +54,9 @@ def find_text_phi(
     protected = list(clinical_ranges(text))
     findings: list[TextFinding] = []
     for pattern, kind in (
+        (TEXT_URL_PATTERN, FIELD_WEB),
+        (TEXT_IPV4_PATTERN, FIELD_NETWORK),
+        (TEXT_ZIP_PATTERN, FIELD_ZIP),
         (TEXT_EMAIL_PATTERN, FIELD_EMAIL),
         (TEXT_PHONE_PATTERN, FIELD_PHONE),
         (TEXT_DATE_PATTERN, FIELD_DATE),
@@ -52,7 +66,11 @@ def find_text_phi(
         (TEXT_PROVIDER_PATTERN, FIELD_PROVIDER_NAME),
     ):
         for match in re.finditer(pattern, text):
-            group = "name" if "name" in match.re.groupindex else 0
+            group = (
+                "name"
+                if "name" in match.re.groupindex
+                else ("value" if "value" in match.re.groupindex else 0)
+            )
             start, end = match.span(group)
             if any(
                 start < existing.end and end > existing.start for existing in findings
@@ -63,8 +81,24 @@ def find_text_phi(
             value = text[start:end]
             if kind == FIELD_DATE:
                 parse_date(value)
+            if kind == FIELD_NETWORK:
+                ip_address(value)
             findings.append(
                 TextFinding(start=start, end=end, original=value, kind=kind)
+            )
+    for pattern, namespace in TEXT_IDENTIFIER_PATTERNS:
+        for match in re.finditer(pattern, text):
+            start, end = match.span("value")
+            if any(start < found.end and end > found.start for found in findings):
+                continue
+            findings.append(
+                TextFinding(
+                    start=start,
+                    end=end,
+                    original=text[start:end],
+                    kind=FIELD_SSN if namespace == SSN_NAMESPACE else FIELD_IDENTIFIER,
+                    namespace=namespace,
+                )
             )
     for expression, number, age in age_mentions(text):
         protected.append(expression)

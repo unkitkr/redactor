@@ -9,6 +9,10 @@ from redactor.utils.constants import (
     NPI_NAMESPACE,
     NPI_PREFIX_CHOICES,
     PRODUCT_LOT_NAMESPACE,
+    SSN_AREA_LIMIT,
+    SSN_DIGITS,
+    SSN_DISALLOWED_AREA,
+    SSN_NAMESPACE,
 )
 from redactor.utils.errors import ERROR_IDENTIFIER, ERROR_REPLACEMENT_COLLISION
 
@@ -59,3 +63,20 @@ def npi_check_digit(root: str) -> str:
         number = int(digit) * (2 if position % 2 == 0 else 1)
         total += number // 10 + number % 10
     return str((-total) % 10)
+
+
+def replace_ssn(value: str, key: bytes) -> str:
+    canonical = normalize_digits(value)
+    if len(canonical) != SSN_DIGITS:
+        raise ValueError(ERROR_IDENTIFIER)
+    digest = derive_digest(key, canonical, namespace=SSN_NAMESPACE)
+    number = int.from_bytes(digest, "big")
+    area = number % (SSN_AREA_LIMIT - 1) + 1
+    if area >= SSN_DISALLOWED_AREA:
+        area += 1
+    group = (number // SSN_AREA_LIMIT) % 99 + 1
+    serial = (number // (SSN_AREA_LIMIT * 99)) % 9999 + 1
+    result = f"{area:03d}-{group:02d}-{serial:04d}"
+    if normalize_digits(result) == canonical:
+        raise ValueError(ERROR_REPLACEMENT_COLLISION)
+    return result
