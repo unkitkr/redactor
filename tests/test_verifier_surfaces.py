@@ -133,7 +133,7 @@ def test_saved_archive_rejects_bytes_outside_its_members(tmp_path: Path) -> None
         (private + payload, payload + private, gap, compressed_tail)
     ):
         changed = tmp_path / f"unaccounted-{index}.xlsx"
-        changed.write_bytes(contaminated)
+        changed.write_bytes(bytes(contaminated))
         # The usual ZIP reader still opens both containers successfully.
         with ZipFile(changed) as archive:
             assert archive.testzip() is None
