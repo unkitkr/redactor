@@ -1,0 +1,9 @@
+*
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!README.md
+!redactor.toml
+!src/
+!src/**
+**/__pycache__/
