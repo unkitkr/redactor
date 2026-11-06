@@ -1,5 +1,6 @@
 """Durable task transitions; callers own the connection and coordinator lock."""
 
+import json
 import sqlite3
 from collections.abc import Iterator, Sequence
 from datetime import UTC, datetime
@@ -154,6 +155,7 @@ def claim_task(
     *,
     step: str | None = None,
     processing_version: str | None = None,
+    steps: Sequence[str] | None = None,
 ) -> Task | None:
     """Claim ready work, optionally restricted to a worker's step and version."""
     with transaction(connection):
@@ -162,6 +164,7 @@ def claim_task(
             SELECT tasks.* FROM tasks
             WHERE tasks.status = ?
                 AND (? IS NULL OR tasks.step = ?)
+                AND (? IS NULL OR tasks.step IN (SELECT value FROM json_each(?)))
                 AND (? IS NULL OR tasks.processing_version = ?)
                 AND NOT EXISTS (
                 SELECT 1 FROM dependencies
@@ -175,6 +178,8 @@ def claim_task(
                 STATUS_PENDING,
                 step,
                 step,
+                json.dumps(steps) if steps is not None else None,
+                json.dumps(steps) if steps is not None else None,
                 processing_version,
                 processing_version,
                 STATUS_SUCCEEDED,

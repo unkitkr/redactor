@@ -40,6 +40,8 @@ ERROR_RESIDUAL_PHI: Final = "residual_phi_detected"
 ERROR_STRUCTURE: Final = "invalid_native_structure"
 ERROR_REPLACEMENT: Final = "expected_replacement_missing"
 ERROR_PIXELS: Final = "pixel_verification_incomplete"
+ERROR_UNKNOWN_STEP: Final = "unknown_pipeline_step"
+ERROR_PIPELINE_BLOCKED: Final = "pipeline_dependencies_blocked"
 
 VERIFICATION_REASON_CODES: Final = (
     ERROR_CHECK_MISSING,

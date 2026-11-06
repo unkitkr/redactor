@@ -1,35 +1,42 @@
-"""Drain ready placeholder tasks through a process-local SQLite connection."""
+"""Claim durable tasks and pass them to the pipeline until the run settles."""
 
 import os
+import time
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-from redactor.persistence.client import claim_task, complete_task, open_queue
-from redactor.schemas.worker import TaskSummary
-from redactor.utils.constants import BOOTSTRAP_PROCESSING_VERSION, PRINT_TASK_STEP
+from redactor.persistence.client import claim_task, open_queue
+from redactor.persistence.scheduling import work_remains
+from redactor.schemas.pipeline import StepHandler
+from redactor.utils.constants import (
+    BOOTSTRAP_PROCESSING_VERSION,
+    PRINT_TASK_STEP,
+    WORKER_POLL_SECONDS,
+)
+from redactor.workers.diagnostic import print_task
+from redactor.workers.pipeline import execute_task
 
 
-def consume_tasks(state_directory: Path, coordinator_pid: int) -> None:
-    """Print safe task metadata and acknowledge this diagnostic step only.
-
-    Inventory is complete before workers start, so an empty queue ends this
-    bootstrap worker. This is not a scheduler for future dependent pipeline steps.
-    Console output can repeat if the process dies before completion is committed.
-    """
+def consume_tasks(
+    state_directory: Path,
+    coordinator_pid: int,
+    *,
+    processing_version: str = BOOTSTRAP_PROCESSING_VERSION,
+    handlers: Mapping[str, StepHandler] | None = None,
+    eligible_steps: Sequence[str] | None = None,
+) -> None:
+    handlers = {PRINT_TASK_STEP: print_task} if handlers is None else handlers
+    eligible_steps = tuple(handlers) if eligible_steps is None else eligible_steps
     with open_queue(state_directory) as queue:
         while os.getppid() == coordinator_pid:
             task = claim_task(
                 queue,
-                step=PRINT_TASK_STEP,
-                processing_version=BOOTSTRAP_PROCESSING_VERSION,
+                steps=eligible_steps,
+                processing_version=processing_version,
             )
             if task is None:
-                return
-
-            summary = TaskSummary(
-                task_id=task.task_id,
-                step=task.step,
-                attempt_count=task.attempt_count,
-                worker_pid=os.getpid(),
-            )
-            print(summary.model_dump_json(), flush=True)
-            complete_task(queue, task)
+                if not work_remains(queue, processing_version, handlers.keys()):
+                    return
+                time.sleep(WORKER_POLL_SECONDS)
+                continue
+            execute_task(queue, task, handlers)

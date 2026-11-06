@@ -59,6 +59,27 @@ def prepare_task(input_path: Path, step: str, processing_version: str) -> TaskSp
     )
 
 
+def prepare_successor(
+    connection: sqlite3.Connection, source: TaskSpec, step: str
+) -> TaskSpec:
+    """Reuse an inventoried fingerprint instead of rereading a large input file."""
+    identity = json.dumps(
+        (str(source.input_path), source.input_sha256, step, source.processing_version),
+        separators=JSON_SEPARATORS,
+    ).encode(TEXT_ENCODING)
+    task_id = hashlib.sha256(identity).hexdigest()
+    return TaskSpec(
+        task_id=task_id,
+        input_path=source.input_path,
+        input_sha256=source.input_sha256,
+        input_size=source.input_size,
+        step=step,
+        processing_version=source.processing_version,
+        temporary_directory=state_directory(connection) / TEMPORARY_DIRECTORY / task_id,
+        output_path=source.output_path,
+    )
+
+
 def register_file(
     connection: sqlite3.Connection,
     input_path: Path,
