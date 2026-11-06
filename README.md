@@ -1,288 +1,271 @@
 # Redactor
 
-PHI pseudonymization with durable SQLite tasks, identity resolution, saved-file
-verification and publication or quarantine. Current publication covers supported
-CSV/TSV, labelled text, XLSX and HL7 ADT; unsupported formats and surfaces
-quarantine. See [notes.md](notes.md) for measured limitations.
+Redactor is a local PHI pseudonymization pipeline with a durable SQLite queue,
+consistent identity mapping, and verification of saved outputs before publication.
+It runs inspection, analysis, rewriting, verification and reporting from one command.
+Files that cannot be assessed safely are quarantined with a reason.
 
-## Run the pipeline
+## Set up
 
-Set `REDACTOR_SECRET_KEY` to a base64-encoded 32-byte secret and retain it for
-replay. The checked-in configuration uses GLiNER PII Edge UINT8. Stage its pinned
-`gliner_config.json`, `tokenizer.json` and `onnx/model_quint8.onnx` under
-`.models/gliner-pii-edge-v1.0/` before running. Checksums and download URLs are in
-[the model manifest](benchmarks/model-artifacts.json); the setup helper
-`uv run python tools/benchmarks/fetch_models.py` fetches all benchmark artifacts.
-Runtime loading never downloads models. In a container, mount the staged directory
-read-only at `/work/.models` and retain the same weights for replay.
+Run these commands from the project root on Linux or macOS with
+[uv](https://docs.astral.sh/uv/) installed:
 
-The shared functional loader supports GLiNER and spaCy with input bounds,
-validated spans and per-worker caching. Missing or incompatible weights and failed
-inference prevent publication when a model is required. GLiNER also rejects inputs
-outside its token window without truncating them. Its additional detections can
-trigger conservative quarantine when rewriting cannot establish safe coverage.
-The same public loading module exposes Tesseract and PP-OCR adapters with bounded
-image inputs and validated pixel coordinates. These adapters currently serve OCR
-evaluation; they do not enable image publication. Empty or partial OCR results are
-treated as unknown coverage. All Python runtimes are locked in `uv.lock`; Tesseract
-also requires its system executable and local English trained data.
+```bash
+uv sync --locked
+uv run --locked python tools/benchmarks/fetch_models.py
+```
 
-For the established spaCy path, use a separate TOML configuration containing:
+The first command installs Python dependencies and the packaged spaCy model. The
+second downloads pinned model artifacts into `.models/`, checks their sizes and
+SHA-256 hashes, and skips matching files. It fetches the full benchmark model set,
+including alternatives to the selected GLiNER PII Edge UINT8 model. Setup requires
+internet access; local inference never downloads missing weights at runtime.
+
+Put the supplied assignment files in `input/`. Inputs and downloaded weights are
+excluded from Git.
+
+Create a private environment file **once**, then retain it with your run state:
+
+```bash
+uv run --locked --offline python - <<'PY'
+import base64
+import os
+
+secret = base64.b64encode(os.urandom(32)).decode()
+descriptor = os.open('.env.local', os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(descriptor, 'w') as environment:
+    environment.write(f'REDACTOR_SECRET_KEY={secret}\nLLM_ENABLED=0\n')
+print('Created .env.local; retain it for replay.')
+PY
+```
+
+This refuses to overwrite an existing `.env.local` and does not print the secret.
+The file is gitignored. If it already exists, keep its key rather than generating a
+new one. Losing or changing the key prevents replay of its encrypted state.
+
+## Run the whole pipeline
+
+```bash
+uv run --locked --offline --env-file .env.local redactor \
+  --input input \
+  --state tmp/held-in/.redactor \
+  --workers 2
+```
+
+This starts the complete pipeline; files that fail an earlier check go directly to
+quarantine. One worker handles inference and another handles lighter work.
+The command waits for all files to reach publication or quarantine
+and then writes the final report. `.env.local` selects local-only processing through
+`LLM_ENABLED=0`; uv's `--offline` flag separately prevents dependency downloads.
+
+Inside the project environment, `python -m redactor` is an equivalent entry point.
+The optional `--state` defaults
+to `.redactor`; the example uses a separate workspace so earlier runs stay intact.
+Configuration comes from `redactor.toml`, or from `--config path/to/config.toml`.
+Environment files are loaded explicitly by uv, not automatically by Redactor.
+
+A zero exit code means the inventory was reconciled, **not that every file was
+redacted successfully**. Check the published/quarantined counts and reasons.
+
+## Inspect and use the results
+
+For the command above, results appear in `tmp/held-in/output/`:
+
+| Path | Contents |
+| --- | --- |
+| `published/` | Files accepted by the saved-output verifier, retaining their relative names. |
+| `quarantine/` | Original files withheld from publication, with `.reason.json` sidecars. These still contain the original sensitive data. |
+| `report.json` | Run completion, per-file outcomes, reason codes, hashes, counts, timings and model usage. |
+| `run.log` | The same per-file report entries as newline-delimited JSON. |
+
+The state directory contains SQLite, encrypted identity/model evidence and private
+intermediate artifacts. Keep it private. Share only appropriate published outputs
+and aggregate reports, not quarantine files or runtime state.
+
+The dashboard starts automatically at <http://127.0.0.1:8765> while the pipeline
+runs. It shows durable queue state and HTML views of the JSON benchmarks. Use
+`--no-dashboard` to disable it or `--dashboard-port 8766` to change its port.
+A dashboard startup failure does not stop processing.
+
+To inspect a completed run, start the dashboard separately:
+
+```bash
+uv run --locked --offline redactor-dashboard --state tmp/held-in/.redactor
+```
+
+Queue snapshots refresh every five seconds while visible. Benchmark snapshots are
+cached for 30 seconds. A running task is a database claim, not a worker heartbeat.
+The dashboard is a local, read-only tool without authentication or external assets.
+
+The OCR benchmark gallery contains 12 variants of three reference documents. If
+those generated images are absent, recreate them with:
+
+```bash
+uv run --locked --offline python tools/make_ocr_corpus.py
+```
+
+The gallery appears only when its manifest matches the measured corpus. OCR scores
+measure transcription and localization, not safe redacted-image publication.
+
+## Resume a run
+
+Re-run the exact pipeline command with the same inputs, configuration, weights,
+secret and input/state locations. Completed steps are reused; interrupted steps recover
+from their durable state. Do not delete SQLite journal files or the run lock.
+After SIGKILL, let surviving workers exit before restarting the coordinator.
+
+Outputs belong to one inventory, configuration, secret identity and pipeline
+version. Changed inputs or processing choices require a fresh workspace, for
+example `--state tmp/another-run/.redactor`. Conflicting outputs produce
+`output_content_conflict`; they are never silently overwritten. State and outputs
+must share a local filesystem for atomic publication.
+
+## Supplied held-in dataset results
+
+The supplied `input/` files are development fixtures, not an independent held-out
+accuracy dataset. The measured end-to-end results are recorded in
+[the held-in run report](benchmarks/held-in-pipeline.json).
+
+The local-only run reconciled all 12 files, but **published none**. Five files
+failed coverage checks, six used unsupported native formats, and one was corrupt.
+This demonstrates completion and replay of quarantine outcomes, not successful
+redaction of this dataset or full assignment coverage.
+
+| Local-only run | Measured result |
+| --- | --- |
+| Model | GLiNER PII Edge v1.0 UINT8; external calls disabled |
+| Input | 12 files, 533,410 bytes |
+| Published / quarantined | 0 / 12 |
+| Initial elapsed time | 2.624 seconds |
+| Exact-command replay | 1.085 seconds |
+| Peak container memory | 572.86 MiB, including probe, coordinator, workers and dashboard |
+| Limits | 2 vCPUs, 1 GiB RAM, no extra swap, no network |
+| Durable work | 37 completed tasks; replay added no attempts |
+| Replay checks | All output bytes and the report unchanged; inputs unchanged |
+| Model requests / charges | 0 / $0 |
+
+The dashboard was enabled and reachable. Current source and staged weights were
+mounted into the existing evaluation image; this was not a fresh production-image
+build. All files branched to quarantine before rewriting and saved-output
+verification, so elapsed time measures quarantine processing, not redaction
+throughput. The replay was a normal completed-run replay, not a random-SIGKILL test.
+
+All files below were quarantined:
+
+| Supplied file | Detected type | Reason |
+| --- | --- | --- |
+| `encounters.csv` | CSV | Incomplete coverage |
+| `billing_export.csv` | XLSX | Incomplete coverage |
+| `patient_roster.xlsx` | XLSX | Incomplete coverage |
+| `progress_note.txt` | Text | Incomplete coverage |
+| `adt_a01.hl7` | HL7 | Incomplete coverage |
+| `claims.json` | JSON | Unsupported native format |
+| `fhir_bundle.json` | FHIR | Unsupported native format |
+| `discharge_summary.docx` | DOCX | Unsupported native format |
+| `referral_packet.pdf` | PDF | Unsupported native format |
+| `wristband_photo.jpg` | JPEG | Unsupported native format |
+| `imaging_0042.dat` | DICOM | Unsupported native format |
+| `corrupt_upload.docx` | ZIP | Invalid container structure |
+
+## Models and current coverage
+
+The checked-in configuration selects **GLiNER PII Edge UINT8** for local NER,
+**PP-OCRv5 mobile English** for OCR, and **z-ai/glm-5.3-flash** for hosted text.
+The [model comparison](benchmarks/README.md) records exact artifacts, accuracy,
+latency, memory and historical hosted costs.
+
+Current publication paths cover supported CSV/TSV, labelled text, XLSX and HL7 ADT.
+Other formats and unsupported document features quarantine. GLiNER can also reject
+otherwise valid supported files when safe coverage cannot be established. To use
+the established spaCy path explicitly, create a separate configuration:
 
 ```toml
 [local]
 ner = "spacy"
+
 [remote]
 enabled = false
 ```
 
-Pass that file with `--config <path>`. The ordinary entry point is:
+Pass it through `--config` and use a fresh output workspace. Tesseract and PP-OCR
+share bounded OCR adapters but do not yet enable image publication. Tesseract also
+requires its system executable and local English trained data.
+
+The remote detector helper supports encrypted replay, bounded exponential backoff,
+cost limits and local fallback, tested separately from file publication. A failed
+local fallback still prevents publication. Production workers currently call local NER
+directly; hosted detection and remote judging are not integrated into publication.
+Setting `LLM_ENABLED=1` alone therefore does not make this a hosted-model run.
+
+The [decision log](notes.md) separates selected policies, measured evidence and
+known limitations. Neither the small fixture run nor the model benchmarks establish
+clinical safety or satisfy the 2 GiB CSV / 30-minute acceptance target. Full-run
+random-SIGKILL equivalence remains unvalidated.
+
+## Run in a constrained container
+
+After staging the local weights and secret, build the image:
 
 ```bash
-uv run redactor --input input --state .redactor --workers 2
+docker build -t redactor:local .
+docker volume create redactor-state
+docker run --name redactor-local \
+  --cpus 2 --memory 1g --memory-swap 1g --network none \
+  --env-file .env.local \
+  --mount type=bind,src="$PWD/input",dst=/work/input,readonly \
+  --mount type=bind,src="$PWD/.models",dst=/work/.models,readonly \
+  --mount type=bind,src="$PWD/redactor.toml",dst=/work/redactor.toml,readonly \
+  --mount type=volume,src=redactor-state,dst=/work/run \
+  redactor:local --input input --state run/.redactor --workers 2 --no-dashboard
 ```
 
-`uv run python -m redactor` provides the same entry point and defaults. The
-coordinator validates directory locations, acquires exclusive run ownership,
-initializes SQLite, recovers interrupted tasks, and registers input files before
-starting workers. Inventory walks nested directories without filtering by file
-extension or loading entire files into memory. Symlinks and nonregular entries
-fail startup; workers do not start after an incomplete inventory.
+The build needs internet access; this local-only run has no network access and no
+extra swap. Keep SQLite state and outputs on the Docker volume: macOS bind-mounted
+state produced `SQLITE_CORRUPT` in this evaluation, while native container storage
+completed the run and replay ([storage observation](benchmarks/docker-bind-mount-observation.json)).
+The precise filesystem mechanism was not diagnosed. Inputs and weights can remain
+read-only bind mounts.
 
-Each worker opens its own queue connection and completes durable pipeline steps.
-Inspection and analysis precede a frozen identity snapshot, rewriting, independent
-saved-file verification, and publication or quarantine. A successful run produces
-`output/published/`, `output/quarantine/`, `output/report.json` and `output/run.log`
-beside the state directory. Reports contain hashes and counts, not raw PHI.
+Copy the outputs out after completion, or replay the same retained container:
 
-`output/.run-id` binds those files to one inventory, configuration, secret identity
-and pipeline version. The same run can resume; a changed run or unowned older
-outputs cause `output_content_conflict` before workers start. Use a fresh workspace
-for an upgrade, for example `--state tmp/new-run/.redactor`, which writes to
-`tmp/new-run/output/`. Existing outputs are never deleted or relabelled.
+```bash
+mkdir -p tmp/container-run
+docker cp redactor-local:/work/run/output tmp/container-run/
+docker start --attach redactor-local
+```
 
-The optional `--diagnostic` mode retains the queue bootstrap demonstration and
-prints task metadata without clinical processing.
-
-The coordinator waits for its workers and stops the group if any worker fails.
-SIGINT and SIGTERM trigger bounded cleanup. A persistent lock file under the state
-directory prevents two runs from sharing recovery ownership. Workers inherit its
-descriptor, so SIGKILL of the coordinator cannot allow recovery to reset work
-while a surviving worker still runs. Workers stop taking tasks when their parent
-exits; restart after they exit. Never delete the lock file to bypass ownership.
-This uses local POSIX filesystem semantics on Linux and macOS.
-
-A crash can repeat a diagnostic console line because printing and SQLite
-completion are separate operations. Clinical artifacts use durable checkpoints
-and atomic installation instead; full-run SIGKILL equivalence remains a separate
-acceptance test, as recorded in the notes.
-
-Coordinator responsibilities are split between `run.py`, `inventory.py`,
-`ownership.py`, `processes.py`, `signals.py`, and `cli.py`.
+Use a new container name and volume for a different run. The automatic dashboard
+binds the container's loopback, so publishing a host port alone would not expose
+it; this container example disables it. The host command above enables the local
+dashboard without Docker networking.
 
 ## Development
 
-Use `uv sync` to install the locked dependencies. `.python-version` selects Python
-3.14 for development; the package supports Python 3.11 and later. Ordinary Python
-3.14 still has a GIL. Workers use separate spawned processes, so they
-do not share one GIL; a free-threaded interpreter is not required.
-
-Pyrefly uses the project interpreter at `.venv/bin/python`, configured in
-`pyproject.toml`. Select that interpreter in the editor as well. If diagnostics
-still show packages from a standalone interpreter, restart the language server.
+The package supports Python 3.11 and later; `.python-version` selects 3.14 for local
+development and the Dockerfile uses 3.12. Workers are separate processes and do not
+share one GIL. Select `.venv/bin/python` in the editor.
 
 ```bash
-uv run ruff check .
-uv run ruff format --check .
-uv run mypy src tests
-uv run pytest -q
+uv run --locked --offline ruff check .
+uv run --locked --offline ruff format --check .
+uv run --locked --offline mypy src tests
+uv run --locked --offline pytest -q
 ```
 
-## Queue and benchmark dashboard
+| Location | Responsibility |
+| --- | --- |
+| `src/redactor/coordinator/` | Startup, inventory, recovery ownership and worker supervision. |
+| `src/redactor/workers/` | Composable pipeline steps and their dispatch. |
+| `src/redactor/persistence/` | Queue, checkpoints, artifacts, identities and model accounting. |
+| `src/redactor/formats/`, `policy/`, `verification/` | Parsing, transformation rules and independent saved-output checks. |
+| `src/redactor/inference/`, `agents/` | Shared local adapters and remote detector prompts/runtime. |
+| `src/redactor/schemas/`, `utils/` | Typed contracts, configuration, constants and shared helpers. |
+| `src/redactor/migrations/` | Numbered SQL migrations, applied transactionally at startup. |
+| `src/redactor/monitoring/` | Read-only HTTP dashboard and plain HTML/CSS/JavaScript. |
+| `tools/`, `benchmarks/`, `tests/` | Reproducible measurements, evidence and integration tests. |
 
-The pipeline starts a read-only dashboard at `http://127.0.0.1:8765` while the
-coordinator runs. Use `--no-dashboard` to disable it or `--dashboard-port 8766`
-to select another port. A dashboard startup failure prints `monitor_startup_failed`
-and processing continues. The dashboard exits with the coordinator and inherits
-no run lock. For inspection after a run, start it separately from the project root:
-
-```bash
-uv run redactor-dashboard --state .redactor
-```
-
-The queue view reads committed SQLite state every five seconds while visible.
-Snapshots are cached briefly; a running claim is not a heartbeat, and checkpoint
-counts describe durable work. Published and quarantined file counts are separate
-from step task counts. Responses exclude input paths, clinical content and private
-model state. Reads have a short time budget and never run migrations or recovery.
-
-The benchmark view reads `benchmarks/results/*.json` and `benchmarks/baseline-*.json`.
-It separates accuracy, historical requests, offline replay, container receipts and
-throughput. Missing measurements remain missing. Reports are bounded and cached
-for 30 seconds; Refresh may return that cached snapshot. Use `--benchmarks` and
-`--images` on the standalone command to select other local directories.
-
-OCR benchmarks include 12 images: three documents with clean, rotated, blurred and
-low-contrast variants. The gallery shows reference images from `tmp/ocr-corpus/`
-only when the manifest matches a measured corpus. Recreate them with
-`uv run python tools/make_ocr_corpus.py` if absent. These tests measure transcription
-and identifier localization; they do not test safe redacted-image publication.
-
-The server uses Python's standard library and packaged HTML/CSS/JavaScript, with
-no frontend build, CDN, telemetry or model imports. It is a local development
-monitor without authentication. The standalone `--host 0.0.0.0` option supports
-an explicitly bound container port; keep access restricted to your trusted machine.
-
-## Staging model files
-
-```bash
-uv sync --locked
-uv run python tools/benchmarks/fetch_models.py
-```
-
-`uv sync` installs Python runtimes and the packaged spaCy model. The second command
-downloads the separately pinned GLiNER, OpenMed, PP-OCR and Tesseract artifacts
-listed in `benchmarks/model-artifacts.json` into `.models/`, verifies their sizes
-and SHA-256 checksums, and skips matching files. It fetches the benchmark set,
-not just the models selected in `redactor.toml`. Run this setup with internet
-access before entering the restricted execution container. Runtime inference
-does not fetch missing weights; stage or mount them read-only. Hosted models run
-at the configured endpoint and have no local weight download.
-
-## Model requests
-
-Remote request settings live in `redactor.toml`. `max_attempts` includes the first
-call. Transient failures use full-jitter exponential backoff, starting with
-`retry_initial_seconds` and capped by `retry_max_seconds`. A server's `Retry-After`
-is a minimum wait, even when it exceeds that cap. The total deadline and remaining
-cost budget can stop retries sooner. Authentication failures and malformed model
-responses fall back immediately. The OpenAI SDK's additional retries are disabled.
-Attempt counts, cost reservations, pending retry waits, and the logical request's
-deadline persist across worker restarts. Restarting does not grant a fresh retry
-or time budget. Only inference workers explicitly load the installed local model. The provider
-wrapper is tested, but hosted detection and judging are not integrated into
-clinical publication; model comparisons and offline replay live under `tools/`.
-
-## Durable queue
-
-```python
-from pathlib import Path
-
-from redactor.persistence.client import claim_task, complete_task, open_queue
-from redactor.persistence.files.registration import register_file
-
-with open_queue(Path(".redactor")) as queue:
-    register_file(queue, Path("input/encounters.csv"), "inspect", "policy-v1")
-    claimed = claim_task(queue, step="inspect", processing_version="policy-v1")
-
-    if claimed is not None:
-        # Perform the metadata-only inspection before accepting its completion.
-        # Persist and validate an output artifact before accepting a file result.
-        complete_task(queue, claimed)
-```
-
-`persistence/client.py` exposes a functional worker API: `open_queue`, `claim_task`,
-`complete_task`, and `fail_task`. The context owns connection cleanup; each queue
-operation owns its short transaction. No transaction stays open while doing work,
-and leaving the context never automatically accepts an unfinished task.
-
-`register_file` hashes the input in bounded buffers outside any write transaction,
-then stores the task and its temporary/output locations in one commit. Locations
-come from `utils/constants.py`: temporary artifacts live under
-`<state>/tmp/<task_id>/`, and outputs target the workspace's
-`output/published/<original_name>`. Registration creates no output files.
-
-`prepare_task`, also in `persistence/files/registration.py`, prepares metadata for callers that
-need to enqueue successors atomically through `complete_task`.
-Its identity includes the input path and content, operation, and processing
-version. The caller must include relevant policy, identity-map, and key versions
-in the processing version, never the secret itself.
-
-`enqueue_task` is idempotent. Dependencies must already exist, and a task's
-dependencies cannot change on rediscovery. `claim_task` only selects pending work
-whose prerequisites succeeded. An empty ready queue does not mean the entire run
-is finished: tasks can still be running or blocked on failed prerequisites.
-
-Each task identifies one step for one input. `complete_task(..., result=artifact,
-successors=[...])` records that step's result and inserts dependent tasks in one
-transaction. The caller must persist artifact bytes before recording their
-metadata. A committed step is preserved on recovery; only interrupted running
-steps return to pending. `fail_task` accepts registered failure codes, not raw
-exception messages. Failed work requires an explicit `retry_task`; it is not
-silently retried by rediscovery.
-
-WAL permits readers alongside a writer; SQLite still permits only one writer at a
-time. Connections use explicit short transactions,
-`synchronous=FULL`, foreign keys, and a bounded suggested page-cache size.
-
-Opening a database does not claim tasks or recover anything automatically.
-`recover_interrupted` is an explicit state transition: it marks running attempts
-interrupted and makes their tasks pending again. Coordinator startup establishes
-exclusive ownership before invoking it. Old attempt tokens
-cannot update current work. This layer accepts one logical result; the future
-processing layer must make actual execution repeatable. It cannot guarantee
-exactly-once remote API billing.
-
-Keep the state directory and SQLite's journal files together across restarts on
-a local filesystem. Do not delete a WAL file manually. The state directory may
-contain sensitive paths and intermediate data; it is private and gitignored.
-
-## Temporary files and outputs
-
-`create_temporary_file(connection, claimed)` creates a private file named by the
-attempt token under its registered temporary directory. Repeated calls preserve
-existing bytes, and a new attempt gets a separate file. This does not implement
-checkpoint recovery or decide where appending is safe.
-
-Close the writer, then call `seal_temporary_file` to sync and fingerprint its
-bytes. The future independent verifier must approve that exact artifact before
-the caller passes it to `finalize_output`. Finalization rechecks the bytes and
-installs the complete file at its registered output path. These helpers do not
-perform PHI verification themselves.
-
-An atomic hard link installs the output without overwriting a conflicting file;
-the output directory is synced before the temporary link is removed. Replaying
-finalization accepts an identical existing output, including after a crash between
-installation and cleanup. The temporary and output paths must share a local
-filesystem. Cross-filesystem publication fails without creating a partial file.
-
-The caller owns exclusive coordination, closes writers before verification, and
-keeps artifacts unchanged until finalization finishes. Filesystem finalization and
-SQLite task completion are separate operations: pass the returned artifact to
-`complete_task` after successful finalization. Actual verifier execution, startup
-reconciliation, and checkpoint save/resume will be implemented separately.
-
-## Schema migrations
-
-Numbered SQL files and their runner live in `src/redactor/migrations/`. The package
-owns discovery, filename validation, and migration execution. Naming constants are
-grouped in `utils/constants.py`. The package discovers the SQL files
-at database startup, orders them by version, and validates consecutive numbering
-from one. Their count determines the current schema version. Adding the next SQL
-file requires no registry or version-constant update. Add a new migration when
-changing the schema rather than editing an existing migration. SQL files are
-packaged with the application.
-
-Database startup applies pending migrations and updates SQLite's `user_version`
-inside one transaction. A failed migration leaves the prior schema and version
-intact. Databases with a newer, unsupported schema are rejected. Each SQL statement
-in a migration must end with a semicolon on its own statement's final line.
-
-## Layout
-
-- `src/redactor/utils/constants.py`: constants grouped by domain and responsibility.
-- `src/redactor/utils/errors.py`: failure codes and allowed failure-code lists.
-- `src/redactor/schemas/persistence.py`: task, attempt, checkpoint, and artifact models.
-- `src/redactor/migrations/`: SQL schema changes, discovery, and the migration runner.
-- `src/redactor/persistence/database.py`: connection setup and transaction boundaries.
-- `src/redactor/persistence/client.py`: functional worker-facing queue API.
-- `src/redactor/persistence/queue/`: task transitions, attempt history, and scheduling.
-- `src/redactor/persistence/files/`: registration, hashing, artifacts, checkpoints, results, and publication.
-- `src/redactor/persistence/runs/`: frozen inventories and run manifests.
-- `src/redactor/persistence/models/`: request budgets and encrypted model decisions.
-- `src/redactor/utils/filesystem.py`: shared private-directory and sync operations.
-- `src/redactor/coordinator/`: startup, inventory, run ownership, and worker supervision.
-- `tests/`: real temporary SQLite databases and files.
-
-Agent prompts, output schemas, and runtime code will be introduced separately
-when a real agent is implemented, following `AGENTS.md`.
+SQLite uses WAL, short transactions and `synchronous=FULL`; writes still serialize.
+Worker APIs are functional, and step completion commits its result and successors
+together. Artifact bytes are persisted before their database references. A saved
+verification verdict is bound to the exact output, source and identity snapshot
+before publication. These boundaries are described in the [architecture notes](notes.md).

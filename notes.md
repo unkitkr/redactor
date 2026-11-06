@@ -37,6 +37,7 @@
 - **Verifier regression:** v3 found zero false accepts and 0–4 false rejects on the unchanged 40-case development corpus across four local adapters and three cached hosted configurations; these macOS runs include local fallbacks and no new charges, not independent clinical validation.
 - **Hosted cost:** receipts total $0.045215, while conservative reservations account for $2.422906; hosted clients ran on macOS, whereas local model comparisons ran in constrained containers.
 - **Offline CSV baseline:** all 30,000 rows / 5,753,686 bytes published in 38.41 seconds at 781 rows/s, with 344.4 MiB peak memory under 2 vCPUs / 1 GiB and no OOM or model charge; this does not exercise the 2 GiB / 30-minute target ([record](benchmarks/baseline-30000.json)).
+- **Held-in pipeline:** local GLiNER reconciled all 12 supplied files / 533,410 bytes in 2.624 seconds at 572.86 MiB under 2 vCPUs / 1 GiB, but published none; replay added no attempts and preserved all output bytes ([record](benchmarks/held-in-pipeline.json)).
 - **Dashboard overhead:** 1,000 tasks under 2 vCPUs / 1 GiB used 0.75% of one core while polling, 43.07 MiB server peak RSS and 40.33 ms mean queue latency; browser overhead and concurrent pipeline throughput were not measured ([record](benchmarks/results/dashboard-overhead.json)).
 
 ## Known limitations
@@ -50,4 +51,5 @@
 - **Model headroom:** OpenMed reached 1 GiB in isolation, and NVIDIA full weights were excluded before inference; GLiNER matched upstream on 140 inputs, while OpenMed BIO grouping remains experimental.
 - **Validation gaps:** hosted publication integration, remote judging, pixel verification, cross-issuer linkage, collision auditing and full-run crash equivalence remain incomplete or unvalidated.
 - **Recovery boundary:** atomic file installation requires one filesystem, and replay requires the saved state and original secret.
+- **Container storage:** SQLite reported corruption on macOS directories shared into Docker Desktop; the same pipeline completed and replayed on native Linux storage, which is required for container state and outputs.
 - **Run isolation:** output ownership blocks mixed runs; input, policy or configuration changes require a fresh output workspace.
