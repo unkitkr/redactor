@@ -64,6 +64,10 @@ Validation at the verifier-v3 milestone: Ruff formatting/lint and mypy passed. T
 
 The subsequent pipeline-v4 loader integration supports the selected GLiNER export through the same bounded, validated adapter used by evaluation. Its real CLI regression publishes a CSV containing a free-text patient name, preserves clinical content, replays identical bytes and quarantines when weights are missing. The four valid files in the earlier mixed-format regression still quarantine with GLiNER because of unresolved coverage; this is a policy/model compatibility limit, not a loading error. That cross-format regression now explicitly selects spaCy, and the separate GLiNER test exercises the checked-in configuration. The 150-test suite passes; this is integration evidence, not a new accuracy or constrained-container benchmark.
 
+Local OCR now also uses a shared functional loader with locked runtimes, pre-inference image limits, finite source-pixel geometry, and explicit errors for empty or partial outputs. PP-OCR requires local weights with an embedded character dictionary, preventing its dictionary download fallback. Its 12-image English regression retained all earlier per-case accuracy and geometry metrics. Hosted OCR uses the same input and output checks, including on cached responses; those tests use a controlled HTTP transport and incur no model charges. This does not establish pixel verification or image publication.
+
+Loader validation: Ruff, formatting and mypy pass; the full suite has 154 passed and one skipped host Tesseract check. Coverage is 85%. A clean production-only Python environment loads spaCy, GLiNER and PP-OCR. A separate offline smoke check under 2 vCPUs and 1 GiB publishes and replays one CSV and reads one synthetic image with both PP-OCR and Tesseract. That check mounts the current source into the existing evaluation image; a fresh production image build was blocked by the spaCy GitHub wheel download timing out. These are integration checks, not the bulk acceptance benchmark.
+
 ### Hosted response replay
 
 The three hosted configurations were also rescored with the new verifier using the existing encrypted `pipeline-v2` response cache and the unchanged corpus. The replay adapter opens SQLite read-only, does not read an API key or construct an HTTP transport, and applies current grounding and policy checks. The raw detection sections are copied from the original reports, identified by SHA-256; they are not fresh model measurements.
@@ -116,8 +120,7 @@ Successful API receipts report **$0.045215**. The shared durable ledger accounts
 Weights and large generated inputs are not committed. Download them during setup, then run local inference without network access. Keep the private remote ledger to replay responses and retain budget accounting.
 
 ```sh
-uv sync --frozen
-uv pip install -r tools/benchmarks/requirements.txt
+uv sync --locked
 uv run --no-sync python tools/benchmarks/fetch_models.py
 uv run --no-sync python tools/make_ocr_corpus.py
 docker build -t redactor:local .

@@ -2,6 +2,7 @@
 
 from redactor.inference.cache import cache_ner
 from redactor.inference.evidence import validate_entity_evidence
+from redactor.inference.ocr_loader import load_local_ocr as load_local_ocr
 from redactor.schemas.configuration import LocalSettings
 from redactor.schemas.entities import NerAdapter, TextEntities, TextEntity
 from redactor.utils.constants import NER_GLINER, NER_SPACY

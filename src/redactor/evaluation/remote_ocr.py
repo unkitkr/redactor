@@ -4,11 +4,11 @@ import sqlite3
 from decimal import Decimal
 from pathlib import Path
 
-from PIL import Image
-
 from redactor.evaluation.ocr_prompts import ocr_request
 from redactor.evaluation.remote import recording_transport, remote_settings
-from redactor.schemas.evaluation import OcrAdapter, OcrRegion, OcrResponse
+from redactor.inference.ocr_evidence import read_ocr_image, validate_ocr_regions
+from redactor.schemas.configuration import ResourceSettings
+from redactor.schemas.ocr import OcrAdapter, OcrRegion, OcrResponse
 from redactor.schemas.persistence import Task
 from redactor.utils.constants import (
     EVALUATION_VISION_INPUT_BYTES,
@@ -17,8 +17,9 @@ from redactor.utils.constants import (
     EVALUATION_VISION_OUTPUT_TOKENS,
     MODEL_KEY_ENVIRONMENT,
     MODEL_REMOTE,
+    OCR_PNG_FORMAT,
 )
-from redactor.utils.errors import ERROR_MODEL_RESPONSE
+from redactor.utils.errors import ERROR_MODEL_INPUT, ERROR_MODEL_RESPONSE
 from redactor.utils.provider import request_json
 
 
@@ -29,7 +30,9 @@ def load_remote_ocr(
     mapping_key: bytes,
     api_key: str,
     receipt_path: Path,
+    resources: ResourceSettings | None = None,
 ) -> OcrAdapter:
+    limits = resources or ResourceSettings()
     settings = remote_settings(model)
     remote = settings.remote.model_copy(
         update={
@@ -43,7 +46,20 @@ def load_remote_ocr(
     transport = recording_transport(receipt_path, remote)
 
     def recognize(path: Path) -> tuple[OcrRegion, ...]:
-        request = ocr_request(path)
+        try:
+            content, size, image_format = read_ocr_image(
+                path,
+                maximum_bytes=min(
+                    limits.max_native_file_bytes, EVALUATION_VISION_INPUT_BYTES
+                ),
+                maximum_pixels=limits.max_image_pixels,
+            )
+            # The evaluation image transport currently declares PNG explicitly.
+            if image_format != OCR_PNG_FORMAT:
+                raise ValueError(ERROR_MODEL_INPUT)
+        except ValueError:
+            raise ValueError(ERROR_MODEL_INPUT) from None
+        request = ocr_request(content, size)
         result = request_json(
             connection,
             claimed,
@@ -56,13 +72,10 @@ def load_remote_ocr(
         )
         if result.backend != MODEL_REMOTE:
             raise ValueError(result.reason_code or ERROR_MODEL_RESPONSE)
-        regions = OcrResponse.model_validate(result.payload).regions
-        with Image.open(path) as image:
-            width, height = image.size
-        for region in regions:
-            left, top, right, bottom = region.box
-            if not (0 <= left < right <= width and 0 <= top < bottom <= height):
-                raise ValueError(ERROR_MODEL_RESPONSE)
-        return regions
+        try:
+            regions = OcrResponse.model_validate(result.payload).regions
+            return validate_ocr_regions(regions, size)
+        except ValueError:
+            raise ValueError(ERROR_MODEL_RESPONSE) from None
 
     return recognize

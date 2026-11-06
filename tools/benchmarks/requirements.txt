@@ -1,2 +1,0 @@
-# Optional OCR evaluation dependency; NER runtimes are locked in uv.lock.
-rapidocr==3.10.0

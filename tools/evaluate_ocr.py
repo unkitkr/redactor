@@ -12,7 +12,8 @@ from pathlib import Path
 from time import perf_counter
 
 from redactor.evaluation.ocr import evaluate_ocr
-from redactor.evaluation.ocr_adapters import load_ppocr, load_tesseract
+from redactor.inference.model_loader import load_local_ocr
+from redactor.schemas.configuration import LocalSettings, ResourceSettings
 from redactor.schemas.evaluation import OcrExample
 from redactor.utils.constants import EVALUATION_OCR_CORPUS
 
@@ -28,13 +29,19 @@ def main() -> None:
     corpus = arguments.corpus.read_bytes()
     examples = tuple(OcrExample.model_validate(item) for item in json.loads(corpus))
     started = perf_counter()
+    adapter = load_local_ocr(
+        LocalSettings(
+            ocr=arguments.backend,
+            ocr_directory=arguments.model,
+            ocr_language=arguments.language,
+        ),
+        ResourceSettings(),
+    )
     if arguments.backend == "tesseract":
-        adapter = load_tesseract(arguments.model)
         runtime = subprocess.check_output(
             ["tesseract", "--version"], text=True
         ).splitlines()[0]
     else:
-        adapter = load_ppocr(arguments.model, arguments.language)
         runtime = "rapidocr " + importlib.metadata.version("rapidocr")
     loaded = perf_counter()
     result = evaluate_ocr(examples, adapter)

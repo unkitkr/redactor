@@ -21,6 +21,12 @@ validated spans and per-worker caching. Missing or incompatible weights and fail
 inference prevent publication when a model is required. GLiNER also rejects inputs
 outside its token window without truncating them. Its additional detections can
 trigger conservative quarantine when rewriting cannot establish safe coverage.
+The same public loading module exposes Tesseract and PP-OCR adapters with bounded
+image inputs and validated pixel coordinates. These adapters currently serve OCR
+evaluation; they do not enable image publication. Empty or partial OCR results are
+treated as unknown coverage. All Python runtimes are locked in `uv.lock`; Tesseract
+also requires its system executable and local English trained data.
+
 For the established spaCy path, use a separate TOML configuration containing:
 
 ```toml

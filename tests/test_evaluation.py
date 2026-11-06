@@ -49,7 +49,8 @@ def test_exact_metrics_do_not_credit_partial_or_wrong_type_spans() -> None:
 
 def test_ocr_metrics_distinguish_reading_from_safe_localization(tmp_path: Path) -> None:
     from redactor.evaluation.ocr import evaluate_ocr
-    from redactor.schemas.evaluation import OcrExample, OcrReference, OcrRegion
+    from redactor.schemas.evaluation import OcrExample, OcrReference
+    from redactor.schemas.ocr import OcrRegion
 
     example = OcrExample(
         case_id="geometry",

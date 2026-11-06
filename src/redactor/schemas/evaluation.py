@@ -1,9 +1,8 @@
 """Manually annotated synthetic examples and exact-span evaluation results."""
 
-from collections.abc import Callable
-from pathlib import Path
-
 from pydantic import BaseModel, Field, NonNegativeInt, PositiveInt
+
+from redactor.schemas.ocr import OcrRegion
 
 
 class ReferenceMention(BaseModel, frozen=True, extra="forbid"):
@@ -36,11 +35,6 @@ class DetectionCounts(BaseModel, frozen=True, extra="forbid"):
     f1: float | None
 
 
-class OcrRegion(BaseModel, frozen=True, extra="forbid"):
-    text: str = Field(min_length=1)
-    box: tuple[float, float, float, float]
-
-
 class OcrReference(OcrRegion):
     sensitive: bool = True
 
@@ -50,10 +44,3 @@ class OcrExample(BaseModel, frozen=True, extra="forbid"):
     image: str
     reference_text: str
     regions: tuple[OcrReference, ...]
-
-
-OcrAdapter = Callable[[Path], tuple[OcrRegion, ...]]
-
-
-class OcrResponse(BaseModel, frozen=True, extra="forbid"):
-    regions: tuple[OcrRegion, ...] = Field(max_length=256)

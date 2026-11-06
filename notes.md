@@ -4,7 +4,7 @@
 - Inspection and analysis produce a frozen identity snapshot before rewriting, saved-output verification, publication or quarantine, and report reconciliation.
 - Input bytes, configuration and secret-key identity bind each run; fenced attempts, atomic successors and durable checkpoints support replay.
 - Large artifacts stay on private disk; CSV checkpoints use complete record boundaries, with one inference worker and one light worker limiting model duplication.
-- Production and evaluation share functional NER loading, bounded inputs, grounded spans and per-worker caches; model failures never become successful empty detections.
+- Production and evaluation share local model adapters; NER validates spans and caches bounded inputs, while OCR validates image limits and source-pixel coordinates.
 
 ## Stack
 
@@ -19,6 +19,7 @@
 
 - Typed fields use deterministic transformations; optional hosted detection and judging obey the global model-disable switch and require local fallback.
 - Verification checks intact and Unicode-normalized source and saved text, including unknown column labels; identifying evidence must fit a complete edit span, and failures or unknown coverage quarantine.
+- Model errors fail closed; empty or partial OCR is unknown coverage, and local inference uses staged weights without runtime downloads.
 - Scoped identifiers and corroboration link identities; names alone do not, conflicting middle names cannot bridge through shorter spellings, and provider roles stay separate.
 - Linked patients share a date offset; ages at or above 90 become 90+, revealing birth dates are generalized, and unrepresentable native bounds quarantine.
 - ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications and diseases retain their content.
@@ -38,6 +39,7 @@
 
 - Current publication covers CSV/TSV, bounded labelled text, supported XLSX and HL7 ADT; other formats and unsupported populated surfaces quarantine.
 - Native files default to 32 MiB, expanded archives to 256 MiB and images to 16 million pixels; only CSV rewriting streams beyond the native-file limit.
+- OCR currently accepts single-frame images with aspect ratios up to 64 and at most 256 text regions; these bounds prevent excessive preprocessing and uncertain partial coverage.
 - Unsupported Office extensions, custom namespace prefixes and part paths quarantine; unsupported international phones and extensions also quarantine instead of accepting a partial replacement.
 - The observed name/contact escapes are blocked; unfamiliar entities can still evade shared statistical NER, and overextended model spans can reject clean text.
 - GLiNER now publishes and replays a structured CSV with free-text names; the mixed-format regression still quarantines all four valid files for unresolved coverage, while explicit spaCy publishes them. PP-OCR and hosted detection remain benchmark-only.

@@ -6,7 +6,8 @@ from time import perf_counter
 from typing import cast
 
 from redactor.evaluation.failures import evaluation_failure
-from redactor.schemas.evaluation import OcrAdapter, OcrExample, OcrRegion
+from redactor.schemas.evaluation import OcrExample
+from redactor.schemas.ocr import OcrAdapter, OcrRegion
 from redactor.utils.constants import EVALUATION_OCR_COVERAGE
 
 

@@ -1489,6 +1489,45 @@ ONNX_CPU_PROVIDER: Final = "CPUExecutionProvider"
 ONNX_INTEGER_TYPE: Final = "tensor(int64)"
 ONNX_FLOAT_TYPE: Final = "tensor(float)"
 TOKENIZER_FILENAME: Final = "tokenizer.json"
+OCR_TIMEOUT_SECONDS: Final = 30
+OCR_MAXIMUM_REGIONS: Final = 256
+OCR_MAXIMUM_REGION_CHARACTERS: Final = 16384
+OCR_MAXIMUM_RESPONSE_BYTES: Final = 2 * 1024 * 1024
+OCR_MAXIMUM_ASPECT_RATIO: Final = 64
+OCR_IMAGE_FORMATS: Final = ("PNG", "JPEG", "TIFF", "BMP", "WEBP")
+OCR_PNG_FORMAT: Final = "PNG"
+OCR_TESSDATA_DIRECTORY: Final = "tessdata"
+OCR_PPOCR_DIRECTORY: Final = "ppocr-v5"
+OCR_ENGLISH_LANGUAGES: Final = ("en", "eng")
+TESSERACT_LANGUAGE: Final = "eng"
+TESSERACT_TRAINED_DATA: Final = "eng.traineddata"
+TESSERACT_OUTPUT_NAME: Final = "recognized"
+TESSERACT_OUTPUT_SUFFIX: Final = ".tsv"
+TESSERACT_WORD_LEVEL: Final = "5"
+TESSERACT_LAYOUT_LEVELS: Final = ("1", "2", "3", "4")
+TESSERACT_MAXIMUM_CONFIDENCE: Final = 100
+TESSERACT_TSV_FIELDS: Final = (
+    "level",
+    "page_num",
+    "block_num",
+    "par_num",
+    "line_num",
+    "word_num",
+    "left",
+    "top",
+    "width",
+    "height",
+    "conf",
+    "text",
+)
+PPOCR_CHARACTER_METADATA: Final = "character"
+PPOCR_ENGLISH_LANGUAGE: Final = "en"
+PPOCR_DETECTOR: Final = "ch_PP-OCRv5_det_mobile.onnx"
+PPOCR_CLASSIFIER: Final = "ch_PP-LCNet_x0_25_textline_ori_cls_mobile.onnx"
+PPOCR_RECOGNIZERS: Final = (
+    (PPOCR_ENGLISH_LANGUAGE, "en_PP-OCRv5_rec_mobile.onnx"),
+    ("latin", "latin_PP-OCRv5_rec_mobile.onnx"),
+)
 GLINER_CONFIG: Final = "gliner_config.json"
 GLINER_WEIGHTS: Final = "onnx/model_quint8.onnx"
 GLINER_MAXIMUM_TOKENS: Final = 2048
@@ -1578,14 +1617,7 @@ EVALUATION_REMOTE_OUTPUT_TOKENS: Final = 2048
 EVALUATION_REMOTE_RECEIPTS: Final = "receipts.jsonl"
 EVALUATION_OCR_CORPUS: Final = "tmp/ocr-corpus/manifest.json"
 EVALUATION_OCR_DIRECTORY: Final = "tmp/ocr-corpus"
-EVALUATION_OCR_TIMEOUT: Final = 30
 EVALUATION_OCR_COVERAGE: Final = 0.9
-EVALUATION_PPOCR_DETECTOR: Final = "ch_PP-OCRv5_det_mobile.onnx"
-EVALUATION_PPOCR_CLASSIFIER: Final = "ch_PP-LCNet_x0_25_textline_ori_cls_mobile.onnx"
-EVALUATION_PPOCR_RECOGNIZERS: Final = (
-    ("en", "en_PP-OCRv5_rec_mobile.onnx"),
-    ("latin", "latin_PP-OCRv5_rec_mobile.onnx"),
-)
 EVALUATION_OCR_VARIANTS: Final = ("clean", "rotated", "blurred", "low_contrast")
 EVALUATION_KEY_FILENAME: Final = "encryption.key"
 EVALUATION_IMAGE_FIELD: Final = "evaluation_image_base64"
