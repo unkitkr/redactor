@@ -24,7 +24,7 @@
 - **File handling:** valid mislabeled files keep their detected native format and original name; corrupt files and unassessed hidden surfaces quarantine.
 - **Identity:** scoped identifiers and corroborating evidence link people, never names alone; conflicting middle names cannot link through shorter spellings, and provider roles stay separate.
 - **Mentions:** a surname can resolve within an established record context; an unlinked person gets a separate contextual surrogate instead of forcing a name-only identity merge.
-- **Model evidence:** original entity labels support datatype checks, while clinical expressions and narrative verbs are preserved; these rules do not establish model recall.
+- **Model evidence:** NER retains clinical context and original entity labels support datatype checks; clinical expressions and narrative verbs are preserved, without claiming universal recall.
 - **Clinical content:** typed fields use deterministic transformations, while clinical codes, values, units, medications and diseases retain their content.
 - **Dates and ages:** linked patients share a date offset; ages at or above 90 become 90+, revealing birth dates are generalized, and formats that cannot represent the required bounds quarantine.
 - **Short dates:** two-digit years use the fixed 1969–2068 window; shifting outside that window writes a four-digit year so reparsing cannot change the century.

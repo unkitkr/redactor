@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v8"
+PIPELINE_VERSION: Final = "pipeline-v9"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -148,7 +148,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v6"
+VERIFIER_VERSION: Final = "verifier-v7"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -157,11 +157,14 @@ VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b(?:https?://|www\.)\S+",
     r"\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b",
     r"\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b",
-    r"(?i)\b(?:MRN|SSN|account|room|serial|license)\s*[:#]?\s*"
+    r"(?i)\b(?:MRN|SSN|account|serial|license)\s*[:#]?\s*"
+    r"(?P<value>[A-Z0-9][\w-]+)",
+    r"(?i)\broom(?:[ \t]*[:#][ \t]*|[ \t]+"
+    r"(?!with\b|for\b|has\b|is\b|was\b|the\b|a\b|an\b))"
     r"(?P<value>[A-Z0-9][\w-]+)",
     r"(?i:\b(?:daughter|son|husband|wife|spouse|mother|father|Dr\.))\s+"
-    r"(?P<value>[A-ZÀ-ÖØ-Þ][\w'’\-]*(?:\.(?=\s+[A-ZÀ-ÖØ-Þ]))?"
-    r"(?:\s+[A-ZÀ-ÖØ-Þ][\w'’\-]*(?:\.(?=\s+[A-ZÀ-ÖØ-Þ]))?){0,3})",
+    r"(?P<value>(?:[A-ZÀ-ÖØ-Þ]\.(?=\s+[A-ZÀ-ÖØ-Þ])|[A-ZÀ-ÖØ-Þ][\w'’\-]*)"
+    r"(?:\s+(?:[A-ZÀ-ÖØ-Þ]\.(?=\s+[A-ZÀ-ÖØ-Þ])|[A-ZÀ-ÖØ-Þ][\w'’\-]*)){0,3})",
 )
 # These independently locate suspicious values, not permission to rewrite them.
 VERIFIER_LABELLED_VALUE_PATTERN: Final = (
@@ -194,7 +197,7 @@ VERIFIER_NAME_BOUNDARY_START: Final = r"(?<![\w'’\-])"
 VERIFIER_NAME_BOUNDARY_END: Final = r"(?![\w'’\-])"
 VERIFIER_NAME_APOSTROPHE_PATTERN: Final = r"['’]"
 VERIFIER_MENTION_ROLE: Final = (
-    r"(?:patient|daughter|son|husband|wife|spouse|mother|father|sister|brother|"
+    r"(?:patient|Pt\.?|daughter|son|husband|wife|spouse|mother|father|sister|brother|"
     r"partner|caregiver|guardian|doctor|Dr\.?|Prof\.?)"
 )
 VERIFIER_MENTION_PREFIX_PATTERN: Final = rf"(?i){VERIFIER_MENTION_ROLE}[ \t]+"

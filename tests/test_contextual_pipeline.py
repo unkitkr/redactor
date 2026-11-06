@@ -28,6 +28,13 @@ def test_local_pipeline_handles_context_without_title_or_person_allowlists(
         ("contact.txt", "Contact: 312-555-0193."),
     ):
         (source / name).write_text(text)
+    (source / "narrative.txt").write_text(
+        "Patient: Celia Morales    MRN: Q128\n"
+        "DOB: 04/18/1975    Admit: 07/23/2025\n"
+        "Pt Celia Morales returned. Metformin 850 mg BID. GCS 15.\n"
+        "Shares room with a ninety-year-old, Leona Vega; assistance requested.\n"
+        "Referred to Dr. Malik.\nSeen and examined with C. Morales.\n"
+    )
     with (source / "records.csv").open("w", newline="") as stream:
         writer = csv.writer(stream)
         writer.writerow(
@@ -70,7 +77,7 @@ def test_local_pipeline_handles_context_without_title_or_person_allowlists(
     assert first.returncode == 0, first.stderr
     output = tmp_path / "output"
     report = json.loads((output / "report.json").read_text())
-    assert report["published"] == 4, report
+    assert report["published"] == 5, report
     assert report["quarantined"] == 0
     published = output / "published"
     assert (published / "census.txt").read_text() == "Census"
@@ -95,6 +102,12 @@ def test_local_pipeline_handles_context_without_title_or_person_allowlists(
         - date.fromisoformat(row["admit_ts"])
     ).days == 1
     assert "312-555-0193" not in (published / "contact.txt").read_text()
+    narrative = (published / "narrative.txt").read_text()
+    for original_name in ("Celia", "Morales", "Leona", "Vega", "Malik"):
+        assert original_name not in narrative
+    assert "90+" in narrative
+    assert "Shares room with" in narrative and "Seen and examined" in narrative
+    assert "Metformin 850 mg BID. GCS 15." in narrative
     accepted = {path.name: path.read_bytes() for path in published.iterdir()}
     replay = subprocess.run(
         command, env=environment, capture_output=True, text=True, timeout=45

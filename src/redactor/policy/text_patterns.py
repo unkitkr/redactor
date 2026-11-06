@@ -12,13 +12,14 @@ from redactor.utils.constants import (
     CLINICAL_NEGATION_PREFIX_PATTERN,
     CLINICAL_RANGE_GAP_PATTERN,
     TEXT_CLINICAL_PATTERNS,
+    VERIFIER_RELATIVE_TIME_PATTERN,
 )
 
 
 def clinical_ranges(text: str) -> tuple[TextRange, ...]:
     ranges = tuple(
         TextRange(start=match.start(), end=match.end())
-        for pattern in TEXT_CLINICAL_PATTERNS
+        for pattern in (*TEXT_CLINICAL_PATTERNS, VERIFIER_RELATIVE_TIME_PATTERN)
         for match in re.finditer(pattern, text)
     ) + snomed_ranges(text)
     expanded: list[TextRange] = []

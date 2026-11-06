@@ -1,8 +1,14 @@
 """Normalize already assessed spans for caching without losing source positions."""
 
+import re
+
 from redactor.schemas.entities import TextEntity
 from redactor.schemas.redaction import TextRange
-from redactor.utils.constants import TEXT_MASK_TOKEN
+from redactor.utils.constants import (
+    ENTITY_PERSON,
+    TEXT_MASK_TOKEN,
+    VERIFIER_MENTION_PREFIX_PATTERN,
+)
 from redactor.utils.errors import ERROR_ENTITY_EVIDENCE
 
 
@@ -37,6 +43,14 @@ def restore_entity(
     source_positions = [position for position in selected if position is not None]
     if not source_positions:
         return None
+    if None in selected and entity.entity_type == ENTITY_PERSON:
+        masked_start = selected.index(None)
+        if all(
+            position is None for position in selected[masked_start:]
+        ) and re.fullmatch(VERIFIER_MENTION_PREFIX_PATTERN, entity.text[:masked_start]):
+            # The only visible characters are a role such as "Dr.". Any extra
+            # unmasked name fragment still reaches the strict coverage check.
+            return None
     if len(source_positions) != len(selected) or source_positions != list(
         range(source_positions[0], source_positions[-1] + 1)
     ):

@@ -106,7 +106,13 @@ def find_text_phi(
                 )
             )
     for expression, number, age in age_mentions(text):
-        protected.append(expression)
+        protected.append(
+            TextRange(
+                start=expression.start,
+                end=expression.end
+                + int(text[expression.end : expression.end + 1] == "+"),
+            )
+        )
         if age >= AGE_GROUP_MINIMUM:
             has_plus = text[number.end : number.end + 1] == "+"
             if has_plus and age == AGE_GROUP_MINIMUM:
@@ -139,18 +145,25 @@ def find_text_phi(
                 kind=next(iter(roles)) if len(roles) == 1 else FIELD_PERSON_NAME,
             )
         )
-    masks = tuple(protected) + tuple(
-        TextRange(start=f.start, end=f.end) for f in findings
-    )
+    # Keep clinical context visible to the model. Replacing diseases and doses
+    # with mask tokens changes the meaning around otherwise unlinked people.
+    masks = tuple(TextRange(start=f.start, end=f.end) for f in findings)
     masked, positions = mask_assessed_ranges(text, masks)
     observations = validate_entity_evidence(
         masked, TextEntities(entities=local_ner(masked))
     )
     for observed in observations:
+        if not possible_entity(observed, masked):
+            continue
         entity = restore_entity(text, observed, positions)
         if entity is None or not possible_entity(entity, text):
             continue
         entity = refine_entity(entity)
+        if any(
+            region.start <= entity.start and entity.end <= region.end
+            for region in protected
+        ):
+            continue
         entity_kind = None
         if entity.entity_type == ENTITY_PERSON:
             patient_match = bool(patient_name) and compatible_name_spelling(
