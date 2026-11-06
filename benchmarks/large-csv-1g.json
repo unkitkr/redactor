@@ -1,0 +1,194 @@
+{
+  "measurement": "large_csv_pipeline",
+  "generator": {
+    "generator": "tools/make_large_csv.py",
+    "generator_sha256": "ec2d9caa5095ddedc6846bb986d95db9f44b04def7ba20fd06999c65a5607c8c",
+    "generator_arguments": {
+      "size_gb": 1,
+      "seed": 1
+    },
+    "input_bytes": 1073957724,
+    "input_sha256": "3986275a83a766adb9a0768efe5b57dca755933c9ee61f3c9af8cb3990d150d6",
+    "input_rows": 5600000,
+    "columns": 14,
+    "malformed_rows": 0,
+    "multiline_records": 1398979,
+    "validation_seconds": 13.691957458038814
+  },
+  "command": [
+    "/opt/redactor/.venv/bin/python",
+    "-m",
+    "redactor",
+    "--input",
+    "/work/input",
+    "--state",
+    "/run/benchmark/.redactor",
+    "--config",
+    "/work/redactor.toml",
+    "--workers",
+    "2"
+  ],
+  "platform": "Linux-6.12.54-linuxkit-aarch64-with-glibc2.41",
+  "python_version": "3.12.16",
+  "model_mode": "local_only",
+  "local_ner": {
+    "backend": "gliner",
+    "artifact_directory": "gliner-pii-edge-v1.0",
+    "artifacts": {
+      "gliner_config.json": {
+        "bytes": 4316,
+        "sha256": "77e6b57335c4bfd461e9041682196dd6c373a0b09bbd9269ef9e95b807915340"
+      },
+      "tokenizer.json": {
+        "bytes": 3583593,
+        "sha256": "84b3a9b18f04a0ccd03b72d9f871b7e0bec40fd7021ef50bc30a7c3693c11205"
+      },
+      "onnx/model_quint8.onnx": {
+        "bytes": 45820894,
+        "sha256": "988acb03456b26e2d9f2521016d820310c2ed64deb4a846297d3289f0c2eb7e4"
+      }
+    }
+  },
+  "source_sha256": "d2718e2f00507ed4a4f753f384f34914739515377a04b0cb00be4e03d0576249",
+  "source_unchanged": false,
+  "probe_sha256": "836ba54d84d2c49d6ba3aa1adb4bdce1917d27d11d558de492e31c12478313d9",
+  "configuration_sha256": "36455ff714502f8059dc18d88ecbcb780220653eadac8193f56447fa10044efe",
+  "input_unchanged": true,
+  "exit_code": 1,
+  "timed_out": false,
+  "deadline_seconds": 1800.0,
+  "wall_seconds": 929.2562472979771,
+  "cgroup": {
+    "cpu.max": "200000 100000",
+    "memory.max": 1073741824,
+    "memory.swap.max": 0,
+    "memory.peak": 1073745920
+  },
+  "memory_scope": "Entire container, including probe, workers and dashboard",
+  "stdout_bytes": 0,
+  "stderr_bytes": 28,
+  "progress": {
+    "steps": [
+      {
+        "step": "analyze",
+        "status": "running",
+        "tasks": 1
+      },
+      {
+        "step": "inspect",
+        "status": "succeeded",
+        "tasks": 1
+      },
+      {
+        "step": "resolve",
+        "status": "pending",
+        "tasks": 1
+      }
+    ],
+    "analysis_checkpoint_rows": 1290000,
+    "rewrite_checkpoint_rows": 0,
+    "model_attempts": 0
+  },
+  "report": null,
+  "published_rows": 0,
+  "all_rows_published": false,
+  "publication_rows_per_second": 0.0,
+  "completed_input_mib_per_second": null,
+  "full_acceptance_target_exercised": false,
+  "scope": "Generated 1 GiB CSV baseline diagnostic. Processing stopped during identity analysis after 929.256 seconds, before the 1800-second deadline. Analysis checkpoints are not rewritten or verified output. Zero rows were published; end-to-end throughput and the full acceptance target were not established.",
+  "measured_at": "2026-11-06",
+  "result": "failed_diagnostic",
+  "acceptance_passed": false,
+  "production_revision": "450fdf85aebe81b0a14a27c00ba9633b1cd5c8b2",
+  "production_snapshot": {
+    "sha256": "1aeefb58305d86d039163c461ae8d9752b26f7117ffb122372a82d7b4bf1f267",
+    "tracked_files": 208,
+    "matches_revision_after_run": true,
+    "mounted_read_only": true
+  },
+  "source_fingerprint_limitation": "The production source and configuration were frozen and mounted read-only. The shared benchmark helper tools/benchmarks/pipeline.py was edited during execution, so the combined source fingerprint changed. This is a failed diagnostic baseline, not an unchanged-source performance result for the current pipeline.",
+  "container": {
+    "image_tag": "redactor:evaluation",
+    "image_id": "sha256:cfea66555ef1114bc71922d7e62403484dc34c5f2f3cbf3e05e85187f69ea3c2",
+    "image_provenance": "Existing evaluation image; current source snapshot and configuration mounted read-only. No fresh image build is claimed.",
+    "cpus": 2,
+    "memory_bytes": 1073741824,
+    "additional_swap_bytes": 0,
+    "network": "none",
+    "state_storage": "Native Linux container filesystem",
+    "dashboard_enabled": true,
+    "started_at": "2026-11-06T15:27:31.482806668Z",
+    "finished_at": "2026-11-06T15:43:06.084406545Z",
+    "init_exit_code": 0,
+    "init_oom_killed": false,
+    "worker_exit_code": null,
+    "worker_exception_type": null
+  },
+  "failure": {
+    "retained_codes": [
+      "worker_failed",
+      "worker_failed"
+    ],
+    "cause": "unknown",
+    "no_final_report": true,
+    "final_cgroup_memory_events": null,
+    "oom_conclusion": "Unconfirmed. The cgroup peak is not evidence of an OOM kill; final memory.events counters were not collected and the container init was not marked OOMKilled."
+  },
+  "poststop_verification": {
+    "method": "Read-only inspection of state copied from the stopped container",
+    "analysis_checkpoint_rows": 1290000,
+    "rewrite_checkpoint_rows": 0,
+    "model_attempts": 0,
+    "database_bytes": 2178838528,
+    "wal_bytes": 0,
+    "task_failure_codes": [
+      [
+        null,
+        3
+      ]
+    ],
+    "checkpoint_matches_probe": true,
+    "steps": [
+      {
+        "step": "analyze",
+        "status": "running",
+        "tasks": 1,
+        "attempts": 1
+      },
+      {
+        "step": "inspect",
+        "status": "succeeded",
+        "tasks": 1,
+        "attempts": 1
+      },
+      {
+        "step": "resolve",
+        "status": "pending",
+        "tasks": 1,
+        "attempts": 0
+      }
+    ]
+  },
+  "analysis_checkpoint_fraction": 0.23035714285714284,
+  "publication_throughput_established": false,
+  "remote_calls": 0,
+  "remote_cost_usd": "0",
+  "probe_command": [
+    "python",
+    "/work/tools/benchmarks/large_csv.py",
+    "--input",
+    "/work/input/big_encounters.csv",
+    "--state",
+    "/run/benchmark/.redactor",
+    "--config",
+    "/work/redactor.toml",
+    "--generation",
+    "/work/generation.json",
+    "--output",
+    "/run/benchmark/measurement.json",
+    "--deadline-seconds",
+    "1800"
+  ],
+  "probe_cleanup_changed_after_measurement": true,
+  "probe_cleanup_note": "The recorded run exited before its deadline. The helper was subsequently updated to record cgroup memory.events and refuse final snapshots while a worker retains the run lock. Those changes do not supply missing counters for this run."
+}
