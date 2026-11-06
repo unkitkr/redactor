@@ -34,6 +34,7 @@ from redactor.utils.constants import (
     FIELD_NETWORK,
     FIELD_PATIENT_ID,
     FIELD_PATIENT_NAME,
+    FIELD_PERSON_NAME,
     FIELD_PHONE,
     FIELD_PROVIDER_ID,
     FIELD_PROVIDER_NAME,
@@ -88,7 +89,7 @@ def cell_edits(
 ) -> tuple[TextEdit, ...]:
     if not findings:
         return ()
-    if policy.kind == FIELD_TEXT:
+    if policy.kind in (FIELD_TEXT, FIELD_PERSON_NAME):
         return text_edits(findings, context, key)
     if len(findings) != 1 or findings[0].original != value:
         raise ValueError(ERROR_COVERAGE)

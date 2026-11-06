@@ -5,9 +5,14 @@ from pathlib import Path
 from xml.etree.ElementTree import Element
 from zipfile import ZipFile
 
+from redactor.formats.office_references import (
+    relationship_labels,
+    rewrite_relationship_labels,
+)
 from redactor.formats.xlsx import shared_strings
 from redactor.schemas.native import NativeDocument
 from redactor.utils.constants import (
+    OFFICE_XML_TEXT_MODE,
     XLSX_NAMESPACE,
     XLSX_SHARED_STRINGS,
     XLSX_WORKSHEET_PREFIX,
@@ -24,6 +29,10 @@ def check_xlsx_preservation(
         if original.namelist() != output.namelist():
             raise ValueError(ERROR_CLINICAL_CHANGED)
         strings = shared_strings(original)
+        source_labels, saved_labels = (
+            relationship_labels(original),
+            relationship_labels(output),
+        )
         for part in original.namelist():
             if part == XLSX_SHARED_STRINGS:
                 # Saved cells carry their strings inline; the saved-surface check
@@ -31,6 +40,8 @@ def check_xlsx_preservation(
                 continue
             before = read_verified_xml(original.read(part))
             after = read_verified_xml(output.read(part))
+            rewrite_relationship_labels(before, part, source_labels)
+            rewrite_relationship_labels(after, part, saved_labels)
             _neutralize_assessed_values(before, part, covered, strings)
             _neutralize_assessed_values(after, part, covered, ())
             for left, right in zip_longest(before.iter(), after.iter()):
@@ -70,6 +81,9 @@ def _neutralize_assessed_values(
             cell.text = value
         return
     for index, node in enumerate(root.iter()):
+        if (part, str(index), OFFICE_XML_TEXT_MODE) in covered:
+            for text in node.iter(f"{{{XLSX_NAMESPACE}}}t"):
+                text.text = ""
         if (part, str(index)) in covered:
             node.text = ""
         for attribute in node.attrib:

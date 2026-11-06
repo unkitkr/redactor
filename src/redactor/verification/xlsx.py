@@ -8,14 +8,20 @@ from redactor.schemas.native import NativeDocument
 from redactor.utils.constants import (
     OFFICE_PUBLIC_FONTS,
     OFFICE_STRUCTURAL_VALUES,
+    OOXML_RELATIONSHIP_ID_PATTERN,
+    OOXML_RELATIONSHIP_REFERENCE,
+    XLSX_COMMENTS_PATTERN,
     XLSX_NAMESPACE,
     XLSX_SHARED_STRINGS,
     XLSX_STYLES,
+    XLSX_VML_PATTERN,
     XLSX_WORKBOOK,
     XLSX_WORKSHEET_PREFIX,
 )
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_RESIDUAL_PHI
+from redactor.verification.vml import check_comment_shapes
 from redactor.verification.worksheet import check_worksheet_cells
+from redactor.verification.xlsx_comments import check_comment_surfaces
 from redactor.verification.xml import read_verified_xml
 from redactor.verification.xml_vocabulary import check_xml_vocabulary
 
@@ -29,7 +35,13 @@ def check_xlsx_surfaces(path: Path, document: NativeDocument) -> None:
             raise ValueError(ERROR_COVERAGE)
         for part in archive.namelist():
             root = read_verified_xml(archive.read(part))
+            if re.fullmatch(XLSX_VML_PATTERN, part):
+                check_comment_shapes(root)
+                continue
             check_xml_vocabulary(root, part)
+            if re.fullmatch(XLSX_COMMENTS_PATTERN, part):
+                check_comment_surfaces(root, part, covered)
+                continue
             if any(node.tail and node.tail.strip() for node in root.iter()):
                 raise ValueError(ERROR_COVERAGE)
             if part == XLSX_SHARED_STRINGS:
@@ -53,6 +65,10 @@ def check_xlsx_surfaces(path: Path, document: NativeDocument) -> None:
                     ):
                         raise ValueError(ERROR_COVERAGE)
                     for attribute, value in node.attrib.items():
+                        if attribute == OOXML_RELATIONSHIP_REFERENCE and re.fullmatch(
+                            OOXML_RELATIONSHIP_ID_PATTERN, value
+                        ):
+                            continue
                         if (
                             attribute == "{http://www.w3.org/XML/1998/namespace}space"
                             and value == "preserve"
@@ -139,7 +155,8 @@ def check_xlsx_surfaces(path: Path, document: NativeDocument) -> None:
                         continue
                     if part.endswith(".rels") and local == "Target":
                         if re.fullmatch(
-                            r"/?(?:[A-Za-z_.]+/)*[A-Za-z_]+[0-9]*\.(?:xml|rels)", value
+                            r"/?(?:[A-Za-z_.]+/)*[A-Za-z_]+[0-9]*\.(?:xml|rels|vml)",
+                            value,
                         ):
                             continue
                         raise ValueError(ERROR_COVERAGE)

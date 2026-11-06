@@ -4,6 +4,7 @@ import re
 from xml.etree.ElementTree import Element
 
 from redactor.utils.constants import (
+    OOXML_COMMENT_VOCABULARY,
     OOXML_CONTENT_EXTENSIONS,
     OOXML_CONTENT_NAMESPACE,
     OOXML_CONTENT_TYPES,
@@ -30,9 +31,12 @@ from redactor.utils.constants import (
     OOXML_WORKBOOK_VOCABULARY,
     OOXML_WORKSHEET_PART_PATTERN,
     OOXML_WORKSHEET_VOCABULARY,
+    XLSX_COMMENTS_PATTERN,
     XLSX_NAMESPACE,
     XLSX_SHARED_STRINGS,
+    XLSX_SHEET_RELATIONSHIPS_PATTERN,
     XLSX_STYLES,
+    XLSX_VML_PATTERN,
     XLSX_WORKBOOK,
     XML_SPACE_ATTRIBUTE,
     XML_TYPE_ATTRIBUTE,
@@ -43,7 +47,13 @@ from redactor.utils.errors import ERROR_COVERAGE
 def supported_xlsx_part(part: str) -> bool:
     return part in OOXML_SUPPORTED_PARTS or any(
         re.fullmatch(pattern, part)
-        for pattern in (OOXML_WORKSHEET_PART_PATTERN, OOXML_THEME_PART_PATTERN)
+        for pattern in (
+            OOXML_WORKSHEET_PART_PATTERN,
+            OOXML_THEME_PART_PATTERN,
+            XLSX_COMMENTS_PATTERN,
+            XLSX_VML_PATTERN,
+            XLSX_SHEET_RELATIONSHIPS_PATTERN,
+        )
     )
 
 
@@ -95,6 +105,8 @@ def _part_vocabulary(part: str) -> tuple[str, dict[str, tuple[str, ...]]]:
             "worksheet",
             OOXML_WORKSHEET_VOCABULARY,
         )
+    elif re.fullmatch(XLSX_COMMENTS_PATTERN, part):
+        namespace, root, entries = XLSX_NAMESPACE, "comments", OOXML_COMMENT_VOCABULARY
     elif part == XLSX_WORKBOOK:
         namespace, root, entries = XLSX_NAMESPACE, "workbook", OOXML_WORKBOOK_VOCABULARY
     elif part == XLSX_STYLES:
@@ -115,7 +127,10 @@ def _part_vocabulary(part: str) -> tuple[str, dict[str, tuple[str, ...]]]:
             "theme",
             OOXML_THEME_VOCABULARY,
         )
-    elif part in (OOXML_PACKAGE_RELATIONSHIPS, OOXML_WORKBOOK_RELATIONSHIPS):
+    elif part in (
+        OOXML_PACKAGE_RELATIONSHIPS,
+        OOXML_WORKBOOK_RELATIONSHIPS,
+    ) or re.fullmatch(XLSX_SHEET_RELATIONSHIPS_PATTERN, part):
         namespace, root, entries = (
             OOXML_RELATIONSHIP_NAMESPACE,
             "Relationships",

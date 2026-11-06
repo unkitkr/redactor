@@ -8,17 +8,26 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 from defusedxml.ElementTree import fromstring
 
+from redactor.formats.office_references import (
+    relationship_labels,
+    rewrite_relationship_labels,
+)
 from redactor.formats.tabular_fields import column_policies
+from redactor.formats.xlsx_comments import comment_records
+from redactor.formats.xml_text import replace_run_text
 from redactor.schemas.configuration import ResourceSettings
 from redactor.schemas.native import NativeDocument, NativeRecord
 from redactor.schemas.redaction import ColumnPolicy
 from redactor.utils.constants import (
     FIELD_TEXT,
+    OFFICE_XML_TEXT_MODE,
+    XLSX_COMMENTS_PATTERN,
     XLSX_DATE_FORMAT_IDS,
     XLSX_EPOCH,
     XLSX_NAMESPACE,
     XLSX_SHARED_STRINGS,
     XLSX_STYLES,
+    XLSX_VML_PATTERN,
     XLSX_WORKBOOK,
     XLSX_WORKSHEET_PREFIX,
     ZIP_FIXED_TIMESTAMP,
@@ -78,6 +87,12 @@ def read_xlsx(path: Path, resources: ResourceSettings) -> NativeDocument:
                     f".//{{{XLSX_NAMESPACE}}}hyperlink"
                 ):
                     raise ValueError(ERROR_COVERAGE)
+            elif re.fullmatch(XLSX_COMMENTS_PATTERN, part):
+                root = fromstring(archive.read(part), forbid_dtd=True)
+                records.extend(comment_records(root, part))
+            elif re.fullmatch(XLSX_VML_PATTERN, part):
+                # Independent verification validates the complete shape grammar.
+                continue
             elif part.startswith("docProps/") and part.endswith(".xml"):
                 root = fromstring(archive.read(part), forbid_dtd=True)
                 for index, element in enumerate(root.iter()):
@@ -128,6 +143,7 @@ def write_xlsx(
         ZipFile(output, "w", compression=ZIP_DEFLATED) as target,
     ):
         strings = shared_strings(source)
+        labels = relationship_labels(source)
         for part in source.namelist():
             payload = source.read(part)
             selected = {
@@ -135,7 +151,7 @@ def write_xlsx(
                 for location, value in replacements.items()
                 if location[0] == part
             }
-            if selected or part.startswith(XLSX_WORKSHEET_PREFIX):
+            if selected or part.startswith(XLSX_WORKSHEET_PREFIX) or part in labels:
                 root = fromstring(payload, forbid_dtd=True)
                 if part.startswith(XLSX_WORKSHEET_PREFIX):
                     for cell in root.iter(f"{{{XLSX_NAMESPACE}}}c"):
@@ -159,11 +175,19 @@ def write_xlsx(
                     for index, element in enumerate(root.iter()):
                         if (str(index),) in selected:
                             element.text = selected[(str(index),)]
+                        text_location = (str(index), OFFICE_XML_TEXT_MODE)
+                        if text_location in selected:
+                            replace_run_text(
+                                element,
+                                f"{{{XLSX_NAMESPACE}}}t",
+                                selected[text_location],
+                            )
                         for attribute in tuple(element.attrib):
                             if (str(index), attribute) in selected:
                                 element.set(
                                     attribute, selected[(str(index), attribute)]
                                 )
+                rewrite_relationship_labels(root, part, labels)
                 payload = tostring(root, encoding="utf-8", xml_declaration=True)
             elif part == XLSX_SHARED_STRINGS:
                 payload = tostring(

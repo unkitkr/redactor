@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v6"
+PIPELINE_VERSION: Final = "pipeline-v7"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -148,7 +148,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v4"
+VERIFIER_VERSION: Final = "verifier-v5"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -493,8 +493,18 @@ XLSX_STYLES: Final = "xl/styles.xml"
 XLSX_WORKBOOK: Final = "xl/workbook.xml"
 XLSX_DATE_FORMAT_IDS: Final = (14, 15, 16, 17, 22, 27, 30, 36, 50, 57)
 XLSX_EPOCH: Final = (1899, 12, 30)
+XLSX_COMMENTS_PATTERN: Final = r"xl/(?:comments/)?comments?[1-9][0-9]*\.xml"
+XLSX_VML_PATTERN: Final = r"xl/drawings/[A-Za-z_]+[1-9][0-9]*\.vml"
+XLSX_SHEET_RELATIONSHIPS_PATTERN: Final = (
+    r"xl/worksheets/_rels/sheet[1-9][0-9]*\.xml\.rels"
+)
+OFFICE_RELATIONSHIP_ID_TEMPLATE: Final = "rId{number}"
+OFFICE_VML_NAMESPACE: Final = "urn:schemas-microsoft-com:vml"
+OFFICE_LEGACY_NAMESPACE: Final = "urn:schemas-microsoft-com:office:office"
+OFFICE_EXCEL_NAMESPACE: Final = "urn:schemas-microsoft-com:office:excel"
+OFFICE_XML_TEXT_MODE: Final = "text"
 ZIP_FIXED_TIMESTAMP: Final = (1980, 1, 1, 0, 0, 0)
-NATIVE_ADAPTER_VERSION: Final = "native-v1"
+NATIVE_ADAPTER_VERSION: Final = "native-v2"
 OFFICE_PUBLIC_FONTS: Final = (
     "",
     "Arial",
@@ -595,6 +605,9 @@ OOXML_TIMESTAMP_TYPE: Final = "dcterms:W3CDTF"
 OOXML_RELATIONSHIP_ID_PATTERN: Final = r"rId[1-9][0-9]*"
 OOXML_RELATIONSHIP_REFERENCE: Final = f"{{{OOXML_OFFICE_RELATIONSHIP_NAMESPACE}}}id"
 OOXML_VERIFIED_NAMESPACES: Final = (
+    OFFICE_VML_NAMESPACE,
+    OFFICE_LEGACY_NAMESPACE,
+    OFFICE_EXCEL_NAMESPACE,
     XLSX_NAMESPACE,
     OOXML_DRAWING_NAMESPACE,
     OOXML_CONTENT_NAMESPACE,
@@ -609,7 +622,7 @@ OOXML_VERIFIED_NAMESPACES: Final = (
     XML_NAMESPACE,
 )
 OOXML_NAMESPACE_PREFIX_PATTERN: Final = (
-    r"(?:|ns[0-9]+|a|s|x|r|cp|dc|dcterms|dcmitype|xsi|xml)"
+    r"(?:|ns[0-9]+|a|s|x|r|v|o|cp|dc|dcterms|dcmitype|xsi|xml)"
 )
 OOXML_WORKSHEET_PART_PATTERN: Final = r"xl/worksheets/sheet[1-9][0-9]*\.xml"
 OOXML_THEME_PART_PATTERN: Final = r"xl/theme/theme[1-9][0-9]*\.xml"
@@ -637,6 +650,8 @@ OOXML_SUPPORTED_RELATIONSHIP_TYPES: Final = (
             "styles",
             "theme",
             "sharedStrings",
+            "comments",
+            "vmlDrawing",
         )
     ),
 )
@@ -648,11 +663,12 @@ OOXML_SUPPORTED_CONTENT_TYPES: Final = (
     "application/vnd.openxmlformats-officedocument.extended-properties+xml",
     *(
         "application/vnd.openxmlformats-officedocument.spreadsheetml." + name + "+xml"
-        for name in ("worksheet", "styles", "sharedStrings")
+        for name in ("worksheet", "styles", "sharedStrings", "comments")
     ),
     "application/vnd.openxmlformats-officedocument.theme+xml",
+    "application/vnd.openxmlformats-officedocument.vmlDrawing",
 )
-OOXML_CONTENT_EXTENSIONS: Final = ("xml", "rels")
+OOXML_CONTENT_EXTENSIONS: Final = ("xml", "rels", "vml")
 OOXML_WORKSHEET_VOCABULARY: Final = (
     ("worksheet", ()),
     ("sheetPr", ()),
@@ -702,6 +718,118 @@ OOXML_WORKSHEET_VOCABULARY: Final = (
     ("t", (XML_SPACE_ATTRIBUTE,)),
     ("v", ()),
     ("pageMargins", ("left", "right", "top", "bottom", "header", "footer")),
+    ("legacyDrawing", (OOXML_RELATIONSHIP_REFERENCE,)),
+)
+OOXML_COMMENT_VOCABULARY: Final = (
+    ("comments", ()),
+    ("authors", ()),
+    ("author", ()),
+    ("commentList", ()),
+    ("comment", ("ref", "authorId", "shapeId")),
+    ("text", ()),
+    ("t", (XML_SPACE_ATTRIBUTE,)),
+    ("r", ()),
+    ("rPr", ()),
+    ("b", ("val",)),
+    ("i", ("val",)),
+    ("u", ("val",)),
+    ("sz", ("val",)),
+    ("rFont", ("val",)),
+    ("color", ("rgb", "indexed", "theme", "tint", "auto")),
+    ("family", ("val",)),
+    ("charset", ("val",)),
+    ("scheme", ("val",)),
+)
+OOXML_COMMENT_CHILDREN: Final = (
+    ("comments", ("authors", "commentList")),
+    ("authors", ("author",)),
+    ("author", ()),
+    ("commentList", ("comment",)),
+    ("comment", ("text",)),
+    ("text", ("t", "r")),
+    ("r", ("rPr", "t")),
+    ("rPr", ("b", "i", "u", "sz", "rFont", "color", "family", "charset", "scheme")),
+)
+# Only geometry and display controls for legacy comment shapes are supported.
+# Embedded pictures, scripts, links, and arbitrary VML attributes are not geometry.
+VML_ATTRIBUTE_RULES: Final = (
+    ("xml", ()),
+    (
+        f"{{{OFFICE_LEGACY_NAMESPACE}}}shapelayout",
+        ((f"{{{OFFICE_VML_NAMESPACE}}}ext", r"edit"),),
+    ),
+    (
+        f"{{{OFFICE_LEGACY_NAMESPACE}}}idmap",
+        ((f"{{{OFFICE_VML_NAMESPACE}}}ext", r"edit"), ("data", r"[0-9, ]+")),
+    ),
+    (
+        f"{{{OFFICE_VML_NAMESPACE}}}shapetype",
+        (
+            ("id", r"_x[0-9A-Fa-f]{4}_t[0-9]+"),
+            ("coordsize", r"[0-9]+,[0-9]+"),
+            (f"{{{OFFICE_LEGACY_NAMESPACE}}}spt", r"[0-9]+"),
+            ("path", r"[mlcxevqbarnt0-9, .+\-]+"),
+        ),
+    ),
+    (f"{{{OFFICE_VML_NAMESPACE}}}stroke", (("joinstyle", r"miter|round|bevel"),)),
+    (
+        f"{{{OFFICE_VML_NAMESPACE}}}path",
+        (
+            ("gradientshapeok", r"t|f|true|false"),
+            (f"{{{OFFICE_LEGACY_NAMESPACE}}}connecttype", r"rect|none"),
+        ),
+    ),
+    (
+        f"{{{OFFICE_VML_NAMESPACE}}}shape",
+        (
+            ("id", r"_x[0-9A-Fa-f]{4}_s[0-9]+"),
+            ("type", r"#_x[0-9A-Fa-f]{4}_t[0-9]+"),
+            ("style", ""),
+            ("fillcolor", r"#[0-9A-Fa-f]{6}|yellow|white|black"),
+            (f"{{{OFFICE_LEGACY_NAMESPACE}}}insetmode", r"auto|custom"),
+        ),
+    ),
+    (
+        f"{{{OFFICE_VML_NAMESPACE}}}fill",
+        (("color2", r"#[0-9A-Fa-f]{6}|yellow|white|black"),),
+    ),
+    (
+        f"{{{OFFICE_VML_NAMESPACE}}}shadow",
+        (("color", r"#[0-9A-Fa-f]{6}|black|white"), ("obscured", r"t|f|true|false")),
+    ),
+    (f"{{{OFFICE_VML_NAMESPACE}}}textbox", (("style", ""),)),
+    ("div", (("style", ""),)),
+    (f"{{{OFFICE_EXCEL_NAMESPACE}}}ClientData", (("ObjectType", r"Note"),)),
+    *(
+        (f"{{{OFFICE_EXCEL_NAMESPACE}}}{name}", ())
+        for name in (
+            "MoveWithCells",
+            "SizeWithCells",
+            "AutoFill",
+            "Row",
+            "Column",
+            "Anchor",
+            "Visible",
+        )
+    ),
+)
+VML_STYLE_RULES: Final = (
+    ("position", r"absolute|relative"),
+    ("visibility", r"hidden|visible"),
+    ("text-align", r"left|right|center"),
+    ("mso-direction-alt", r"auto"),
+    *(
+        (name, r"-?[0-9]+(?:\.[0-9]+)?(?:pt|px)?")
+        for name in (
+            "margin-left",
+            "margin-top",
+            "width",
+            "height",
+            "z-index",
+            "left",
+            "top",
+        )
+    ),
 )
 OOXML_WORKBOOK_VOCABULARY: Final = (
     ("workbook", ()),
