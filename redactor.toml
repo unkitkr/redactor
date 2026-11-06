@@ -1,26 +1,31 @@
 # Secrets are read only from LLM_API_KEY and REDACTOR_SECRET_KEY.
+# Local processing is the default. Set LLM_ENABLED=1 to allow hosted detection.
 # Set LLM_ENABLED=0 to disable remote detection and judging together.
 # Selected models from benchmarks/README.md; local weights must be staged first.
-# GLiNER is supported; PP-OCR and hosted detection are still evaluation-only.
+# GLiNER is supported; PP-OCR is still evaluation-only.
 [remote]
-enabled = true
+enabled = false
 base_url = "https://openrouter.ai/api/v1"
 model = "z-ai/glm-5.3-flash"
+provider = "openrouter"
+reasoning_enabled = true
+temperature = 0.0
 vision = false
 json_mode = true
 budget_usd = "3.00"
-# Supply endpoint prices before enabling paid requests. Missing prices use local inference.
-# input_usd_per_million = "0.00"
-# output_usd_per_million = "0.00"
+# USD per million tokens; OpenRouter routing rejects providers above these caps.
+# Public model catalog checked on 2026-11-06; reasoning counts as output tokens.
+input_usd_per_million = "0.15"
+output_usd_per_million = "0.50"
 # Includes the initial call: 3 attempts means at most 2 retries.
 max_attempts = 3
 retry_initial_seconds = 0.5
 retry_max_seconds = 8.0
-timeout_seconds = 15.0
-deadline_seconds = 45.0
+timeout_seconds = 30.0
+deadline_seconds = 65.0
 circuit_failures = 3
 circuit_cooldown_seconds = 60.0
-max_output_tokens = 1024
+max_output_tokens = 2048
 max_input_bytes = 16384
 
 [local]

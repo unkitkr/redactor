@@ -9,10 +9,11 @@ from openai import AsyncOpenAI, omit
 from openai.types.chat import ChatCompletion
 
 from redactor.schemas.configuration import RemoteSettings
-from redactor.schemas.provider import ModelRequest
+from redactor.schemas.provider import ModelPricing, ModelRequest
 from redactor.utils.constants import (
     HTTP_CONTENT_ENCODING_HEADER,
     HTTP_IDENTITY_ENCODING,
+    MODEL_PROVIDER_OPENROUTER,
     MODEL_RESPONSE_BYTES,
 )
 from redactor.utils.errors import ERROR_MODEL_CONFIGURATION, ERROR_MODEL_RESPONSE
@@ -54,17 +55,19 @@ async def open_model_client(
 async def request_completion(
     client: AsyncOpenAI,
     settings: RemoteSettings,
-    model: str,
+    pricing: ModelPricing,
     request: ModelRequest,
 ) -> ChatCompletion:
     async with client.chat.completions.with_streaming_response.create(
-        model=model,
+        model=pricing.model,
         messages=[
             {"role": "system", "content": request.system_prompt},
             {"role": "user", "content": request.input_text},
         ],
         max_tokens=settings.max_output_tokens,
+        temperature=settings.temperature if settings.temperature is not None else omit,
         response_format={"type": "json_object"} if settings.json_mode else omit,
+        extra_body=_provider_options(settings, pricing),
         stream=False,
     ) as response:
         payload = bytearray()
@@ -76,6 +79,28 @@ async def request_completion(
             return ChatCompletion.model_validate_json(payload, strict=True)
         except ValueError:
             raise ValueError(ERROR_MODEL_RESPONSE) from None
+
+
+def _provider_options(
+    settings: RemoteSettings, pricing: ModelPricing
+) -> dict[str, object] | None:
+    """Apply the reservation's rates to routing, including an independent judge."""
+    if settings.provider != MODEL_PROVIDER_OPENROUTER:
+        return None
+    options: dict[str, object] = {
+        "provider": {
+            "require_parameters": True,
+            "max_price": {
+                "prompt": float(pricing.input_usd_per_million),
+                "completion": float(pricing.output_usd_per_million),
+                "request": 0,
+                "image": 0,
+            },
+        }
+    }
+    if settings.reasoning_enabled is not None:
+        options["reasoning"] = {"enabled": settings.reasoning_enabled}
+    return options
 
 
 async def _reject_http_error(response: httpx.Response) -> None:

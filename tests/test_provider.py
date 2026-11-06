@@ -1,6 +1,7 @@
 """Integration through the real OpenAI SDK and a controlled HTTP boundary."""
 
 import asyncio
+import json
 import random
 import sqlite3
 import time
@@ -35,6 +36,7 @@ def test_provider_retries_once_then_replays_without_another_call_or_charge(
     assert claimed is not None
     settings = PipelineSettings(
         remote=RemoteSettings(
+            enabled=True,
             base_url="https://model.example/v1",
             model="test-model",
             input_usd_per_million=Decimal("1"),
@@ -54,6 +56,10 @@ def test_provider_retries_once_then_replays_without_another_call_or_charge(
         nonlocal calls
         calls += 1
         assert http_request.url == "https://model.example/v1/chat/completions"
+        payload = json.loads(http_request.content)
+        assert "provider" not in payload
+        assert "reasoning" not in payload
+        assert payload["temperature"] == 0
         if calls == 1:
             return httpx.Response(429, headers={"Retry-After": "0"})
         return _completion_response()
@@ -204,6 +210,7 @@ def test_configured_backoff_honors_attempt_deadline_and_budget_limits(
         assert claimed is not None
         settings = PipelineSettings(
             remote=RemoteSettings(
+                enabled=True,
                 base_url="https://model.example/v1",
                 model="test-model",
                 input_usd_per_million=Decimal("1"),
@@ -282,6 +289,7 @@ def test_interrupted_request_keeps_attempt_limit_and_backoff_progress(
     assert claimed is not None
     settings = PipelineSettings(
         remote=RemoteSettings(
+            enabled=True,
             base_url="https://model.example/v1",
             model="test-model",
             input_usd_per_million=Decimal("1"),
@@ -355,6 +363,7 @@ def test_retry_wait_and_request_deadline_survive_interruption(
         assert claimed is not None
         settings = PipelineSettings(
             remote=RemoteSettings(
+                enabled=True,
                 base_url="https://model.example/v1",
                 model="test-model",
                 input_usd_per_million=Decimal("1"),

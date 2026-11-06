@@ -49,6 +49,7 @@ def test_detector_replays_grounded_remote_spans_and_falls_back_to_real_local_ner
         assert claimed is not None
         settings = PipelineSettings(
             remote=RemoteSettings(
+                enabled=True,
                 base_url="https://model.example/v1",
                 model="test-model",
                 input_usd_per_million=Decimal("1"),

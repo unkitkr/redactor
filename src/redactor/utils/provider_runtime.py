@@ -17,6 +17,7 @@ from redactor.schemas.provider import (
     ModelDecision,
     ModelFailure,
     ModelPricing,
+    ModelReceipt,
     ModelRequest,
     ModelUnavailable,
     ModelUsage,
@@ -39,8 +40,8 @@ from redactor.utils.model_failures import classify_model_error
 from redactor.utils.model_pricing import (
     currency_nanos,
     maximum_request_cost,
-    token_cost,
 )
+from redactor.utils.model_receipts import accounted_usage, completion_receipt
 from redactor.utils.model_retries import retry_delay_seconds
 from redactor.utils.model_transport import open_model_client, request_completion
 
@@ -65,6 +66,7 @@ async def run_model_request(
     )
     deadline = time.monotonic() + remaining_seconds
     failure = ModelFailure(reason_code=ERROR_MODEL_TRANSIENT)
+    receipt: ModelReceipt | None = None
     had_transient_failure = bool(window.retry_after_at)
     pending_delay = max(0, window.retry_after_at - time.time())
     if window.attempts_used >= settings.max_attempts:
@@ -101,8 +103,9 @@ async def run_model_request(
                         min(remaining, settings.timeout_seconds)
                     ):
                         completion = await request_completion(
-                            client, settings, pricing.model, request
+                            client, settings, pricing, request
                         )
+                        receipt = completion_receipt(completion, pricing)
                 except (
                     APIConnectionError,
                     httpx.HTTPError,
@@ -112,21 +115,7 @@ async def run_model_request(
                     settle_attempt(connection, claimed, reservation, None)
                     failure = classify_model_error(error)
                 else:
-                    receipt = completion.usage
-                    usage = None
-                    if (
-                        receipt is not None
-                        and min(receipt.prompt_tokens, receipt.completion_tokens) >= 0
-                    ):
-                        usage = ModelUsage(
-                            input_tokens=receipt.prompt_tokens,
-                            output_tokens=receipt.completion_tokens,
-                            cost_nanos=token_cost(
-                                pricing,
-                                receipt.prompt_tokens,
-                                receipt.completion_tokens,
-                            ),
-                        )
+                    usage = accounted_usage(receipt, pricing)
                     settle_attempt(connection, claimed, reservation, usage)
                     if usage is not None and usage.cost_nanos > maximum_cost:
                         failure = ModelFailure(reason_code=ERROR_MODEL_PRICE_BOUND)
@@ -155,6 +144,7 @@ async def run_model_request(
                             ModelDecision(
                                 backend=MODEL_REMOTE,
                                 payload=validated.model_dump(mode="json"),
+                                receipt=receipt,
                             ),
                             mapping_key,
                             settings,
@@ -182,7 +172,9 @@ async def run_model_request(
         connection,
         claimed,
         request_key,
-        ModelDecision(backend=MODEL_LOCAL, reason_code=failure.reason_code),
+        ModelDecision(
+            backend=MODEL_LOCAL, reason_code=failure.reason_code, receipt=receipt
+        ),
         mapping_key,
         settings,
         transient_failure=had_transient_failure,

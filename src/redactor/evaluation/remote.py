@@ -48,6 +48,7 @@ def remote_settings(model: str) -> PipelineSettings:
     )
     return PipelineSettings(
         remote=RemoteSettings(
+            enabled=True,
             base_url=EVALUATION_OPENROUTER_URL,
             model=model,
             input_usd_per_million=Decimal(input_price),

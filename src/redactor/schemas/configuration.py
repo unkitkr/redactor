@@ -19,6 +19,7 @@ from redactor.utils.constants import (
     DEFAULT_MODEL_DEADLINE_SECONDS,
     DEFAULT_MODEL_INPUT_BYTES,
     DEFAULT_MODEL_OUTPUT_TOKENS,
+    DEFAULT_MODEL_TEMPERATURE,
     DEFAULT_MODEL_TIMEOUT_SECONDS,
     DEFAULT_NATIVE_FILE_BYTES,
     DEFAULT_NER_CACHE_CHARACTERS,
@@ -31,15 +32,21 @@ from redactor.utils.constants import (
     DEFAULT_RETRY_MAX_SECONDS,
     DEFAULT_SPACY_MODEL,
     MODEL_DIRECTORY,
+    MODEL_PROVIDER_OPENAI,
     NER_SPACY,
     OCR_TESSERACT,
 )
 
 
 class RemoteSettings(BaseModel, frozen=True, extra="forbid"):
-    enabled: bool = True
+    enabled: bool = False
     base_url: str = ""
     model: str = ""
+    provider: Literal["openai", "openrouter"] = MODEL_PROVIDER_OPENAI
+    reasoning_enabled: bool | None = None
+    temperature: float | None = Field(
+        default=DEFAULT_MODEL_TEMPERATURE, ge=0, le=2, allow_inf_nan=False
+    )
     vision: bool = False
     json_mode: bool = True
     budget_usd: Decimal = Field(default=Decimal(DEFAULT_MODEL_BUDGET_USD), ge=0)

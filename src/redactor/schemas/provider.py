@@ -23,10 +23,22 @@ class ModelUnavailable(BaseModel, frozen=True, extra="forbid"):
     reason_code: str
 
 
+class ModelReceipt(BaseModel, frozen=True, extra="forbid"):
+    """Endpoint attribution kept with the encrypted response, without source text."""
+
+    requested_model: str
+    returned_model: str
+    provider: str | None = None
+    input_tokens: NonNegativeInt | None = None
+    output_tokens: NonNegativeInt | None = None
+    reported_cost_usd: Decimal | None = Field(default=None, ge=0)
+
+
 class ModelDecision(BaseModel, frozen=True, extra="forbid"):
     backend: Literal["remote", "local"]
     payload: dict[str, JsonValue] | None = None
     reason_code: str | None = None
+    receipt: ModelReceipt | None = None
 
 
 class ModelRequest(BaseModel, frozen=True, extra="forbid"):

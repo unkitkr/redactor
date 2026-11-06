@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from redactor.schemas.configuration import RemoteSettings
 from redactor.utils.configuration import (
     load_settings,
     processing_fingerprint,
@@ -37,6 +38,20 @@ def test_configuration_resolves_environment_without_persisting_secrets(
 
     changed = load_settings(configuration, environment={"LLM_MODEL": "different"})
     assert processing_fingerprint(changed) != processing_fingerprint(settings)
+
+
+def test_default_configuration_is_local_with_explicit_hosted_override() -> None:
+    configuration = Path(__file__).resolve().parents[1] / "redactor.toml"
+    assert not RemoteSettings().enabled
+    local = load_settings(configuration, environment={})
+    hosted = load_settings(configuration, environment={"LLM_ENABLED": "1"})
+    assert not local.remote.enabled
+    assert hosted.remote.enabled
+    assert hosted.remote.provider == "openrouter"
+    assert hosted.remote.reasoning_enabled
+    assert hosted.remote.input_usd_per_million is not None
+    assert hosted.remote.output_usd_per_million is not None
+    assert processing_fingerprint(hosted) == processing_fingerprint(local)
 
 
 def test_configuration_rejects_unknown_settings_and_bad_keys(tmp_path: Path) -> None:
