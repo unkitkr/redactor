@@ -280,6 +280,11 @@ ZIP_MAX_COMMENT_BYTES: Final = 65535
 ZIP_MAX_ENTRIES: Final = 20000
 ZIP_MAX_DIRECTORY_BYTES: Final = 8 * 1024 * 1024
 ZIP_ENCRYPTED_FLAG: Final = 1
+ZIP_LOCAL_HEADER_FORMAT: Final = "<4s5H3I2H"
+ZIP_CENTRAL_HEADER_BYTES: Final = 46
+ZIP_END_RECORD_FORMAT: Final = "<4s4H2IH"
+ZIP_UTF8_FLAG: Final = 0x800
+ZIP_LEGACY_ENCODING: Final = "cp437"
 DEFAULT_NATIVE_FILE_BYTES: Final = 32 * 1024 * 1024
 DEFAULT_ARCHIVE_BYTES: Final = 256 * 1024 * 1024
 OOXML_CONTENT_TYPES: Final = "[Content_Types].xml"
@@ -551,11 +556,403 @@ OFFICE_STRUCTURAL_VALUES: Final = (
     "rgb",
     "theme",
 )
-OOXML_PUBLIC_URL_PREFIXES: Final = (
-    "http://schemas.openxmlformats.org/",
-    "http://schemas.microsoft.com/",
-    "http://purl.org/dc/",
-    "http://www.w3.org/",
+# Supported Office XML vocabulary. Unknown extension elements and attributes
+# require a surface adapter instead of inheriting numeric or URL exemptions.
+OOXML_DRAWING_NAMESPACE: Final = "http://schemas.openxmlformats.org/drawingml/2006/main"
+OOXML_OFFICE_RELATIONSHIP_NAMESPACE: Final = (
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+)
+OOXML_CORE_NAMESPACE: Final = (
+    "http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+)
+OOXML_EXTENDED_NAMESPACE: Final = (
+    "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"
+)
+OOXML_DC_NAMESPACE: Final = "http://purl.org/dc/elements/1.1/"
+OOXML_DC_TERMS_NAMESPACE: Final = "http://purl.org/dc/terms/"
+OOXML_DC_TYPE_NAMESPACE: Final = "http://purl.org/dc/dcmitype/"
+XML_SCHEMA_INSTANCE_NAMESPACE: Final = "http://www.w3.org/2001/XMLSchema-instance"
+XML_NAMESPACE: Final = "http://www.w3.org/XML/1998/namespace"
+XML_SPACE_ATTRIBUTE: Final = f"{{{XML_NAMESPACE}}}space"
+XML_TYPE_ATTRIBUTE: Final = f"{{{XML_SCHEMA_INSTANCE_NAMESPACE}}}type"
+OOXML_TIMESTAMP_TYPE: Final = "dcterms:W3CDTF"
+OOXML_RELATIONSHIP_ID_PATTERN: Final = r"rId[1-9][0-9]*"
+OOXML_RELATIONSHIP_REFERENCE: Final = f"{{{OOXML_OFFICE_RELATIONSHIP_NAMESPACE}}}id"
+OOXML_VERIFIED_NAMESPACES: Final = (
+    XLSX_NAMESPACE,
+    OOXML_DRAWING_NAMESPACE,
+    OOXML_CONTENT_NAMESPACE,
+    OOXML_RELATIONSHIP_NAMESPACE,
+    OOXML_OFFICE_RELATIONSHIP_NAMESPACE,
+    OOXML_CORE_NAMESPACE,
+    OOXML_EXTENDED_NAMESPACE,
+    OOXML_DC_NAMESPACE,
+    OOXML_DC_TERMS_NAMESPACE,
+    OOXML_DC_TYPE_NAMESPACE,
+    XML_SCHEMA_INSTANCE_NAMESPACE,
+    XML_NAMESPACE,
+)
+OOXML_NAMESPACE_PREFIX_PATTERN: Final = (
+    r"(?:|ns[0-9]+|a|s|x|r|cp|dc|dcterms|dcmitype|xsi|xml)"
+)
+OOXML_WORKSHEET_PART_PATTERN: Final = r"xl/worksheets/sheet[1-9][0-9]*\.xml"
+OOXML_THEME_PART_PATTERN: Final = r"xl/theme/theme[1-9][0-9]*\.xml"
+OOXML_CORE_PART: Final = "docProps/core.xml"
+OOXML_EXTENDED_PART: Final = "docProps/app.xml"
+OOXML_WORKBOOK_RELATIONSHIPS: Final = "xl/_rels/workbook.xml.rels"
+OOXML_SUPPORTED_PARTS: Final = (
+    OOXML_CONTENT_TYPES,
+    OOXML_PACKAGE_RELATIONSHIPS,
+    OOXML_WORKBOOK_RELATIONSHIPS,
+    OOXML_CORE_PART,
+    OOXML_EXTENDED_PART,
+    XLSX_WORKBOOK,
+    XLSX_STYLES,
+    XLSX_SHARED_STRINGS,
+)
+OOXML_SUPPORTED_RELATIONSHIP_TYPES: Final = (
+    OOXML_OFFICE_DOCUMENT_RELATIONSHIP,
+    OOXML_RELATIONSHIP_NAMESPACE + "/metadata/core-properties",
+    *(
+        OOXML_OFFICE_RELATIONSHIP_NAMESPACE + "/" + name
+        for name in (
+            "extended-properties",
+            "worksheet",
+            "styles",
+            "theme",
+            "sharedStrings",
+        )
+    ),
+)
+OOXML_SUPPORTED_CONTENT_TYPES: Final = (
+    XLSX_MAIN_TYPE,
+    "application/xml",
+    "application/vnd.openxmlformats-package.relationships+xml",
+    "application/vnd.openxmlformats-package.core-properties+xml",
+    "application/vnd.openxmlformats-officedocument.extended-properties+xml",
+    *(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml." + name + "+xml"
+        for name in ("worksheet", "styles", "sharedStrings")
+    ),
+    "application/vnd.openxmlformats-officedocument.theme+xml",
+)
+OOXML_CONTENT_EXTENSIONS: Final = ("xml", "rels")
+OOXML_WORKSHEET_VOCABULARY: Final = (
+    ("worksheet", ()),
+    ("sheetPr", ()),
+    ("outlinePr", ("summaryBelow", "summaryRight", "showOutlineSymbols")),
+    ("pageSetUpPr", ("fitToPage", "autoPageBreaks")),
+    ("dimension", ("ref",)),
+    ("sheetViews", ()),
+    ("sheetView", ("workbookViewId", "showGridLines", "topLeftCell")),
+    ("selection", ("activeCell", "activeCellId", "sqref")),
+    (
+        "sheetFormatPr",
+        ("baseColWidth", "defaultRowHeight", "defaultColWidth", "customHeight"),
+    ),
+    ("cols", ()),
+    (
+        "col",
+        (
+            "min",
+            "max",
+            "width",
+            "style",
+            "hidden",
+            "bestFit",
+            "customWidth",
+            "outlineLevel",
+            "collapsed",
+        ),
+    ),
+    ("sheetData", ()),
+    (
+        "row",
+        (
+            "r",
+            "s",
+            "ht",
+            "hidden",
+            "customHeight",
+            "customFormat",
+            "outlineLevel",
+            "collapsed",
+            "thickTop",
+            "thickBot",
+        ),
+    ),
+    ("c", ("r", "s", "t")),
+    ("is", ()),
+    ("t", (XML_SPACE_ATTRIBUTE,)),
+    ("v", ()),
+    ("pageMargins", ("left", "right", "top", "bottom", "header", "footer")),
+)
+OOXML_WORKBOOK_VOCABULARY: Final = (
+    ("workbook", ()),
+    (
+        "workbookPr",
+        (
+            "date1904",
+            "filterPrivacy",
+            "showObjects",
+            "saveExternalLinkValues",
+            "updateLinks",
+        ),
+    ),
+    ("workbookProtection", ()),
+    ("bookViews", ()),
+    (
+        "workbookView",
+        (
+            "activeTab",
+            "autoFilterDateGrouping",
+            "firstSheet",
+            "minimized",
+            "showHorizontalScroll",
+            "showSheetTabs",
+            "showVerticalScroll",
+            "tabRatio",
+            "visibility",
+            "windowHeight",
+            "windowWidth",
+            "xWindow",
+            "yWindow",
+        ),
+    ),
+    ("sheets", ()),
+    ("sheet", ("name", "sheetId", "state", OOXML_RELATIONSHIP_REFERENCE)),
+    ("definedNames", ()),
+    (
+        "calcPr",
+        (
+            "calcId",
+            "fullCalcOnLoad",
+            "calcMode",
+            "forceFullCalc",
+            "calcOnSave",
+            "iterate",
+            "iterateCount",
+            "iterateDelta",
+            "refMode",
+        ),
+    ),
+)
+OOXML_STYLE_VOCABULARY: Final = (
+    ("styleSheet", ()),
+    ("numFmts", ("count",)),
+    ("numFmt", ("numFmtId", "formatCode")),
+    ("fonts", ("count",)),
+    ("font", ()),
+    *(
+        (name, ("val",))
+        for name in (
+            "name",
+            "family",
+            "sz",
+            "scheme",
+            "b",
+            "i",
+            "u",
+            "strike",
+            "outline",
+            "shadow",
+            "condense",
+            "extend",
+            "vertAlign",
+            "charset",
+        )
+    ),
+    ("color", ("rgb", "indexed", "theme", "tint", "auto")),
+    ("fills", ("count",)),
+    ("fill", ()),
+    ("patternFill", ("patternType",)),
+    ("fgColor", ("rgb", "indexed", "theme", "tint", "auto")),
+    ("bgColor", ("rgb", "indexed", "theme", "tint", "auto")),
+    ("borders", ("count",)),
+    ("border", ("diagonalUp", "diagonalDown", "outline")),
+    *(
+        (name, ("style",))
+        for name in (
+            "left",
+            "right",
+            "top",
+            "bottom",
+            "diagonal",
+            "vertical",
+            "horizontal",
+            "start",
+            "end",
+        )
+    ),
+    ("cellStyleXfs", ("count",)),
+    ("cellXfs", ("count",)),
+    (
+        "xf",
+        (
+            "borderId",
+            "fillId",
+            "fontId",
+            "numFmtId",
+            "pivotButton",
+            "quotePrefix",
+            "xfId",
+            "applyAlignment",
+            "applyBorder",
+            "applyFill",
+            "applyFont",
+            "applyNumberFormat",
+            "applyProtection",
+        ),
+    ),
+    (
+        "alignment",
+        (
+            "horizontal",
+            "vertical",
+            "textRotation",
+            "wrapText",
+            "shrinkToFit",
+            "indent",
+            "relativeIndent",
+            "justifyLastLine",
+            "readingOrder",
+        ),
+    ),
+    ("protection", ("locked", "hidden")),
+    ("cellStyles", ("count",)),
+    ("cellStyle", ("name", "xfId", "builtinId", "hidden", "customBuiltin")),
+    ("dxfs", ("count",)),
+    ("dxf", ()),
+    ("tableStyles", ("count", "defaultTableStyle", "defaultPivotStyle")),
+    ("colors", ()),
+    ("indexedColors", ()),
+    ("rgbColor", ("rgb",)),
+)
+OOXML_THEME_VOCABULARY: Final = (
+    ("theme", ("name",)),
+    ("themeElements", ()),
+    *((name, ("name",)) for name in ("clrScheme", "fontScheme", "fmtScheme")),
+    *(
+        (name, ())
+        for name in (
+            "dk1",
+            "lt1",
+            "dk2",
+            "lt2",
+            "accent1",
+            "accent2",
+            "accent3",
+            "accent4",
+            "accent5",
+            "accent6",
+            "hlink",
+            "folHlink",
+            "majorFont",
+            "minorFont",
+            "fillStyleLst",
+            "solidFill",
+            "gsLst",
+            "lnStyleLst",
+            "effectStyleLst",
+            "effectStyle",
+            "effectLst",
+            "scene3d",
+            "sp3d",
+            "bgFillStyleLst",
+            "objectDefaults",
+            "extraClrSchemeLst",
+        )
+    ),
+    ("sysClr", ("val", "lastClr")),
+    ("srgbClr", ("val",)),
+    ("schemeClr", ("val",)),
+    *(
+        (name, ("typeface", "panose", "pitchFamily", "charset"))
+        for name in ("latin", "ea", "cs")
+    ),
+    ("font", ("script", "typeface")),
+    ("gradFill", ("rotWithShape", "flip")),
+    ("gs", ("pos",)),
+    *(
+        (name, ("val",))
+        for name in (
+            "tint",
+            "shade",
+            "alpha",
+            "alphaMod",
+            "alphaOff",
+            "sat",
+            "satMod",
+            "satOff",
+            "lum",
+            "lumMod",
+            "lumOff",
+            "hue",
+            "hueMod",
+            "hueOff",
+        )
+    ),
+    ("lin", ("ang", "scaled")),
+    ("ln", ("algn", "cap", "cmpd", "w")),
+    ("prstDash", ("val",)),
+    (
+        "outerShdw",
+        ("blurRad", "dir", "dist", "rotWithShape", "algn", "sx", "sy", "kx", "ky"),
+    ),
+    ("camera", ("prst", "fov", "zoom")),
+    ("rot", ("lat", "lon", "rev")),
+    ("lightRig", ("dir", "rig")),
+    ("bevelT", ("h", "w", "prst")),
+    ("bevelB", ("h", "w", "prst")),
+    ("path", ("path",)),
+    ("fillToRect", ("b", "l", "r", "t")),
+)
+OOXML_CORE_VOCABULARY: Final = (
+    (
+        OOXML_CORE_NAMESPACE,
+        (
+            "coreProperties",
+            "category",
+            "contentStatus",
+            "contentType",
+            "keywords",
+            "lastModifiedBy",
+            "lastPrinted",
+            "revision",
+            "version",
+        ),
+    ),
+    (
+        OOXML_DC_NAMESPACE,
+        ("title", "subject", "creator", "description", "identifier", "language"),
+    ),
+    (OOXML_DC_TERMS_NAMESPACE, ("created", "modified")),
+)
+OOXML_EXTENDED_VOCABULARY: Final = (
+    "Properties",
+    "Template",
+    "Manager",
+    "Company",
+    "Pages",
+    "Words",
+    "Characters",
+    "PresentationFormat",
+    "Lines",
+    "Paragraphs",
+    "Slides",
+    "Notes",
+    "TotalTime",
+    "HiddenSlides",
+    "MMClips",
+    "ScaleCrop",
+    "LinksUpToDate",
+    "CharactersWithSpaces",
+    "SharedDoc",
+    "HyperlinkBase",
+    "HyperlinksChanged",
+    "Application",
+    "AppVersion",
+    "DocSecurity",
 )
 MRN_NAMESPACE: Final = "mrn"
 PATIENT_ID_NAMESPACE: Final = "patient-id"

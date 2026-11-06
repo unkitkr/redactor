@@ -16,7 +16,11 @@ from redactor.evaluation.text import evaluate_text_examples
 from redactor.inference.ner import load_local_ner
 from redactor.schemas.configuration import LocalSettings
 from redactor.schemas.evaluation import TextExample
-from redactor.utils.constants import DEFAULT_SPACY_MODEL, EVALUATION_TEXT_CORPUS
+from redactor.utils.constants import (
+    DEFAULT_SPACY_MODEL,
+    EVALUATION_TEXT_CORPUS,
+    VERIFIER_VERSION,
+)
 
 
 def main() -> None:
@@ -71,6 +75,7 @@ def main() -> None:
         ),
         "corpus_sha256": hashlib.sha256(corpus).hexdigest(),
         "remote_models_enabled": False,
+        "verifier_version": VERIFIER_VERSION,
         "model_load_seconds": load_seconds,
         "evaluations": [
             evaluate_text_examples(examples, adapter, combined=mode)

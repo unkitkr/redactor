@@ -23,6 +23,7 @@
 - ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications and diseases retain their content.
 - Device production identifiers and ambiguous lots are pseudonymized; known shared medication batches remain unless patient linkage is evident, following the [HHS distinction](https://www.hhs.gov/hipaa/for-professionals/faq/can-device-identifier-di-portion-unique-device-identifier-udi-be-part-limited-or-de-identified/index.html).
 - Valid mislabeled files retain their detected native format and original name; corrupt files and unassessed hidden surfaces fail closed.
+- XLSX verification accounts for XML names, metadata and ZIP contents, rejects ambiguous cells, and compares unedited layout and styles with the source.
 - Saved remote responses replay; a crash before persistence may require another bounded request, a different answer or another charge.
 
 ## Measurements
@@ -35,6 +36,7 @@
 
 - Current publication covers CSV/TSV, bounded labelled text, supported XLSX and HL7 ADT; other formats and unsupported populated surfaces quarantine.
 - Native files default to 32 MiB, expanded archives to 256 MiB and images to 16 million pixels; only CSV rewriting streams beyond the native-file limit.
+- Unsupported Office extensions, custom namespace prefixes and part paths quarantine; unsupported international phones and extensions also quarantine instead of accepting a partial replacement.
 - The labelled cases exposed verifier false accepts involving initialled names, international phones and model-specific misses; shared writer/verifier detection still permits correlated errors.
 - The config-only selection leaves GLiNER unsupported by the production loader: the CLI test published 0 instead of 4 files (124 tests passed, 1 failed); PP-OCR and hosted detection remain benchmark-only.
 - OpenMed reached 1 GiB in isolation; NVIDIA full weights were excluded before inference. GLiNER matched upstream on 140 inputs; OpenMed BIO grouping remains experimental.

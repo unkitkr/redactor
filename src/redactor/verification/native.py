@@ -16,6 +16,7 @@ from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.entities import NerAdapter
 from redactor.schemas.formats import FileInspection
+from redactor.schemas.native import NativeDocument
 from redactor.schemas.persistence import Artifact, Task
 from redactor.schemas.verification import VerificationCheck
 from redactor.utils.constants import (
@@ -32,9 +33,12 @@ from redactor.utils.errors import (
     ERROR_COVERAGE,
     ERROR_STRUCTURE,
 )
+from redactor.verification.archive import check_saved_archive
 from redactor.verification.hl7 import check_hl7_surfaces
 from redactor.verification.text import verify_text_changes
 from redactor.verification.xlsx import check_xlsx_surfaces
+from redactor.verification.xlsx_preservation import check_xlsx_preservation
+from redactor.verification.xlsx_source import check_xlsx_source_surfaces
 
 
 def verify_native(
@@ -63,8 +67,13 @@ def verify_native(
         raise ValueError(ERROR_STRUCTURE)
     original = read_native(task.input_path, inspection, settings.resources)
     output = read_native(artifact.path, written_inspection, settings.resources)
+    _validate_locations(original)
+    _validate_locations(output)
     if inspection.file_type == FORMAT_XLSX:
+        check_saved_archive(artifact.path)
+        check_xlsx_source_surfaces(task.input_path, original)
         check_xlsx_surfaces(artifact.path, output)
+        check_xlsx_preservation(task.input_path, artifact.path, original)
     if inspection.file_type == FORMAT_HL7:
         check_hl7_surfaces(
             task.input_path,
@@ -79,6 +88,8 @@ def verify_native(
     analysis = read_step_result(
         connection, analysis_id, FileAnalysis, encryption_key=mapping_key
     )
+    if analysis.reason is not None or analysis.file_type != inspection.file_type:
+        raise ValueError(ERROR_COVERAGE)
     counts: Counter[str] = Counter()
     cells = 0
     for number, (before, after) in enumerate(
@@ -118,6 +129,8 @@ def verify_native(
                 edits,
                 local_ner,
                 free_text=column.kind == FIELD_TEXT,
+                patient_name=context.patient_name,
+                provider_name=context.provider_name,
             )
             counts.update(edit.kind for edit in edits)
             cells += 1
@@ -133,3 +146,18 @@ def verify_native(
         )
         for kind in REQUIRED_VERIFICATION_CHECKS
     )
+
+
+def _validate_locations(document: NativeDocument) -> None:
+    seen: set[tuple[str, ...]] = set()
+    for record in document.records:
+        if not len(record.values) == len(record.locations) == len(record.policies):
+            raise ValueError(ERROR_COVERAGE)
+        if tuple(policy.index for policy in record.policies) != tuple(
+            range(len(record.values))
+        ):
+            raise ValueError(ERROR_COVERAGE)
+        for location in record.locations:
+            if not location or location in seen:
+                raise ValueError(ERROR_COVERAGE)
+            seen.add(location)

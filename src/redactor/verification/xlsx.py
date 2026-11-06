@@ -4,13 +4,10 @@ import re
 from pathlib import Path
 from zipfile import ZipFile
 
-from defusedxml.ElementTree import fromstring
-
 from redactor.schemas.native import NativeDocument
 from redactor.utils.constants import (
     OFFICE_PUBLIC_FONTS,
     OFFICE_STRUCTURAL_VALUES,
-    OOXML_PUBLIC_URL_PREFIXES,
     XLSX_NAMESPACE,
     XLSX_SHARED_STRINGS,
     XLSX_STYLES,
@@ -18,6 +15,9 @@ from redactor.utils.constants import (
     XLSX_WORKSHEET_PREFIX,
 )
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_RESIDUAL_PHI
+from redactor.verification.worksheet import check_worksheet_cells
+from redactor.verification.xml import read_verified_xml
+from redactor.verification.xml_vocabulary import check_xml_vocabulary
 
 
 def check_xlsx_surfaces(path: Path, document: NativeDocument) -> None:
@@ -28,12 +28,16 @@ def check_xlsx_surfaces(path: Path, document: NativeDocument) -> None:
         ):
             raise ValueError(ERROR_COVERAGE)
         for part in archive.namelist():
-            root = fromstring(archive.read(part), forbid_dtd=True)
+            root = read_verified_xml(archive.read(part))
+            check_xml_vocabulary(root, part)
+            if any(node.tail and node.tail.strip() for node in root.iter()):
+                raise ValueError(ERROR_COVERAGE)
             if part == XLSX_SHARED_STRINGS:
                 if len(root) or (root.text and root.text.strip()):
                     raise ValueError(ERROR_RESIDUAL_PHI)
                 continue
             if part.startswith(XLSX_WORKSHEET_PREFIX):
+                check_worksheet_cells(root, part, covered)
                 cells = set(root.iter(f"{{{XLSX_NAMESPACE}}}c"))
                 cell_nodes = {node for cell in cells for node in cell.iter()}
                 for node in root.iter():
@@ -130,7 +134,8 @@ def check_xlsx_surfaces(path: Path, document: NativeDocument) -> None:
                     local = attribute.rsplit("}", 1)[-1]
                     if local == "TargetMode":
                         raise ValueError(ERROR_COVERAGE)
-                    if value.startswith(OOXML_PUBLIC_URL_PREFIXES):
+                    # Vocabulary validation checked the exact URI and its role.
+                    if local in ("Type", "ContentType"):
                         continue
                     if part.endswith(".rels") and local == "Target":
                         if re.fullmatch(
