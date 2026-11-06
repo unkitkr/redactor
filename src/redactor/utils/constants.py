@@ -177,10 +177,15 @@ MODEL_REQUEST_CONTEXT: Final = b"redactor-model-request-v1:"
 DEFAULT_RETRY_INITIAL_SECONDS: Final = 0.5
 DEFAULT_RETRY_MAX_SECONDS: Final = 8.0
 MODEL_FINISH_STOP: Final = "stop"
+MODEL_PURPOSE_DETECTOR: Final = "detector"
 MODEL_PURPOSE_JUDGE: Final = "judge"
 HTTP_RETRY_AFTER_HEADER: Final = "retry-after"
 HTTP_CONTENT_ENCODING_HEADER: Final = "content-encoding"
 HTTP_IDENTITY_ENCODING: Final = "identity"
+
+# Grounded text detection
+DETECTOR_PROMPT_VERSION: Final = "text-entities-v1"
+DETECTOR_TEXT_FIELD: Final = "text"
 
 # Native delimited text
 CSV_ADAPTER_VERSION: Final = "csv-utf8-v1"

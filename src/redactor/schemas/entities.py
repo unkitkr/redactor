@@ -23,4 +23,11 @@ class TextEntities(BaseModel, frozen=True, extra="forbid"):
     entities: tuple[TextEntity, ...] = Field(max_length=MAX_TEXT_ENTITIES)
 
 
+class EntityDetection(TextEntities):
+    """Detector observations and provenance, never a verification verdict."""
+
+    backend: Literal["remote", "local"]
+    fallback_reason: str | None = None
+
+
 NerAdapter = Callable[[str], tuple[TextEntity, ...]]
