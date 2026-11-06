@@ -36,11 +36,16 @@ def publish_verified_artifact(
         "SELECT 1 FROM dependencies WHERE task_id = ? AND depends_on = ?",
         (current.task_id, verification_task_id),
     ).fetchone()
+    verified_producer = connection.execute(
+        "SELECT 1 FROM dependencies WHERE task_id = ? AND depends_on = ?",
+        (verification_task_id, producer.task_id),
+    ).fetchone()
     if (
         current.step != STEP_PUBLISH
         or verification_task.step != STEP_VERIFY
         or producer.step != STEP_REWRITE
         or dependency is None
+        or verified_producer is None
         or verdict.context != expected_context
         or expected_context.original_sha256 != current.input_sha256
         or producer.input_sha256 != current.input_sha256

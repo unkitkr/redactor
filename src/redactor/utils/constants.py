@@ -20,6 +20,13 @@ OUTPUT_DIRECTORY: Final = "output"
 PUBLISHED_DIRECTORY: Final = "published"
 TEMPORARY_DIRECTORY: Final = "tmp"
 TEMPORARY_FILE_TEMPLATE: Final = "{attempt_token}.part"
+RESULT_FILE_TEMPLATE: Final = "{attempt_token}.result"
+REASON_FILE_SUFFIX: Final = ".reason.json"
+REPORT_FILENAME: Final = "report.json"
+RUN_LOG_FILENAME: Final = "run.log"
+OUTCOME_PUBLISHED: Final = "published"
+OUTCOME_QUARANTINED: Final = "quarantined"
+QUARANTINE_DIRECTORY: Final = "quarantine"
 FILE_LOCATION_FIELDS: Final = ("temporary_directory", "output_path")
 
 # Coordinator ownership and placeholder work

@@ -14,7 +14,7 @@ from redactor.persistence.files.artifacts import (
 )
 from redactor.persistence.files.checkpoints import resume_checkpoint, save_checkpoint
 from redactor.persistence.files.registration import prepare_successor
-from redactor.persistence.files.results import read_step_result
+from redactor.persistence.files.results import read_step_result, write_step_result
 from redactor.persistence.identities.snapshots import load_identity_lookup
 from redactor.policy.tabular import cell_edits, cell_findings
 from redactor.policy.text import apply_text_edits
@@ -22,6 +22,7 @@ from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.entities import NerAdapter
 from redactor.schemas.formats import FileInspection
+from redactor.schemas.outcomes import FileFailure
 from redactor.schemas.persistence import Checkpoint, Task
 from redactor.schemas.pipeline import StepResult
 from redactor.utils.constants import (
@@ -29,6 +30,8 @@ from redactor.utils.constants import (
     HASH_CHUNK_BYTES,
     STEP_ANALYZE,
     STEP_INSPECT,
+    STEP_QUARANTINE,
+    STEP_REWRITE,
     STEP_VERIFY,
 )
 from redactor.utils.errors import (
@@ -36,6 +39,39 @@ from redactor.utils.errors import (
     ERROR_FORMAT_UNSUPPORTED,
     ERROR_RESOURCE_LIMIT,
 )
+from redactor.utils.failures import failure_reason
+
+
+def rewrite_or_quarantine(
+    connection: sqlite3.Connection,
+    task: Task,
+    *,
+    settings: PipelineSettings,
+    mapping_key: bytes,
+    local_ner: NerAdapter,
+    resolution_task_id: str,
+) -> StepResult:
+    try:
+        return rewrite_task(
+            connection,
+            task,
+            settings=settings,
+            mapping_key=mapping_key,
+            local_ner=local_ner,
+            resolution_task_id=resolution_task_id,
+        )
+    except Exception as error:
+        failure = FileFailure(step=STEP_REWRITE, reason=failure_reason(error))
+        return StepResult(
+            artifact=write_step_result(
+                connection,
+                task,
+                failure,
+                encryption_key=mapping_key,
+                auxiliary=True,
+            ),
+            successors=(prepare_successor(connection, task, STEP_QUARANTINE),),
+        )
 
 
 def rewrite_task(

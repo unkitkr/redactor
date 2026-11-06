@@ -11,6 +11,7 @@ from redactor.schemas.persistence import Artifact, Task
 from redactor.utils.constants import (
     PRIVATE_FILE_MODE,
     READ_BINARY,
+    RESULT_FILE_TEMPLATE,
     TEMPORARY_FILE_TEMPLATE,
 )
 from redactor.utils.errors import (
@@ -23,14 +24,16 @@ from redactor.utils.errors import (
 from redactor.utils.filesystem import private_directory, sync_directory
 
 
-def create_temporary_file(connection: sqlite3.Connection, claimed: Task) -> Path:
+def create_temporary_file(
+    connection: sqlite3.Connection, claimed: Task, *, result_file: bool = False
+) -> Path:
     """Create a private file for this attempt without truncating existing bytes.
 
     Reopening a partial file does not make it safe to append: checkpoint recovery
     determines the usable prefix before the writer resumes.
     """
     current = require_attempt(connection, claimed)
-    temporary_path = temporary_path_for(current)
+    temporary_path = temporary_path_for(current, result_file=result_file)
     private_directory(temporary_path.parent)
     descriptor = os.open(
         temporary_path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, PRIVATE_FILE_MODE
@@ -112,13 +115,12 @@ def install_artifact(artifact: Artifact, output_path: Path) -> Artifact:
     return Artifact(path=output_path, sha256=artifact.sha256, size=artifact.size)
 
 
-def temporary_path_for(task: Task) -> Path:
+def temporary_path_for(task: Task, *, result_file: bool = False) -> Path:
     """Locate an attempt's working file, including non-public pipeline artifacts."""
     if task.temporary_directory is None or task.attempt_token is None:
         raise ValueError(ERROR_FILE_NOT_REGISTERED)
-    return task.temporary_directory / TEMPORARY_FILE_TEMPLATE.format(
-        attempt_token=task.attempt_token
-    )
+    template = RESULT_FILE_TEMPLATE if result_file else TEMPORARY_FILE_TEMPLATE
+    return task.temporary_directory / template.format(attempt_token=task.attempt_token)
 
 
 def inspect_artifact(path: Path, *, persist: bool) -> Artifact:

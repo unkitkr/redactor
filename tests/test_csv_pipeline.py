@@ -10,12 +10,18 @@ from redactor.coordinator.bootstrap import prepare_run
 from redactor.inference.ner import load_local_ner
 from redactor.persistence.files.artifacts import inspect_artifact
 from redactor.persistence.files.results import read_step_result
-from redactor.persistence.queue.tasks import claim_task, iter_tasks, recover_interrupted
+from redactor.persistence.queue.tasks import (
+    claim_task,
+    complete_task,
+    iter_tasks,
+    recover_interrupted,
+)
 from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.configuration import PipelineSettings, ResourceSettings
 from redactor.verification.csv import verify_csv
 from redactor.verification.text import scan_residuals
 from redactor.workers.analyze import analyze_task
+from redactor.workers.handlers import pipeline_handlers
 from redactor.workers.inspect import inspect_task
 from redactor.workers.pipeline import execute_task
 from redactor.workers.resolve import resolve_task
@@ -141,3 +147,43 @@ def test_csv_analysis_resolution_and_checkpoint_replay(
     # A residual pattern is rejected independently of the writer's detections.
     with pytest.raises(ValueError, match="residual_phi_detected"):
         scan_residuals("Remote address 192.168.1.12", (), ner)
+    replay.artifact.path.write_bytes(first_bytes)
+    complete_task(
+        connection, retry, result=replay.artifact, successors=replay.successors
+    )
+    handlers = pipeline_handlers(settings, key, ner, run.resolution_task_id)
+    while task := claim_task(connection):
+        execute_task(connection, task, handlers)
+    assert retry.output_path is not None
+    assert retry.output_path.read_bytes() == first_bytes
+    assert {task.step for task in iter_tasks(connection)} == {
+        "inspect",
+        "analyze",
+        "resolve",
+        "rewrite",
+        "verify",
+        "publish",
+    }
+
+
+def test_rejected_input_is_retained_with_a_safe_reason(
+    connection: sqlite3.Connection, tmp_path: Path
+) -> None:
+    source = tmp_path / "input"
+    source.mkdir()
+    original = source / "broken.docx"
+    original.write_bytes(b"PK\x03\x04 broken private source")
+    settings = PipelineSettings()
+    key = bytes(range(32))
+    run = prepare_run(connection, source, settings, key)
+    handlers = pipeline_handlers(
+        settings, key, load_local_ner(settings.local), run.resolution_task_id
+    )
+    while task := claim_task(connection):
+        execute_task(connection, task, handlers)
+    quarantined = tmp_path / "output" / "quarantine" / original.name
+    assert quarantined.read_bytes() == original.read_bytes()
+    reason = quarantined.with_name(quarantined.name + ".reason.json").read_text()
+    assert "private" not in reason
+    assert "reason" in reason
+    assert not (tmp_path / "output" / "published" / original.name).exists()

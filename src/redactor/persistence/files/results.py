@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError
 
 from redactor.persistence.files.artifacts import (
     create_temporary_file,
-    seal_temporary_file,
+    inspect_artifact,
 )
 from redactor.persistence.queue.tasks import get_task
 from redactor.schemas.persistence import Artifact, Task
@@ -25,6 +25,7 @@ def write_step_result(
     result: BaseModel,
     *,
     encryption_key: bytes | None = None,
+    auxiliary: bool = False,
 ) -> Artifact:
     payload = result.model_dump_json().encode()
     if encryption_key is not None:
@@ -33,9 +34,9 @@ def write_step_result(
         )
     if len(payload) > MAX_MANIFEST_BYTES:
         raise ValueError(ERROR_STEP_RESULT)
-    path = create_temporary_file(connection, claimed)
+    path = create_temporary_file(connection, claimed, result_file=auxiliary)
     path.write_bytes(payload)
-    return seal_temporary_file(connection, claimed)
+    return inspect_artifact(path, persist=True)
 
 
 def accepted_artifact(connection: sqlite3.Connection, task_id: str) -> Artifact:
