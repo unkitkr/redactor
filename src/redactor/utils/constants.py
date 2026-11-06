@@ -131,6 +131,17 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 VERIFIER_VERSION: Final = "verifier-v1"
+VERIFIER_RESIDUAL_PATTERNS: Final = (
+    r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
+    r"(?<!\d)(?:\+?1[ .-]?)?\(?\d{3}\)?[ .-]\d{3}[ .-]\d{4}(?!\d)",
+    r"\b\d{3}-\d{2}-\d{4}\b",
+    r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
+    r"(?i)\b(?:https?://|www\.)\S+",
+    r"\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b",
+    r"\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b",
+    r"(?i)\b(?:MRN|SSN|account|room|serial|license)\s*[:#]?\s*[A-Z0-9][\w-]+",
+    r"(?i)\b(?:daughter|son|husband|wife|spouse|mother|father|Dr\.)\s+[^\W\d_]",
+)
 VERIFICATION_PASS: Final = "pass"
 VERIFICATION_FAIL: Final = "fail"
 VERIFICATION_UNKNOWN: Final = "unknown"

@@ -4,12 +4,17 @@ import csv
 import sqlite3
 from pathlib import Path
 
+import pytest
+
 from redactor.coordinator.bootstrap import prepare_run
 from redactor.inference.ner import load_local_ner
+from redactor.persistence.files.artifacts import inspect_artifact
 from redactor.persistence.files.results import read_step_result
 from redactor.persistence.queue.tasks import claim_task, iter_tasks, recover_interrupted
 from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.configuration import PipelineSettings, ResourceSettings
+from redactor.verification.csv import verify_csv
+from redactor.verification.text import scan_residuals
 from redactor.workers.analyze import analyze_task
 from redactor.workers.inspect import inspect_task
 from redactor.workers.pipeline import execute_task
@@ -105,3 +110,34 @@ def test_csv_analysis_resolution_and_checkpoint_replay(
     assert b"415-555-0104" not in first_bytes
     assert b"1965-10-16" not in first_bytes
     assert len(list(iter_tasks(connection))) == 4
+    checks = verify_csv(
+        connection,
+        retry,
+        replay.artifact,
+        settings=settings,
+        mapping_key=key,
+        local_ner=ner,
+        resolution_task_id=run.resolution_task_id,
+    )
+    assert all(check.status == "pass" and check.checked == 12 for check in checks)
+    for corrupted in (
+        first_bytes.replace(b"8.4%", b"9.4%"),
+        first_bytes.replace(b"LDL 92 mg/dL.", b"LDL 92 mg/dL. Jane Smith."),
+        first_bytes[: first_bytes.index(b"\n") + 1],
+        first_bytes + first_bytes[first_bytes.index(b"\n") + 1 :],
+    ):
+        replay.artifact.path.write_bytes(corrupted)
+        changed = inspect_artifact(replay.artifact.path, persist=False)
+        with pytest.raises(ValueError):
+            verify_csv(
+                connection,
+                retry,
+                changed,
+                settings=settings,
+                mapping_key=key,
+                local_ner=ner,
+                resolution_task_id=run.resolution_task_id,
+            )
+    # A residual pattern is rejected independently of the writer's detections.
+    with pytest.raises(ValueError, match="residual_phi_detected"):
+        scan_residuals("Remote address 192.168.1.12", (), ner)
