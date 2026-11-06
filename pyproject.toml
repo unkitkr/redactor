@@ -13,6 +13,7 @@ dependencies = [
     "numpy>=2,<3",
     "onnxruntime==1.31.1",
     "openai>=2,<3",
+    "openpyxl>=3.1,<4",
     "pillow>=12,<14",
     "pydantic>=2.10,<3",
     "pydicom>=3,<4",
@@ -40,6 +41,7 @@ dev = [
     "pytest-cov>=6",
     "ruff>=0.11",
     "types-defusedxml>=0.7.0.20260504",
+    "types-openpyxl>=3.1,<4",
 ]
 
 [tool.pytest.ini_options]

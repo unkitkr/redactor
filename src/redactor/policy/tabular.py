@@ -115,7 +115,7 @@ def cell_edits(
     elif policy.kind == FIELD_IDENTIFIER and policy.namespace == SSN_NAMESPACE:
         replacement = replace_ssn(value, key)
     elif policy.kind in (FIELD_PATIENT_ID, FIELD_IDENTIFIER):
-        replacement = replace_identifier(
+        replacement = policy.identifier_prefix + replace_identifier(
             canonical_record_identifier(value, policy.namespace),
             key,
             namespace=policy.namespace,

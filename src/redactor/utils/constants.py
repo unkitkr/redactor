@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v9"
+PIPELINE_VERSION: Final = "pipeline-v10"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -148,7 +148,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v7"
+VERIFIER_VERSION: Final = "verifier-v8"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -497,6 +497,20 @@ XLSX_STYLES: Final = "xl/styles.xml"
 XLSX_WORKBOOK: Final = "xl/workbook.xml"
 XLSX_DATE_FORMAT_IDS: Final = (14, 15, 16, 17, 22, 27, 30, 36, 50, 57)
 XLSX_EPOCH: Final = (1899, 12, 30)
+XLSX_MAX_ROWS: Final = 1_048_576
+XLSX_MAX_COLUMNS: Final = 16_384
+XLSX_MAX_SHEET_NAME: Final = 31
+XLSX_NAME_NAMESPACE: Final = "workbook-name"
+XLSX_NAME_PREFIX: Final = "range_"
+XLSX_RANGE_PATTERN: Final = (
+    r"(?:\$?[A-Z]{1,3}\$?[1-9][0-9]*(?::\$?[A-Z]{1,3}\$?[1-9][0-9]*)?"
+    r"|\$?[A-Z]{1,3}:\$?[A-Z]{1,3}|\$?[1-9][0-9]*:\$?[1-9][0-9]*)"
+)
+XLSX_BUILTIN_NAMES: Final = (
+    "_xlnm.Print_Area",
+    "_xlnm.Print_Titles",
+    "_xlnm._FilterDatabase",
+)
 XLSX_COMMENTS_PATTERN: Final = r"xl/(?:comments/)?comments?[1-9][0-9]*\.xml"
 XLSX_VML_PATTERN: Final = r"xl/drawings/[A-Za-z_]+[1-9][0-9]*\.vml"
 XLSX_SHEET_RELATIONSHIPS_PATTERN: Final = (
@@ -508,7 +522,7 @@ OFFICE_LEGACY_NAMESPACE: Final = "urn:schemas-microsoft-com:office:office"
 OFFICE_EXCEL_NAMESPACE: Final = "urn:schemas-microsoft-com:office:excel"
 OFFICE_XML_TEXT_MODE: Final = "text"
 ZIP_FIXED_TIMESTAMP: Final = (1980, 1, 1, 0, 0, 0)
-NATIVE_ADAPTER_VERSION: Final = "native-v2"
+NATIVE_ADAPTER_VERSION: Final = "native-v3"
 OFFICE_PUBLIC_FONTS: Final = (
     "",
     "Arial",
@@ -870,6 +884,7 @@ OOXML_WORKBOOK_VOCABULARY: Final = (
     ("sheets", ()),
     ("sheet", ("name", "sheetId", "state", OOXML_RELATIONSHIP_REFERENCE)),
     ("definedNames", ()),
+    ("definedName", ("name", "localSheetId", "hidden", "comment", "description")),
     (
         "calcPr",
         (

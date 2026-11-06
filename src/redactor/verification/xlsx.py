@@ -4,12 +4,14 @@ import re
 from pathlib import Path
 from zipfile import ZipFile
 
+from redactor.formats.xlsx_names import workbook_label_records
 from redactor.schemas.native import NativeDocument
 from redactor.utils.constants import (
     OFFICE_PUBLIC_FONTS,
     OFFICE_STRUCTURAL_VALUES,
     OOXML_RELATIONSHIP_ID_PATTERN,
     OOXML_RELATIONSHIP_REFERENCE,
+    XLSX_BUILTIN_NAMES,
     XLSX_COMMENTS_PATTERN,
     XLSX_NAMESPACE,
     XLSX_SHARED_STRINGS,
@@ -39,6 +41,8 @@ def check_xlsx_surfaces(path: Path, document: NativeDocument) -> None:
                 check_comment_shapes(root)
                 continue
             check_xml_vocabulary(root, part)
+            if part == XLSX_WORKBOOK:
+                workbook_label_records(root)
             if re.fullmatch(XLSX_COMMENTS_PATTERN, part):
                 check_comment_surfaces(root, part, covered)
                 continue
@@ -140,12 +144,23 @@ def check_xlsx_surfaces(path: Path, document: NativeDocument) -> None:
                     node.text
                     and node.text.strip()
                     and (part, str(index)) not in covered
+                    and not (
+                        part == XLSX_WORKBOOK
+                        and node.tag == f"{{{XLSX_NAMESPACE}}}definedName"
+                    )
                 ):
                     raise ValueError(ERROR_COVERAGE)
                 if node.tail and node.tail.strip():
                     raise ValueError(ERROR_COVERAGE)
                 for attribute, value in node.attrib.items():
                     if (part, str(index), attribute) in covered:
+                        continue
+                    if (
+                        part == XLSX_WORKBOOK
+                        and node.tag == f"{{{XLSX_NAMESPACE}}}definedName"
+                        and attribute == "name"
+                        and value in XLSX_BUILTIN_NAMES
+                    ):
                         continue
                     local = attribute.rsplit("}", 1)[-1]
                     if local == "TargetMode":

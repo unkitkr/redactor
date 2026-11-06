@@ -14,6 +14,11 @@ from redactor.formats.office_references import (
 )
 from redactor.formats.tabular_fields import column_policies
 from redactor.formats.xlsx_comments import comment_records
+from redactor.formats.xlsx_names import (
+    rewrite_range_targets,
+    workbook_label_records,
+    workbook_names,
+)
 from redactor.formats.xml_text import replace_run_text
 from redactor.schemas.configuration import ResourceSettings
 from redactor.schemas.native import NativeDocument, NativeRecord
@@ -108,20 +113,7 @@ def read_xlsx(path: Path, resources: ResourceSettings) -> NativeDocument:
                         )
             elif part == XLSX_WORKBOOK:
                 root = fromstring(archive.read(part), forbid_dtd=True)
-                for index, element in enumerate(root.iter()):
-                    if element.tag == f"{{{XLSX_NAMESPACE}}}sheet":
-                        records.append(
-                            NativeRecord(
-                                values=(element.attrib["name"],),
-                                policies=(ColumnPolicy(index=0, kind=FIELD_TEXT),),
-                                locations=((part, str(index), "name"),),
-                            )
-                        )
-                    elif (
-                        element.tag == f"{{{XLSX_NAMESPACE}}}definedName"
-                        or element.attrib.get("date1904") in ("1", "true")
-                    ):
-                        raise ValueError(ERROR_COVERAGE)
+                records.extend(workbook_label_records(root))
             elif part in (XLSX_SHARED_STRINGS, XLSX_STYLES) or (
                 part.endswith(".rels")
                 or part == "[Content_Types].xml"
@@ -144,6 +136,14 @@ def write_xlsx(
     ):
         strings = shared_strings(source)
         labels = relationship_labels(source)
+        workbook = fromstring(source.read(XLSX_WORKBOOK), forbid_dtd=True)
+        sheet_names = workbook_names(workbook)
+        sheet_changes = {
+            node.attrib["name"]: replacements[(XLSX_WORKBOOK, str(index), "name")]
+            for index, node in enumerate(workbook.iter())
+            if node.tag == f"{{{XLSX_NAMESPACE}}}sheet"
+            and (XLSX_WORKBOOK, str(index), "name") in replacements
+        }
         for part in source.namelist():
             payload = source.read(part)
             selected = {
@@ -153,6 +153,11 @@ def write_xlsx(
             }
             if selected or part.startswith(XLSX_WORKSHEET_PREFIX) or part in labels:
                 root = fromstring(payload, forbid_dtd=True)
+                if part == XLSX_WORKBOOK:
+                    for definition in root.iter(f"{{{XLSX_NAMESPACE}}}definedName"):
+                        definition.text = rewrite_range_targets(
+                            definition.text or "", sheet_names, sheet_changes
+                        )
                 if part.startswith(XLSX_WORKSHEET_PREFIX):
                     for cell in root.iter(f"{{{XLSX_NAMESPACE}}}c"):
                         value = selected.get((cell.attrib["r"],))

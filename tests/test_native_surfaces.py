@@ -1,12 +1,14 @@
 """Unmodeled Office surfaces cannot be laundered through a successful cell pass."""
 
 from pathlib import Path
+from xml.etree.ElementTree import SubElement, fromstring, tostring
 from zipfile import ZipFile
 
 import pytest
 
 from redactor.formats.xlsx import read_xlsx, write_xlsx
 from redactor.schemas.configuration import ResourceSettings
+from redactor.utils.constants import XLSX_NAMESPACE
 from redactor.verification.xlsx import check_xlsx_surfaces
 
 
@@ -19,16 +21,19 @@ def test_xlsx_verifier_rejects_hidden_text_and_attributes(tmp_path: Path) -> Non
     with ZipFile(clean) as archive:
         parts = {part: archive.read(part) for part in archive.namelist()}
     sheet = "xl/worksheets/sheet1.xml"
+    header = fromstring(parts[sheet])
+    SubElement(
+        SubElement(header, f"{{{XLSX_NAMESPACE}}}headerFooter"),
+        f"{{{XLSX_NAMESPACE}}}oddHeader",
+    ).text = "Jane Smith"
+    attribute = fromstring(parts[sheet])
+    properties = attribute.find(f"{{{XLSX_NAMESPACE}}}sheetPr")
+    assert properties is not None
+    properties.set("codeName", "Jane Smith")
     for index, replacement in enumerate(
         (
-            parts[sheet].replace(
-                b"</ns0:worksheet>",
-                b"<ns0:headerFooter><ns0:oddHeader>Jane Smith</ns0:oddHeader>"
-                b"</ns0:headerFooter></ns0:worksheet>",
-            ),
-            parts[sheet].replace(
-                b"<ns0:sheetPr>", b'<ns0:sheetPr codeName="Jane Smith">'
-            ),
+            tostring(header),
+            tostring(attribute),
         )
     ):
         assert replacement != parts[sheet]

@@ -40,6 +40,7 @@ from redactor.verification.text import verify_text_changes
 from redactor.verification.xlsx import check_xlsx_surfaces
 from redactor.verification.xlsx_preservation import check_xlsx_preservation
 from redactor.verification.xlsx_source import check_xlsx_source_surfaces
+from redactor.verification.xlsx_tooling import check_workbook_tooling
 
 
 def verify_native(
@@ -75,6 +76,7 @@ def verify_native(
         check_xlsx_source_surfaces(task.input_path, original)
         check_xlsx_surfaces(artifact.path, output)
         check_xlsx_preservation(task.input_path, artifact.path, original)
+        check_workbook_tooling(artifact.path)
     if inspection.file_type == FORMAT_HL7:
         check_hl7_surfaces(
             task.input_path,

@@ -10,11 +10,13 @@ from redactor.formats.office_references import (
     rewrite_relationship_labels,
 )
 from redactor.formats.xlsx import shared_strings
+from redactor.formats.xlsx_names import rewrite_range_targets, workbook_names
 from redactor.schemas.native import NativeDocument
 from redactor.utils.constants import (
     OFFICE_XML_TEXT_MODE,
     XLSX_NAMESPACE,
     XLSX_SHARED_STRINGS,
+    XLSX_WORKBOOK,
     XLSX_WORKSHEET_PREFIX,
 )
 from redactor.utils.errors import ERROR_CLINICAL_CHANGED
@@ -42,6 +44,16 @@ def check_xlsx_preservation(
             after = read_verified_xml(output.read(part))
             rewrite_relationship_labels(before, part, source_labels)
             rewrite_relationship_labels(after, part, saved_labels)
+            if part == XLSX_WORKBOOK:
+                names = workbook_names(before)
+                saved_names = workbook_names(after)
+                if len(names) != len(saved_names):
+                    raise ValueError(ERROR_CLINICAL_CHANGED)
+                changes = dict(zip(names, saved_names, strict=True))
+                for definition in before.iter(f"{{{XLSX_NAMESPACE}}}definedName"):
+                    definition.text = rewrite_range_targets(
+                        definition.text or "", names, changes
+                    )
             _neutralize_assessed_values(before, part, covered, strings)
             _neutralize_assessed_values(after, part, covered, ())
             for left, right in zip_longest(before.iter(), after.iter()):
