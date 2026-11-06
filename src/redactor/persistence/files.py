@@ -116,7 +116,7 @@ def seal_temporary_file(connection: sqlite3.Connection, claimed: Task) -> Artifa
     through verification and finalization. This function does not check for PHI.
     """
     current = require_attempt(connection, claimed)
-    return _inspect_artifact(temporary_path_for(current), persist=True)
+    return inspect_artifact(temporary_path_for(current), persist=True)
 
 
 def finalize_output(
@@ -139,32 +139,42 @@ def finalize_output(
     if verified.path != temporary_path:
         raise ValueError(ERROR_ARTIFACT_CORRUPT)
 
-    if not temporary_path.exists():
-        # A previous call may have installed the output and removed the temp file
-        # before the process died or the caller recorded task completion.
-        output = _inspect_artifact(output_path, persist=True)
-        _require_matching_bytes(output, verified, ERROR_OUTPUT_CONFLICT)
-        sync_directory(output_path.parent)
+    published = install_artifact(verified, output_path)
+    if temporary_path.exists():
+        temporary_path.unlink()
         sync_directory(temporary_path.parent)
+    return published
+
+
+def install_artifact(artifact: Artifact, output_path: Path) -> Artifact:
+    """Atomically install exact bytes without overwriting a conflicting result.
+
+    This is a filesystem primitive, not permission to publish clinical content.
+    Clinical callers must use persistence.publication.publish_verified_artifact.
+    """
+    if output_path.is_symlink():
+        raise ValueError(ERROR_OUTPUT_CONFLICT)
+    if output_path.exists():
+        output = inspect_artifact(output_path, persist=True)
+        _require_matching_bytes(output, artifact, ERROR_OUTPUT_CONFLICT)
+        sync_directory(output_path.parent)
         return output
 
-    staged = _inspect_artifact(temporary_path, persist=True)
-    _require_matching_bytes(staged, verified, ERROR_ARTIFACT_CORRUPT)
+    staged = inspect_artifact(artifact.path, persist=True)
+    _require_matching_bytes(staged, artifact, ERROR_ARTIFACT_CORRUPT)
     private_directory(output_path.parent)
     try:
-        os.link(temporary_path, output_path, follow_symlinks=False)
+        os.link(artifact.path, output_path, follow_symlinks=False)
     except FileExistsError:
-        output = _inspect_artifact(output_path, persist=True)
-        _require_matching_bytes(output, verified, ERROR_OUTPUT_CONFLICT)
+        output = inspect_artifact(output_path, persist=True)
+        _require_matching_bytes(output, artifact, ERROR_OUTPUT_CONFLICT)
     except OSError as error:
         if error.errno == EXDEV:
             raise ValueError(ERROR_OUTPUT_FILESYSTEM) from error
         raise
 
     sync_directory(output_path.parent)
-    temporary_path.unlink()
-    sync_directory(temporary_path.parent)
-    return Artifact(path=output_path, sha256=verified.sha256, size=verified.size)
+    return Artifact(path=output_path, sha256=artifact.sha256, size=artifact.size)
 
 
 def temporary_path_for(task: Task) -> Path:
@@ -176,7 +186,7 @@ def temporary_path_for(task: Task) -> Path:
     )
 
 
-def _inspect_artifact(path: Path, *, persist: bool) -> Artifact:
+def inspect_artifact(path: Path, *, persist: bool) -> Artifact:
     if path.is_symlink():
         raise ValueError(ERROR_ARTIFACT_CORRUPT)
     try:

@@ -29,6 +29,29 @@ ERROR_PROCESSING: Final = "processing_error"
 ERROR_TIMEOUT: Final = "processing_timeout"
 ERROR_CONFIGURATION: Final = "invalid_pipeline_configuration"
 ERROR_MAPPING_KEY: Final = "invalid_mapping_key"
+ERROR_STEP_RESULT: Final = "unaccepted_step_result"
+ERROR_VERIFICATION: Final = "verification_did_not_pass"
+ERROR_VERIFICATION_RECORD: Final = "invalid_verification_record"
+ERROR_VERIFICATION_CONTEXT: Final = "verification_context_mismatch"
+ERROR_CHECK_MISSING: Final = "required_verification_check_missing"
+ERROR_COVERAGE: Final = "incomplete_surface_coverage"
+ERROR_CLINICAL_CHANGED: Final = "clinical_content_changed"
+ERROR_RESIDUAL_PHI: Final = "residual_phi_detected"
+ERROR_STRUCTURE: Final = "invalid_native_structure"
+ERROR_REPLACEMENT: Final = "expected_replacement_missing"
+ERROR_PIXELS: Final = "pixel_verification_incomplete"
+
+VERIFICATION_REASON_CODES: Final = (
+    ERROR_CHECK_MISSING,
+    ERROR_COVERAGE,
+    ERROR_CLINICAL_CHANGED,
+    ERROR_RESIDUAL_PHI,
+    ERROR_STRUCTURE,
+    ERROR_REPLACEMENT,
+    ERROR_PIXELS,
+    ERROR_TIMEOUT,
+    ERROR_PROCESSING,
+)
 
 # Coordinator startup and input discovery
 ERROR_RUN_ACTIVE: Final = "state_directory_in_use"
@@ -51,6 +74,10 @@ COORDINATOR_FAILURE_CODES: Final = (
 )
 
 FAILURE_CODES: Final = (
+    ERROR_VERIFICATION,
+    ERROR_VERIFICATION_CONTEXT,
+    ERROR_VERIFICATION_RECORD,
+    ERROR_STEP_RESULT,
     ERROR_PROCESSING,
     ERROR_TIMEOUT,
     ERROR_INPUT_CHANGED,

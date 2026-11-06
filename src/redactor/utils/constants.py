@@ -94,3 +94,32 @@ DEFAULT_IMAGE_PIXELS: Final = 16_000_000
 DEFAULT_NESTING_DEPTH: Final = 16
 DEFAULT_DATE_SHIFT_DAYS: Final = 365
 DEFAULT_CHECKPOINT_RECORDS: Final = 5000
+
+# Durable pipeline steps and verification
+STEP_INSPECT: Final = "inspect"
+STEP_ANALYZE: Final = "analyze"
+STEP_RESOLVE: Final = "resolve"
+STEP_REWRITE: Final = "rewrite"
+STEP_VERIFY: Final = "verify"
+STEP_PUBLISH: Final = "publish"
+STEP_QUARANTINE: Final = "quarantine"
+STEP_RECONCILE: Final = "reconcile"
+VERIFIER_VERSION: Final = "verifier-v1"
+VERIFICATION_PASS: Final = "pass"
+VERIFICATION_FAIL: Final = "fail"
+VERIFICATION_UNKNOWN: Final = "unknown"
+CHECK_STRUCTURE: Final = "structure"
+CHECK_COVERAGE: Final = "coverage"
+CHECK_TRANSFORMATIONS: Final = "transformations"
+CHECK_RESIDUAL_PHI: Final = "residual_phi"
+CHECK_CLINICAL: Final = "clinical"
+CHECK_PIXELS: Final = "pixels"
+REQUIRED_VERIFICATION_CHECKS: Final = (
+    CHECK_STRUCTURE,
+    CHECK_COVERAGE,
+    CHECK_TRANSFORMATIONS,
+    CHECK_RESIDUAL_PHI,
+    CHECK_CLINICAL,
+)
+SHA256_PATTERN: Final = r"^[0-9a-f]{64}$"
+MAX_MANIFEST_BYTES: Final = 4 * 1024 * 1024
