@@ -29,6 +29,6 @@
 
 - Five valid supplied files quarantine locally. Statistical misses and false positives remain; the reused text corpus does not establish full-document recall.
 - Hosted fallback covers request/schema/span failures; semantic ambiguity still quarantines. Hosted judging and vision, cross-issuer linkage and collision auditing remain incomplete.
-- Native limits are 32 MiB files, 256 MiB expanded archives and 16 million image pixels; unsupported structures quarantine. Age bounds require downstream interpretation.
+- Native limits are 32 MiB files, 256 MiB expanded archives and 16 million image pixels; unsupported structures quarantine. Age bounds require downstream interpretation; clinical syntax checks do not validate complete terminology dictionaries.
 - [Two SIGKILL recoveries](benchmarks/crash-replay-v28.json) reproduced all artifact bytes; this is not exhaustive crash coverage. Atomic publication needs one filesystem; lost remote responses can incur repeat charges.
 - [Requirement coverage](docs/requirements.md) separates demonstrated results from omissions. Bulk throughput remains below the required gate.
