@@ -125,7 +125,8 @@ def test_csv_analysis_resolution_and_checkpoint_replay(
         local_ner=ner,
         resolution_task_id=run.resolution_task_id,
     )
-    assert all(check.status == "pass" and check.checked == 12 for check in checks)
+    # All twelve data cells and the six preserved header cells were assessed.
+    assert all(check.status == "pass" and check.checked == 18 for check in checks)
     for corrupted in (
         first_bytes.replace(b"8.4%", b"9.4%"),
         first_bytes.replace(b"LDL 92 mg/dL.", b"LDL 92 mg/dL. Jane Smith."),

@@ -1,18 +1,16 @@
-"""Check exact edit locations and rescan unexempted serialized text."""
+"""Check exact edit locations and rescan serialized text without hiding context."""
 
-import re
-
-from redactor.inference.evidence import validate_entity_evidence
-from redactor.inference.masking import mask_assessed_ranges, restore_entity
-from redactor.policy.text_patterns import age_mentions, clinical_ranges
-from redactor.schemas.entities import NerAdapter, TextEntities
+from redactor.schemas.entities import NerAdapter
 from redactor.schemas.redaction import TextEdit, TextRange
-from redactor.utils.constants import AGE_GROUP_MINIMUM, VERIFIER_RESIDUAL_PATTERNS
 from redactor.utils.errors import (
     ERROR_CLINICAL_CHANGED,
     ERROR_REPLACEMENT,
-    ERROR_RESIDUAL_PHI,
 )
+from redactor.verification.residuals import (
+    assessed_age_ranges,
+    protected_clinical_ranges,
+)
+from redactor.verification.residuals import scan_residuals as scan_residuals
 
 
 def verify_text_changes(
@@ -22,15 +20,17 @@ def verify_text_changes(
     local_ner: NerAdapter,
     *,
     free_text: bool,
+    patient_name: str = "",
+    provider_name: str = "",
 ) -> None:
     """An exemption belongs to one span, never every occurrence of its value."""
     source_end = output_end = 0
     source_ranges: list[TextRange] = []
     output_ranges: list[TextRange] = []
-    clinical = clinical_ranges(original) if free_text else ()
+    clinical = protected_clinical_ranges(original) if free_text else ()
     for edit in expected:
         if (
-            edit.start < source_end
+            not (source_end <= edit.start < edit.end <= len(original))
             or original[edit.start : edit.end] != edit.original
             or edit.original == edit.replacement
         ):
@@ -52,34 +52,44 @@ def verify_text_changes(
     if free_text:
         # The source scan detects patterns the writer missed. The output scan
         # separately detects residuals and allows only the confirmed edit spans.
-        scan_residuals(original, tuple(source_ranges), local_ner)
-        scan_residuals(output, tuple(output_ranges), local_ner)
+        scan_residuals(
+            original,
+            tuple(source_ranges),
+            local_ner,
+            patient_name=patient_name,
+            provider_name=provider_name,
+            clinical=clinical,
+        )
+        age_ranges = assessed_age_ranges(original)
+        scan_residuals(
+            output,
+            tuple(output_ranges),
+            local_ner,
+            patient_name=patient_name,
+            provider_name=provider_name,
+            clinical=_output_ranges(clinical, expected),
+            assessed_ages=_output_ranges(age_ranges, expected),
+        )
 
 
-def scan_residuals(
-    text: str, exemptions: tuple[TextRange, ...], local_ner: NerAdapter
-) -> None:
-    for pattern in VERIFIER_RESIDUAL_PATTERNS:
-        for match in re.finditer(pattern, text):
-            start, end = match.span("value" if "value" in match.re.groupindex else 0)
-            if not any(span.start <= start and end <= span.end for span in exemptions):
-                raise ValueError(ERROR_RESIDUAL_PHI)
-    ages = age_mentions(text)
-    for _, number, age in ages:
-        if age == AGE_GROUP_MINIMUM and text[number.end : number.end + 1] == "+":
-            continue
-        if age >= AGE_GROUP_MINIMUM and not any(
-            span.start <= number.start and span.end >= number.end for span in exemptions
-        ):
-            raise ValueError(ERROR_RESIDUAL_PHI)
-    allowed = (
-        exemptions
-        + clinical_ranges(text)
-        + tuple(expression for expression, _, _ in ages)
+def _output_ranges(
+    source: tuple[TextRange, ...], edits: tuple[TextEdit, ...]
+) -> tuple[TextRange, ...]:
+    """Carry source evidence forward; rewritten text cannot mint new exemptions."""
+    return tuple(
+        TextRange(
+            start=span.start
+            + sum(
+                len(edit.replacement) - (edit.end - edit.start)
+                for edit in edits
+                if edit.end <= span.start
+            ),
+            end=span.end
+            + sum(
+                len(edit.replacement) - (edit.end - edit.start)
+                for edit in edits
+                if edit.end <= span.end
+            ),
+        )
+        for span in source
     )
-    masked, positions = mask_assessed_ranges(text, allowed)
-    entities = validate_entity_evidence(
-        masked, TextEntities(entities=local_ner(masked))
-    )
-    if any(restore_entity(text, entity, positions) is not None for entity in entities):
-        raise ValueError(ERROR_RESIDUAL_PHI)

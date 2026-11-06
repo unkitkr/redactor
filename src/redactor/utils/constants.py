@@ -69,7 +69,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v2"
+PIPELINE_VERSION: Final = "pipeline-v3"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -138,7 +138,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v2"
+VERIFIER_VERSION: Final = "verifier-v3"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -150,7 +150,46 @@ VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b(?:MRN|SSN|account|room|serial|license)\s*[:#]?\s*"
     r"(?P<value>[A-Z0-9][\w-]+)",
     r"(?i:\b(?:daughter|son|husband|wife|spouse|mother|father|Dr\.))\s+"
-    r"(?P<value>[A-ZÀ-ÖØ-Þ][\w'’\-]*(?:\s+[A-ZÀ-ÖØ-Þ][\w'’\-]*){0,3})",
+    r"(?P<value>[A-ZÀ-ÖØ-Þ][\w'’\-]*(?:\.(?=\s+[A-ZÀ-ÖØ-Þ]))?"
+    r"(?:\s+[A-ZÀ-ÖØ-Þ][\w'’\-]*(?:\.(?=\s+[A-ZÀ-ÖØ-Þ]))?){0,3})",
+)
+# These independently locate suspicious values, not permission to rewrite them.
+VERIFIER_LABELLED_VALUE_PATTERN: Final = (
+    r"(?i:\b(?:patient(?:[ \t]+name)?|name|attending|provider|mother|father|"
+    r"daughter|son|spouse|guardian|caregiver|next of kin|facility|hospital|"
+    r"clinic|phone|telephone|tel|mobile|fax)[ \t]*:[ \t]*)"
+    r"(?P<value>[^\r\n;|]+)"
+)
+VERIFIER_LABEL_VALUE_END_PATTERN: Final = r"(?<=[^\W\d_]{2})\.(?=[ \t]|$)|[ \t]{2,}"
+VERIFIER_FACILITY_PATTERN: Final = (
+    r"\b(?:[A-ZÀ-ÖØ-Þ][\w'’\-]*[ \t]+)+"
+    r"(?:Hospital|Clinic|Centre|Center|Laboratory)\b"
+)
+VERIFIER_CONTACT_CANDIDATE_PATTERN: Final = (
+    r"(?<![\w+])(?P<number>(?:\+|00)?[0-9](?:[0-9 \t().-]*[0-9]))"
+    r"(?:[ \t]*(?i:ext(?:ension)?\.?|x|#)[ \t]*[:=]?[ \t]*[0-9]+)?(?!\w)"
+)
+VERIFIER_CONTACT_MINIMUM_DIGITS: Final = 7
+VERIFIER_CONTACT_INTERNATIONAL_PREFIXES: Final = ("+", "00")
+VERIFIER_SIGNED_DECIMAL_PATTERN: Final = r"\+[0-9]+\.[0-9]+"
+VERIFIER_RELATIVE_TIME_PATTERN: Final = (
+    r"(?i)\b(?:age[ \t]+)?[0-9]+(?:\.[0-9]+)?[ \t]+"
+    r"(?:days?|weeks?|months?|years?)(?:[ \t]+ago)?\b"
+)
+VERIFIER_IPV6_CANDIDATE_PATTERN: Final = (
+    r"(?<![\w:])[0-9A-Fa-f:.]*:[0-9A-Fa-f:.]+"
+    r"(?:%[A-Za-z0-9_.-]+)?(?![\w:])"
+)
+VERIFIER_NAME_BOUNDARY_START: Final = r"(?<![\w'’\-])"
+VERIFIER_NAME_BOUNDARY_END: Final = r"(?![\w'’\-])"
+VERIFIER_NAME_APOSTROPHE_PATTERN: Final = r"['’]"
+VERIFIER_MENTION_ROLE: Final = (
+    r"(?:patient|daughter|son|husband|wife|spouse|mother|father|sister|brother|"
+    r"partner|caregiver|guardian|doctor|Dr\.?|Prof\.?)"
+)
+VERIFIER_MENTION_PREFIX_PATTERN: Final = rf"(?i){VERIFIER_MENTION_ROLE}[ \t]+"
+VERIFIER_MENTION_SUFFIX_PATTERN: Final = (
+    rf"(?i)[ \t]+(?:&|and)[ \t]+{VERIFIER_MENTION_ROLE}(?:-in-law)?(?=[ \t,.;:]|$)"
 )
 VERIFICATION_PASS: Final = "pass"
 VERIFICATION_FAIL: Final = "fail"
@@ -665,8 +704,11 @@ TEXT_NAMED_DATE_PATTERN: Final = (
 # Free-text evidence. These are field-independent clinical and PHI patterns.
 TEXT_EMAIL_PATTERN: Final = r"(?<![\w.+-])[\w.+-]+@[\w-]+(?:\.[\w-]+)+(?![\w-])"
 TEXT_PHONE_PATTERN: Final = (
-    r"(?<![\w])(?:\+?1[ .-]?)?(?:\([2-9][0-9]{2}\)|[2-9][0-9]{2})"
-    r"[ .-]?[0-9]{3}[ .-]?[0-9]{4}(?![\w])"
+    r"(?<![\w+])(?:(?:\+|00)[1-9](?:[ \t().-]*[0-9]){6,14}"
+    r"|(?:\+?1[ .-]?)?(?:\([2-9][0-9]{2}\)|[2-9][0-9]{2})"
+    r"[ .-]?[0-9]{3}[ .-]?[0-9]{4})"
+    r"(?:[ \t]*(?i:ext(?:ension)?\.?|x|#)[ \t]*[:=]?[ \t]*[0-9]+)?"
+    r"(?![\w]|[ \t().-]*[0-9])"
 )
 TEXT_DATE_PATTERN: Final = (
     r"(?<![\w/])(?:[0-9]{4}[-/][0-9]{1,2}[-/][0-9]{1,2}"
@@ -842,7 +884,8 @@ TEXT_LABEL_FIELDS: Final = (
 TEXT_IDENTIFIER_PATTERNS: Final = (
     (r"(?i)\bMRN[ :#]+(?P<value>[A-Z0-9]+(?:-[A-Z0-9]+)*)", "mrn"),
     (
-        r"(?i)\b(?:account|room|visit|serial|license)[ :#]+"
+        r"(?i)\b(?:account|room|visit|serial|license)"
+        r"(?:[ \t]*[:#][ \t]*|[ \t]+(?=[A-Z0-9-]*[0-9]))"
         r"(?P<value>[A-Z0-9]+(?:-[A-Z0-9]+)*)",
         "identifier",
     ),

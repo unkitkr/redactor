@@ -17,7 +17,7 @@
 ## Choices
 
 - Typed fields use deterministic transformations; optional hosted detection and judging obey the global model-disable switch and require local fallback.
-- Verification always runs; failed checks or unknown coverage quarantine the original, and surrogate exemptions apply only to complete edit spans.
+- Verification checks intact source and saved text, including unknown column labels; independent evidence must fit a complete edit span, and failed checks or unknown coverage quarantine the original.
 - Scoped identifiers and corroboration link identities; names alone do not, conflicting middle names cannot bridge through shorter spellings, and provider roles stay separate.
 - Linked patients share a date offset; ages at or above 90 become 90+, revealing birth dates are generalized, and unrepresentable native bounds quarantine.
 - ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications and diseases retain their content.

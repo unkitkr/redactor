@@ -31,6 +31,7 @@ from redactor.utils.errors import (
     ERROR_COVERAGE,
     ERROR_STRUCTURE,
 )
+from redactor.verification.headers import verify_column_headers
 from redactor.verification.reader import read_csv_rows
 from redactor.verification.text import verify_text_changes
 
@@ -80,6 +81,7 @@ def verify_csv(
             or next(rewritten, None) != layout.columns
         ):
             raise ValueError(ERROR_STRUCTURE)
+        verify_column_headers(layout.columns, local_ner)
         for number, pair in enumerate(zip_longest(original, rewritten), start=1):
             before, after = pair
             if (
@@ -114,6 +116,8 @@ def verify_csv(
                     expected,
                     local_ner,
                     free_text=column.kind == FIELD_TEXT,
+                    patient_name=context.patient_name,
+                    provider_name=context.provider_name,
                 )
                 counts.update(edit.kind for edit in expected)
                 cells += 1
@@ -127,7 +131,10 @@ def verify_csv(
         raise ValueError(ERROR_ARTIFACT_CORRUPT)
     return tuple(
         VerificationCheck(
-            kind=kind, status=VERIFICATION_PASS, expected=cells, checked=cells
+            kind=kind,
+            status=VERIFICATION_PASS,
+            expected=cells + len(layout.columns),
+            checked=cells + len(layout.columns),
         )
         for kind in REQUIRED_VERIFICATION_CHECKS
     )

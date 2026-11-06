@@ -26,7 +26,12 @@ from redactor.utils.errors import ERROR_IDENTIFIER, ERROR_REPLACEMENT_COLLISION
 
 
 def canonical_phone(value: str) -> str:
+    normalized = unicodedata.normalize(UNICODE_NORMAL_FORM, value).strip()
     digits = normalize_digits(value)
+    # A foreign number can have ten digits too. Its country prefix must never
+    # be interpreted as a domestic area code merely because the length fits.
+    if normalized.startswith("+") and not digits.startswith(NANP_COUNTRY_CODE):
+        raise ValueError(ERROR_IDENTIFIER)
     if len(digits) == NANP_PHONE_DIGITS + 1 and digits.startswith(NANP_COUNTRY_CODE):
         digits = digits[1:]
     if len(digits) != NANP_PHONE_DIGITS or digits[0] not in "23456789":

@@ -71,6 +71,8 @@ def evaluate_text_examples(
                         edits,
                         verifier_adapter or adapter,
                         free_text=True,
+                        patient_name=example.patient_name,
+                        provider_name=example.provider_name,
                     )
                 except ValueError:
                     verifier_passed = False

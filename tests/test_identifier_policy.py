@@ -11,11 +11,14 @@ from redactor.formats.csv import (
     inspect_csv,
     iter_csv_records,
 )
+from redactor.inference.text import find_text_phi
 from redactor.policy.contacts import replace_email, replace_phone, replace_street
 from redactor.policy.identifiers import replace_identifier, replace_lot, replace_npi
 from redactor.policy.keys import evidence_key
 from redactor.policy.names import format_person_name, person_name
 from redactor.policy.normalization import normalize_name
+from redactor.policy.text import apply_text_edits, text_edits
+from redactor.schemas.redaction import TextContext
 from redactor.utils.constants import DEFAULT_RECORD_BYTES
 from redactor.utils.errors import ERROR_IDENTIFIER, ERROR_MAPPING_KEY
 
@@ -109,3 +112,45 @@ def test_identifier_policy_replays_across_files_and_preserves_clinical_fields(
         "123  OAK Street", key
     )
     assert replace_street("123 Oak Street", key) != "123 Oak Street"
+
+
+def test_phone_detection_is_complete_and_preserves_clinical_values() -> None:
+    """Unsupported dialling rules quarantine instead of leaving a phone untouched."""
+    key = bytes(range(32))
+    context = TextContext(context_key="contacts", maximum_date_shift_days=365)
+    unsupported_numbers = (
+        "+33 1 53 00 10 20",
+        "+33.1.53.00.10.20",
+        "+33 12 34 56 78",
+        "+49 (30) 1234-5678",
+        "0049 30 1234 5678",
+        "+81-3-1234-5678",
+        "+852 2345 6789",
+        "+493012345678",
+        "202.555.0169 ext. 93",
+        "+1 (202) 555-0169 x93",
+        "(202) 555-0169#93",
+        "+12345678",
+    )
+    clinical = (
+        "Metformin 500 mg BID. BP 120/80. HbA1c 6.3%. "
+        "Sodium +138.0000000 mmol/L. LOINC 4548-4. NDC 12345-6789-01. "
+        "ICD-10 E11.9. Weight 70.1250000 kg."
+    )
+    assert find_text_phi(clinical, lambda _: ()) == ()
+    for phone in unsupported_numbers:
+        text = f"Call {phone} after discharge. {clinical}"
+        findings = find_text_phi(text, lambda _: ())
+        assert len(findings) == 1
+        assert findings[0].kind == "phone"
+        assert findings[0].original == phone
+        with pytest.raises(ValueError, match=ERROR_IDENTIFIER):
+            text_edits(findings, context, key)
+
+    for phone in ("(202) 555-0169", "202.555.0169", "+1 202-555-0169"):
+        text = f"Call {phone} after discharge. {clinical}"
+        findings = find_text_phi(text, lambda _: ())
+        edits = text_edits(findings, context, key)
+        output = apply_text_edits(text, edits)
+        assert phone not in output
+        assert output.endswith(clinical)
