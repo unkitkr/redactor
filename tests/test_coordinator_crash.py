@@ -73,6 +73,7 @@ def test_sigkill_blocks_recovery_until_surviving_worker_exits(tmp_path: Path) ->
             sys.executable,
             "-m",
             "redactor",
+            "--diagnostic",
             "--input",
             str(inputs),
             "--state",

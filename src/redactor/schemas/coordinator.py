@@ -13,3 +13,5 @@ class CoordinatorConfig(BaseModel):
     input_directory: Path
     state_directory: Path
     worker_count: PositiveInt = DEFAULT_WORKER_COUNT
+    configuration_path: Path | None = None
+    diagnostic: bool = False

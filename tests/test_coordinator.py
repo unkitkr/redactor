@@ -37,6 +37,7 @@ def invoke_coordinator(inputs: Path, state: Path) -> subprocess.CompletedProcess
             sys.executable,
             "-m",
             "redactor",
+            "--diagnostic",
             "--input",
             str(inputs),
             "--state",

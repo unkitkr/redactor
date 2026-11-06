@@ -16,11 +16,27 @@ from redactor.utils.constants import (
 from redactor.utils.errors import ERROR_WORKER_FAILED
 
 
-def run_workers(state_directory: Path, worker_count: int, lock_descriptor: int) -> None:
+def run_workers(
+    state_directory: Path,
+    worker_count: int,
+    lock_descriptor: int,
+    *,
+    resolution_task_id: str | None = None,
+    remote_enabled: bool = False,
+) -> None:
     """Wait for all workers; a failed launch or worker stops the entire group."""
     workers: list[subprocess.Popen[bytes]] = []
     try:
-        for _ in range(worker_count):
+        for index in range(worker_count):
+            arguments: list[str] = []
+            if resolution_task_id is not None:
+                arguments.extend(("--resolution-task-id", resolution_task_id))
+                if remote_enabled:
+                    arguments.append("--remote-enabled")
+                if index == 0:
+                    arguments.append("--inference")
+                if worker_count == 1:
+                    arguments.append("--all-steps")
             workers.append(
                 subprocess.Popen(
                     [
@@ -30,6 +46,7 @@ def run_workers(state_directory: Path, worker_count: int, lock_descriptor: int) 
                         str(state_directory),
                         str(os.getpid()),
                         str(lock_descriptor),
+                        *arguments,
                     ],
                     pass_fds=(lock_descriptor,),
                     stdin=subprocess.DEVNULL,

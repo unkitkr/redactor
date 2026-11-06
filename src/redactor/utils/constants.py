@@ -137,6 +137,7 @@ STEP_VERIFY: Final = "verify"
 STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
+INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
 VERIFIER_VERSION: Final = "verifier-v1"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",

@@ -19,7 +19,7 @@ from redactor.utils.errors import COORDINATOR_FAILURE_CODES, ERROR_COORDINATOR_F
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Register input files and run placeholder queue workers."
+        description="Pseudonymize native files through durable, verified steps."
     )
     parser.add_argument(
         "--input", dest="input_directory", type=Path, default=INPUT_DIRECTORY
@@ -30,6 +30,8 @@ def main() -> int:
     parser.add_argument(
         "--workers", dest="worker_count", type=int, default=DEFAULT_WORKER_COUNT
     )
+    parser.add_argument("--config", dest="configuration_path", type=Path)
+    parser.add_argument("--diagnostic", action="store_true", help=argparse.SUPPRESS)
     arguments = parser.parse_args()
 
     try:

@@ -11,6 +11,10 @@ class WorkerConfig(BaseModel):
     state_directory: Path
     coordinator_pid: PositiveInt
     lock_descriptor: NonNegativeInt
+    resolution_task_id: str | None = None
+    inference: bool = False
+    all_steps: bool = False
+    remote_enabled: bool = False
 
 
 class TaskSummary(BaseModel):
