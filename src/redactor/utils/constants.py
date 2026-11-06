@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v10"
+PIPELINE_VERSION: Final = "pipeline-v11"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -148,7 +148,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v8"
+VERIFIER_VERSION: Final = "verifier-v9"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -1218,8 +1218,26 @@ CLINICAL_FIELD_PATTERNS: Final = (
     ("rxnorm", r"[0-9]+"),
     ("quantity", r"[<>≤≥]?[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?"),
     ("sex", r"(?:M|F|O|U|male|female|other|unknown)"),
-    ("unit", r"(?:[0-9]+|%|[a-zA-Zµμ]+(?:\^[0-9]+)?(?:/[a-zA-Zµμ]+(?:\^[0-9]+)?)?)"),
 )
+# Supported medical symbols from UCUM 2.2: https://ucum.org/ucum.
+# Copyright 1999-2024 Regenstrief Institute, Inc.; https://ucum.org/license.
+# This vocabulary is a validation subset, not a modified unit standard.
+CLINICAL_UNIT_MAX_LENGTH: Final = 128
+CLINICAL_UNIT_PREFIXES: Final = tuple(
+    "Y Z E P T G M k h da d c m u n p f a z y".split()
+)
+CLINICAL_UNIT_METRIC_ATOMS: Final = tuple(
+    "m s g rad K C cd mol sr Hz N Pa J W A V F Ohm S Wb Cel T H lm lx "
+    "Bq Gy Sv l L ar t bar u eV pc gf Gal dyn erg P St G Ci R RAD REM "
+    "cal cal_IT cal_th tex m[H2O] m[Hg] eq osm kat U [iU] [IU] Np B "
+    "bit By Bd".split()
+)
+CLINICAL_UNIT_ATOMS: Final = tuple(
+    "10* 10^ % [ppm] [ppb] deg min h d a wk mo atm [lb_av] [oz_av] "
+    "[in_i] [ft_i] [degF] [degR] [Cal] [HPF] [LPF] [CFU] [PFU] "
+    "[pH] [arb'U] [USP'U] [IU]".split()
+)
+CLINICAL_UNIT_ALIASES: Final = (("mmHg", "mm[Hg]"), ("mcg", "ug"))
 CLINICAL_CODE_SEPARATOR_PATTERN: Final = r"[;,|\s]+"
 AGE_EXPLICIT_PATTERN: Final = (
     r"(?i)\bage\s*[:=]?\s*(?P<age>[0-9]{1,3})(?:\+)?\b"

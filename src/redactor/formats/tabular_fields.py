@@ -2,6 +2,7 @@
 
 import re
 
+from redactor.policy.units import is_clinical_unit
 from redactor.schemas.redaction import ColumnPolicy
 from redactor.utils.constants import (
     CLINICAL_CODE_SEPARATOR_PATTERN,
@@ -32,6 +33,10 @@ def column_policies(columns: tuple[str, ...]) -> tuple[ColumnPolicy, ...]:
 
 def validate_clinical_field(value: str, namespace: str) -> None:
     if not value.strip():
+        return
+    if namespace == "unit":
+        if not is_clinical_unit(value):
+            raise ValueError(ERROR_CLINICAL_CHANGED)
         return
     if namespace.startswith(KINSHIP_DISPLAY_NAMESPACE):
         code = namespace.removeprefix(KINSHIP_DISPLAY_NAMESPACE)

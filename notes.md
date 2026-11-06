@@ -26,6 +26,7 @@
 - **Mentions:** a surname can resolve within an established record context; an unlinked person gets a separate contextual surrogate instead of forcing a name-only identity merge.
 - **Model evidence:** NER retains clinical context and original entity labels support datatype checks; clinical expressions and narrative verbs are preserved, without claiming universal recall.
 - **Clinical content:** typed fields use deterministic transformations, while clinical codes, values, units, medications and diseases retain their content.
+- **Units:** compound medical units are validated against a UCUM symbol subset without changing their spelling; unknown symbols and free-text annotations quarantine.
 - **Dates and ages:** linked patients share a date offset; ages at or above 90 become 90+, revealing birth dates are generalized, and formats that cannot represent the required bounds quarantine.
 - **Short dates:** two-digit years use the fixed 1969–2068 window; shifting outside that window writes a four-digit year so reparsing cannot change the century.
 - **Locations:** ZIP codes retain only permitted three-digit prefixes, otherwise 000.
