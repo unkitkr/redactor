@@ -50,7 +50,11 @@ def text_edits(
             IDENTITY_RELATIVE,
         ):
             replacement = mention_name(
-                value, context, key, provider=finding.kind == FIELD_PROVIDER_NAME
+                value,
+                context,
+                key,
+                provider=finding.kind == FIELD_PROVIDER_NAME,
+                relative=finding.kind == IDENTITY_RELATIVE,
             )
         elif finding.kind == ENTITY_LOCATION:
             location_key = evidence_key(

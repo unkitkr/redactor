@@ -8,8 +8,10 @@ from pydantic import BaseModel, PositiveInt
 
 class ParsedDate(BaseModel, frozen=True, extra="forbid"):
     value: date
-    style: Literal["ymd", "mdy", "compact"]
+    style: Literal["ymd", "mdy", "compact", "named_mdy", "named_dmy"]
     separator: str = ""
     month_width: PositiveInt = 2
     day_width: PositiveInt = 2
     clock: str = ""
+    month_name: str = ""
+    year_separator: str = " "

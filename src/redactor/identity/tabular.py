@@ -50,6 +50,7 @@ def row_evidence(
             older_age |= any(
                 int(match["age"]) >= AGE_GROUP_MINIMUM
                 for match in re.finditer(AGE_EXPLICIT_PATTERN, value)
+                if not value[: match.start()].strip()
             )
     patient = None
     if patient_name or patient_id or birth:

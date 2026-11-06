@@ -14,6 +14,7 @@ from redactor.policy.text import text_edits
 from redactor.schemas.entities import NerAdapter
 from redactor.schemas.redaction import ColumnPolicy, TextContext, TextEdit, TextFinding
 from redactor.utils.constants import (
+    AGE_GROUP_MINIMUM,
     FIELD_ADDRESS,
     FIELD_AGE,
     FIELD_BIRTH_DATE,
@@ -57,8 +58,10 @@ def cell_findings(
         )
     if policy.kind in (FIELD_DATE, FIELD_BIRTH_DATE):
         parse_date(value.strip())
-    if policy.kind == FIELD_AGE and generalize_age(int(value.rstrip("+"))) == value:
-        return ()
+    if policy.kind == FIELD_AGE:
+        age = int(value.rstrip("+"))
+        if age < AGE_GROUP_MINIMUM or generalize_age(age) == value:
+            return ()
     if policy.kind == FIELD_ZIP and generalize_zip(value) == value:
         return ()
     return (TextFinding(start=0, end=len(value), original=value, kind=policy.kind),)

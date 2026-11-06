@@ -8,7 +8,12 @@ from redactor.utils.constants import IDENTITY_PROVIDER, RELATIVE_NAME_NAMESPACE
 
 
 def mention_name(
-    value: str, context: TextContext, key: bytes, *, provider: bool
+    value: str,
+    context: TextContext,
+    key: bytes,
+    *,
+    provider: bool,
+    relative: bool = False,
 ) -> str:
     normalized = normalize_name(value)
     known_name = context.provider_name if provider else context.patient_name
@@ -16,13 +21,17 @@ def mention_name(
     known = normalize_name(known_name).split()
     # A provider surname in an explicitly marked provider mention can refer to
     # this row's named provider. Unqualified patient surnames are not merged.
-    if identity is not None and (
-        normalized == " ".join(known)
-        or (
-            provider
-            and len(normalized.split()) == 1
-            and known
-            and normalized == known[-1]
+    if (
+        not relative
+        and identity is not None
+        and (
+            normalized == " ".join(known)
+            or (
+                provider
+                and len(normalized.split()) == 1
+                and known
+                and normalized == known[-1]
+            )
         )
     ):
         return format_person_name(value, identity.surrogate_name)

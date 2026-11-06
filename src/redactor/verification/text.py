@@ -68,6 +68,8 @@ def scan_residuals(
                 raise ValueError(ERROR_RESIDUAL_PHI)
     ages = age_mentions(text)
     for _, number, age in ages:
+        if age == AGE_GROUP_MINIMUM and text[number.end : number.end + 1] == "+":
+            continue
         if age >= AGE_GROUP_MINIMUM and not any(
             span.start <= number.start and span.end >= number.end for span in exemptions
         ):

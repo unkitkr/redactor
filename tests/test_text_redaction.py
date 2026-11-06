@@ -14,6 +14,7 @@ from redactor.policy.text import apply_text_edits, text_edits
 from redactor.schemas.configuration import LocalSettings
 from redactor.schemas.redaction import TextContext
 from redactor.utils.errors import ERROR_CLINICAL_CHANGED
+from redactor.verification.text import verify_text_changes
 
 
 def test_text_patterns_and_local_ner_preserve_clinical_content(tmp_path: Path) -> None:
@@ -93,3 +94,28 @@ def test_tabular_identity_uses_headers_and_keeps_clinical_codes_distinct(
     validate_clinical_field(values[0], policies[0].namespace)
     with pytest.raises(ValueError, match=ERROR_CLINICAL_CHANGED):
         validate_clinical_field("E11.9; Jane Smith", policies[0].namespace)
+
+
+def test_written_ages_and_named_dates_are_verified_without_reaging_patient() -> None:
+    ner = load_local_ner(LocalSettings())
+    context = TextContext(context_key="calendar-record", maximum_date_shift_days=365)
+    for original in (
+        "The ninety-one-year-old patient returned on 29-Feb-2024.",
+        "Age 91+. Follow-up March 1, 2024.",
+        "Age 90+. Follow-up 01-Mar-2024.",
+    ):
+        findings = find_text_phi(original, ner)
+        edits = text_edits(findings, context, bytes(range(32)))
+        output = apply_text_edits(original, edits)
+        verify_text_changes(original, output, edits, ner, free_text=True)
+        assert "90+" in output and "90++" not in output
+        assert "ninety-one" not in output and "91+" not in output
+    policies = column_policies(("patient", "birth_date", "comments"))
+    evidence = row_evidence(
+        ("Jane Smith", "1970-01-01", "Mother: age 95. Patient is 56."),
+        policies,
+        "a" * 64,
+        1,
+    )
+    assert evidence.patient is not None
+    assert not evidence.patient.explicit_older_age

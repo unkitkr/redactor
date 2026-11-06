@@ -619,6 +619,41 @@ AGE_EXPLICIT_PATTERN: Final = (
     r"(?i)\bage\s*[:=]?\s*(?P<age>[0-9]{1,3})(?:\+)?\b"
     r"(?!\s*(?:days?|weeks?|months?)\b)"
 )
+AGE_WORD_PATTERN: Final = (
+    r"(?i)\b(?P<age>ninety(?:[- ](?:one|two|three|four|five|six|seven|eight|nine))?"
+    r"|(?:one[- ])?hundred(?:[- ](?:and[- ])?(?:[a-z]+(?:[- ][a-z]+)?))?)"
+    r"(?:[- ]years?[- ]old|\s+years?\s+of\s+age)\b"
+)
+MONTH_NAMES: Final = (
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
+DATE_NAMED_MDY_PATTERN: Final = (
+    r"(?P<month_name>[A-Za-z]+)(?P<separator> )(?P<day>[0-9]{1,2})"
+    r"(?P<year_separator>,? )(?P<year>[0-9]{4})(?P<clock>.*)"
+)
+DATE_NAMED_DMY_PATTERN: Final = (
+    r"(?P<day>[0-9]{1,2})(?P<separator>[- ])(?P<month_name>[A-Za-z]+)"
+    r"(?P=separator)(?P<year>[0-9]{4})(?P<clock>.*)"
+)
+TEXT_NAMED_DATE_PATTERN: Final = (
+    r"(?i)\b(?:[0-9]{1,2}[- ](?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|"
+    r"Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|"
+    r"Dec(?:ember)?)[- ][0-9]{4}"
+    r"|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|"
+    r"Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?) "
+    r"[0-9]{1,2},? [0-9]{4})\b"
+)
 
 # Free-text evidence. These are field-independent clinical and PHI patterns.
 TEXT_EMAIL_PATTERN: Final = r"(?<![\w.+-])[\w.+-]+@[\w-]+(?:\.[\w-]+)+(?![\w-])"
@@ -723,6 +758,8 @@ DATE_OFFSET_NAMESPACE: Final = "patient-date-offset"
 DATE_STYLE_YMD: Final = "ymd"
 DATE_STYLE_MDY: Final = "mdy"
 DATE_STYLE_COMPACT: Final = "compact"
+DATE_STYLE_NAMED_MDY: Final = "named_mdy"
+DATE_STYLE_NAMED_DMY: Final = "named_dmy"
 DATE_ZONE_PATTERN: Final = r"(?:[+-](?:[01][0-9]|2[0-3]):?[0-5][0-9])"
 DATE_CLOCK_PATTERN: Final = (
     r"(?P<clock>[ T][0-9]{2}:[0-9]{2}(?::[0-9]{2}(?:\.[0-9]{1,6})?)?"

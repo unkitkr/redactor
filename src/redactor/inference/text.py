@@ -23,6 +23,7 @@ from redactor.utils.constants import (
     IDENTITY_RELATIVE,
     TEXT_DATE_PATTERN,
     TEXT_EMAIL_PATTERN,
+    TEXT_NAMED_DATE_PATTERN,
     TEXT_PHONE_PATTERN,
     TEXT_PROVIDER_PATTERN,
     TEXT_RELATIVE_PATTERN,
@@ -45,6 +46,7 @@ def find_text_phi(
         (TEXT_EMAIL_PATTERN, FIELD_EMAIL),
         (TEXT_PHONE_PATTERN, FIELD_PHONE),
         (TEXT_DATE_PATTERN, FIELD_DATE),
+        (TEXT_NAMED_DATE_PATTERN, FIELD_DATE),
         (TEXT_STREET_PATTERN, FIELD_ADDRESS),
         (TEXT_RELATIVE_PATTERN, IDENTITY_RELATIVE),
         (TEXT_PROVIDER_PATTERN, FIELD_PROVIDER_NAME),
@@ -67,11 +69,14 @@ def find_text_phi(
     for expression, number, age in age_mentions(text):
         protected.append(expression)
         if age >= AGE_GROUP_MINIMUM:
+            has_plus = text[number.end : number.end + 1] == "+"
+            if has_plus and age == AGE_GROUP_MINIMUM:
+                continue
             findings.append(
                 TextFinding(
                     start=number.start,
-                    end=number.end,
-                    original=text[number.start : number.end],
+                    end=number.end + int(has_plus),
+                    original=text[number.start : number.end + int(has_plus)],
                     kind=FIELD_AGE,
                 )
             )

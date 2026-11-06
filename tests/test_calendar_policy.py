@@ -101,6 +101,9 @@ def test_saved_dates_preserve_intervals_and_protect_explicit_and_derived_age(
     assert shift_date("20240229123000-0500", 1) == "20240301123000-0500"
     assert shift_date("2024022912", 1) == "2024030112"
     assert shift_date("2/29/2024", 1) == "3/01/2024"
+    assert shift_date("29-Feb-2024", 1) == "01-Mar-2024"
+    assert shift_date("February 29, 2024", 1) == "March 01, 2024"
+    assert shift_date("4 JUNE 2026", -5) == "30 MAY 2026"
     for invalid in ("2023-02-29", "2024-02", "2024-02-29T12:30:00+01:99"):
         with pytest.raises(ValueError, match=ERROR_DATE):
             shift_date(invalid, offset)
