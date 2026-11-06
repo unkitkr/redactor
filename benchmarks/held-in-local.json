@@ -1,0 +1,420 @@
+{
+  "benchmark": "held_in_pipeline",
+  "schema_version": 1,
+  "scope": "Supplied assignment inputs; development evidence, not held-out accuracy",
+  "command": [
+    "/opt/redactor/.venv/bin/python",
+    "-m",
+    "redactor",
+    "--input",
+    "input",
+    "--state",
+    "/run/benchmark/.redactor",
+    "--config",
+    "redactor.toml",
+    "--workers",
+    "2"
+  ],
+  "platform": "Linux-6.12.54-linuxkit-aarch64-with-glibc2.41",
+  "python_version": "3.12.16",
+  "runtime_versions": {
+    "onnxruntime": "1.31.1",
+    "tokenizers": "0.23.3",
+    "spacy": "3.8.18"
+  },
+  "model_mode": "local_only",
+  "local_ner": {
+    "backend": "gliner",
+    "artifact_directory": "gliner-pii-edge-v1.0",
+    "artifacts": {
+      "gliner_config.json": {
+        "bytes": 4316,
+        "sha256": "77e6b57335c4bfd461e9041682196dd6c373a0b09bbd9269ef9e95b807915340"
+      },
+      "tokenizer.json": {
+        "bytes": 3583593,
+        "sha256": "84b3a9b18f04a0ccd03b72d9f871b7e0bec40fd7021ef50bc30a7c3693c11205"
+      },
+      "onnx/model_quint8.onnx": {
+        "bytes": 45820894,
+        "sha256": "988acb03456b26e2d9f2521016d820310c2ed64deb4a846297d3289f0c2eb7e4"
+      }
+    }
+  },
+  "remote_enabled": false,
+  "detection": {
+    "unique_observation_backends": {
+      "local": 11
+    },
+    "local_reasons": {
+      "remote_model_disabled": 11
+    },
+    "returned_models": {},
+    "providers": {},
+    "persisted_receipt_cost_usd": "0",
+    "persisted_cost_receipts": 0,
+    "receipt_scope": "Last completed response per durable decision; ledger covers all attempts"
+  },
+  "requested_model": null,
+  "dashboard": "Enabled; one page probe per execution, no browser workload",
+  "source_sha256": "a18d3f59cebb6e5c686bd01b11c21243f39630e656f057d49cc33308eba22453",
+  "source_unchanged": true,
+  "configuration_sha256": "31c7ae72a0d42d113b2af9da79a644b39121ff0619c3d7f7ec274334c5c42216",
+  "input_files": {
+    "adt_a01.hl7": {
+      "bytes": 1159,
+      "sha256": "b55e503684f01532eb11c84c82394b11af6b81424893e335c68efb5fbfb7b53a"
+    },
+    "billing_export.csv": {
+      "bytes": 5227,
+      "sha256": "ef3ecec38c50654f5a4bc899a34935c1f38e22c152a92aebb5c20b0607968251"
+    },
+    "claims.json": {
+      "bytes": 2473,
+      "sha256": "6441e4d516a5e1657e8db22212161b34f3570f95025ba10af7484b1991cbd3a6"
+    },
+    "corrupt_upload.docx": {
+      "bytes": 20089,
+      "sha256": "9fd60ccc8970fdecf84ea55cd91de6e6db6e5f39e7c87144a288691ffa311c24"
+    },
+    "discharge_summary.docx": {
+      "bytes": 40439,
+      "sha256": "bb4139d7302d6666e518601dacf27287dbc35601a76f73625cd937d6dba5e400"
+    },
+    "encounters.csv": {
+      "bytes": 1289,
+      "sha256": "ddd0d900033bf8b64c7973491d49758588a03187ad726fc59a211499c0a90c09"
+    },
+    "fhir_bundle.json": {
+      "bytes": 8985,
+      "sha256": "ff34e7fa3aded1eeb3961d31aaf335cfb5e730f35fd050def24e7e3a17450ba9"
+    },
+    "imaging_0042.dat": {
+      "bytes": 263640,
+      "sha256": "053573f3fada2e2e76c78349baeb15cad64988e97c906263a777a47dae67fb43"
+    },
+    "patient_roster.xlsx": {
+      "bytes": 8947,
+      "sha256": "1b05e8bbf9ba432160d6a30c33ee5972f076d52a266f67185bb7a34c556d9ca4"
+    },
+    "progress_note.txt": {
+      "bytes": 1458,
+      "sha256": "a2b68ffb393f590467144f603863f6271483537873dc2c875d33fa9196aa3810"
+    },
+    "referral_packet.pdf": {
+      "bytes": 128935,
+      "sha256": "2d16dfbb1773d8cdb01b58d023a789504bc26bdef2f94f198623bf0caf96ea9b"
+    },
+    "wristband_photo.jpg": {
+      "bytes": 50769,
+      "sha256": "0d3fe7b69942cde6377394d255a36287daea6c44ddf989df1afa95fd7b90b76e"
+    }
+  },
+  "input_file_count": 12,
+  "input_bytes": 533410,
+  "input_unchanged": true,
+  "initial": {
+    "exit_code": 0,
+    "wall_seconds": 11.88360321399523,
+    "cgroup": {
+      "cpu.max": "200000 100000",
+      "memory.max": 1073741824,
+      "memory.swap.max": 0,
+      "memory.peak": 677085184
+    },
+    "dashboard_reachable": true,
+    "stdout_bytes": 0,
+    "stderr_bytes": 0,
+    "queue": {
+      "tasks": 37,
+      "attempts": 37,
+      "model_attempts": 0,
+      "statuses": {
+        "succeeded": 37
+      }
+    }
+  },
+  "replay": {
+    "exit_code": 0,
+    "wall_seconds": 4.921633125981316,
+    "cgroup": {
+      "cpu.max": "200000 100000",
+      "memory.max": 1073741824,
+      "memory.swap.max": 0,
+      "memory.peak": 677085184
+    },
+    "dashboard_reachable": true,
+    "stdout_bytes": 0,
+    "stderr_bytes": 0,
+    "queue": {
+      "tasks": 37,
+      "attempts": 37,
+      "model_attempts": 0,
+      "statuses": {
+        "succeeded": 37
+      }
+    },
+    "output_bytes_unchanged": true,
+    "queue_counts_unchanged": true
+  },
+  "complete": true,
+  "inventoried": 12,
+  "published": 0,
+  "quarantined": 12,
+  "quarantine_reasons": {
+    "incomplete_surface_coverage": 5,
+    "unsupported_native_format": 6,
+    "invalid_container_structure": 1
+  },
+  "files": [
+    {
+      "file": "adt_a01.hl7",
+      "file_id": "d6fc73dfe2ae9cc28dc6434e69223c8ce14686fd778dc0fd6339ebb12b9433d1",
+      "input_sha256": "b55e503684f01532eb11c84c82394b11af6b81424893e335c68efb5fbfb7b53a",
+      "output_sha256": "b55e503684f01532eb11c84c82394b11af6b81424893e335c68efb5fbfb7b53a",
+      "actual_type": "hl7",
+      "status": "quarantined",
+      "reason": "incomplete_surface_coverage",
+      "records": 0,
+      "detected": {
+        "identifier": 8,
+        "date": 2,
+        "patient_id": 1,
+        "ssn": 2,
+        "patient_name": 1,
+        "relative_name": 2,
+        "birth_date": 1,
+        "address": 1,
+        "location": 1,
+        "zip": 1,
+        "phone": 1,
+        "email": 1
+      },
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 0.07,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "billing_export.csv",
+      "file_id": "b95e219b838d1bdb5753165c0cd5e515de2ea724f99386e71104f68168ef7590",
+      "input_sha256": "ef3ecec38c50654f5a4bc899a34935c1f38e22c152a92aebb5c20b0607968251",
+      "output_sha256": "ef3ecec38c50654f5a4bc899a34935c1f38e22c152a92aebb5c20b0607968251",
+      "actual_type": "xlsx",
+      "status": "quarantined",
+      "reason": "incomplete_surface_coverage",
+      "records": 8,
+      "detected": {
+        "provider_name": 1,
+        "date": 5,
+        "identifier": 6,
+        "patient_name": 3
+      },
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 0.049,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "claims.json",
+      "file_id": "a9ef4b1d494f0e98e35163d04f9618f1484831682f62b8e1e292975cee5d82d4",
+      "input_sha256": "6441e4d516a5e1657e8db22212161b34f3570f95025ba10af7484b1991cbd3a6",
+      "output_sha256": "6441e4d516a5e1657e8db22212161b34f3570f95025ba10af7484b1991cbd3a6",
+      "actual_type": "json",
+      "status": "quarantined",
+      "reason": "unsupported_native_format",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 0.023,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "corrupt_upload.docx",
+      "file_id": "d612084910ff8dd963a9688797da46eceaa1e13897418809c08d70718f1dc6c6",
+      "input_sha256": "9fd60ccc8970fdecf84ea55cd91de6e6db6e5f39e7c87144a288691ffa311c24",
+      "output_sha256": "9fd60ccc8970fdecf84ea55cd91de6e6db6e5f39e7c87144a288691ffa311c24",
+      "actual_type": "zip",
+      "status": "quarantined",
+      "reason": "invalid_container_structure",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 0.018,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "discharge_summary.docx",
+      "file_id": "c5285ab70ee57caa853a81c3f7e585bd21b7dfe4ae665f7cc1abdd24b29a56af",
+      "input_sha256": "bb4139d7302d6666e518601dacf27287dbc35601a76f73625cd937d6dba5e400",
+      "output_sha256": "bb4139d7302d6666e518601dacf27287dbc35601a76f73625cd937d6dba5e400",
+      "actual_type": "docx",
+      "status": "quarantined",
+      "reason": "unsupported_native_format",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 0.083,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "encounters.csv",
+      "file_id": "158996c6e6f04fff45ac51184036c6cebb84fa090e8cc4bb25bbcde7c95246df",
+      "input_sha256": "ddd0d900033bf8b64c7973491d49758588a03187ad726fc59a211499c0a90c09",
+      "output_sha256": "ddd0d900033bf8b64c7973491d49758588a03187ad726fc59a211499c0a90c09",
+      "actual_type": "csv",
+      "status": "quarantined",
+      "reason": "incomplete_surface_coverage",
+      "records": 0,
+      "detected": {
+        "identifier": 1,
+        "patient_id": 1,
+        "patient_name": 1,
+        "birth_date": 1,
+        "date": 2,
+        "provider_name": 1,
+        "provider_id": 1,
+        "lot": 1,
+        "phone": 1
+      },
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 0.659,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "fhir_bundle.json",
+      "file_id": "92a23e171796ccfa24869954622585f218fab6586d37761e595f7b4cb8ed7109",
+      "input_sha256": "ff34e7fa3aded1eeb3961d31aaf335cfb5e730f35fd050def24e7e3a17450ba9",
+      "output_sha256": "ff34e7fa3aded1eeb3961d31aaf335cfb5e730f35fd050def24e7e3a17450ba9",
+      "actual_type": "fhir",
+      "status": "quarantined",
+      "reason": "unsupported_native_format",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 0.591,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "imaging_0042.dat",
+      "file_id": "e04810723a131dbbce58540be4c832423f4b6501494a5e59587f06583c801425",
+      "input_sha256": "053573f3fada2e2e76c78349baeb15cad64988e97c906263a777a47dae67fb43",
+      "output_sha256": "053573f3fada2e2e76c78349baeb15cad64988e97c906263a777a47dae67fb43",
+      "actual_type": "dicom",
+      "status": "quarantined",
+      "reason": "unsupported_native_format",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 1.347,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "patient_roster.xlsx",
+      "file_id": "d9ea7ab083b33c6bfb3ea1b13fac61afdd1cf72eb3e12cd31f05c761c360648b",
+      "input_sha256": "1b05e8bbf9ba432160d6a30c33ee5972f076d52a266f67185bb7a34c556d9ca4",
+      "output_sha256": "1b05e8bbf9ba432160d6a30c33ee5972f076d52a266f67185bb7a34c556d9ca4",
+      "actual_type": "xlsx",
+      "status": "quarantined",
+      "reason": "incomplete_surface_coverage",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 0.025,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "progress_note.txt",
+      "file_id": "d17019ab719859b445791e7bdf474a40413c3de0f173e6bd300f6145a0ba703f",
+      "input_sha256": "a2b68ffb393f590467144f603863f6271483537873dc2c875d33fa9196aa3810",
+      "output_sha256": "a2b68ffb393f590467144f603863f6271483537873dc2c875d33fa9196aa3810",
+      "actual_type": "text",
+      "status": "quarantined",
+      "reason": "incomplete_surface_coverage",
+      "records": 0,
+      "detected": {
+        "patient_name": 1,
+        "patient_id": 1,
+        "birth_date": 1,
+        "date": 1,
+        "identifier": 1,
+        "provider_name": 1,
+        "provider_id": 1
+      },
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 3.445,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "referral_packet.pdf",
+      "file_id": "4a6fe9ee07c7d678f3648642aeade64b6efc560c23b58c6f1623d9d441163141",
+      "input_sha256": "2d16dfbb1773d8cdb01b58d023a789504bc26bdef2f94f198623bf0caf96ea9b",
+      "output_sha256": "2d16dfbb1773d8cdb01b58d023a789504bc26bdef2f94f198623bf0caf96ea9b",
+      "actual_type": "pdf",
+      "status": "quarantined",
+      "reason": "unsupported_native_format",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 2.738,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "wristband_photo.jpg",
+      "file_id": "e02efbb368e2df9ea790deddb93e0f44105768b58237d6642b119f6c4afeeaab",
+      "input_sha256": "0d3fe7b69942cde6377394d255a36287daea6c44ddf989df1afa95fd7b90b76e",
+      "output_sha256": "0d3fe7b69942cde6377394d255a36287daea6c44ddf989df1afa95fd7b90b76e",
+      "actual_type": "jpeg",
+      "status": "quarantined",
+      "reason": "unsupported_native_format",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 0.538,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    }
+  ],
+  "memory_scope": "Whole container including probe, coordinator, workers and dashboard",
+  "memory_peak_is_cumulative": true,
+  "crash_injection": false,
+  "source_revision": "7025ae5ea5f43b85e91005bb53987a930552435a",
+  "container_image": "sha256:cfea66555ef1114bc71922d7e62403484dc34c5f2f3cbf3e05e85187f69ea3c2",
+  "network": "none",
+  "network_check": null,
+  "container_storage": "Native Linux writable container filesystem",
+  "concurrent_workload": "A separate constrained large-CSV benchmark was running on the same Docker host."
+}
