@@ -126,6 +126,49 @@ def _whole_prediction(text: str) -> tuple[TextEntity, ...]:
     return (TextEntity(start=0, end=len(text), text=text, entity_type="person"),)
 
 
+def test_saved_role_predicate_does_not_exempt_an_unedited_name(tmp_path: Path) -> None:
+    source = tmp_path / "source.txt"
+    saved = tmp_path / "saved.txt"
+    source.write_text("spouse Alina Stone assists. Creatinine 1.20 mg/dL.")
+    context = TextContext(context_key="record", maximum_date_shift_days=365)
+    for name in ("Alina Stone", "Alina"):
+        finding = TextFinding(
+            start=7, end=7 + len(name), original=name, kind="person_name"
+        )
+        edits = text_edits((finding,), context, bytes(range(32)))
+        saved.write_text(apply_text_edits(source.read_text(), edits))
+        if name == "Alina":
+            with pytest.raises(ValueError, match="residual_phi_detected"):
+                verify_text_changes(
+                    source.read_text(),
+                    saved.read_text(),
+                    edits,
+                    _predicate_prediction,
+                    free_text=True,
+                )
+        else:
+            verify_text_changes(
+                source.read_text(),
+                saved.read_text(),
+                edits,
+                _predicate_prediction,
+                free_text=True,
+            )
+
+
+def _predicate_prediction(text: str) -> tuple[TextEntity, ...]:
+    start = text.index("assists")
+    return (
+        TextEntity(
+            start=start,
+            end=start + 7,
+            text="assists",
+            entity_type="location",
+            label="location city",
+        ),
+    )
+
+
 def _role_prediction(text: str) -> tuple[TextEntity, ...]:
     end = text.index(" ")
     return (TextEntity(start=0, end=end, text=text[:end], entity_type="person"),)

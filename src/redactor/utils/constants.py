@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v17"
+PIPELINE_VERSION: Final = "pipeline-v18"
 RUNTIME_SOURCE_SUFFIXES: Final = (".py", ".sql")
 RUNTIME_IGNORED_SUFFIXES: Final = (".pyc", ".pyo")
 RUNTIME_MISSING_ARTIFACT: Final = "missing"
@@ -169,7 +169,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v14"
+VERIFIER_VERSION: Final = "verifier-v15"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -1890,11 +1890,13 @@ CLINICAL_NEGATION_PREFIX_PATTERN: Final = (
     r"(?i)\b(?:no|without|denies|negative for|history of|with|has)\s+$"
 )
 CLINICAL_RANGE_GAP_PATTERN: Final = r"[\s.,;:!?()\[\]{}'\"’/-]*"
-NAME_TRAILING_VERB_PATTERN: Final = (
-    r"[ \t]+(?:visit(?:s|ed)|return(?:s|ed)|call(?:s|ed)|arriv(?:es|ed)|"
+NARRATIVE_VERB_PATTERN: Final = (
+    r"(?:visit(?:s|ed)|return(?:s|ed)|call(?:s|ed)|arriv(?:es|ed)|"
     r"report(?:s|ed)|assist(?:s|ed)|accompan(?:ies|ied)|attend(?:s|ed)|"
-    r"declin(?:es|ed)|agree(?:s|d)|confirm(?:s|ed)|request(?:s|ed))$"
+    r"declin(?:es|ed)|agree(?:s|d)|confirm(?:s|ed)|request(?:s|ed))"
 )
+NAME_TRAILING_VERB_PATTERN: Final = rf"[ \t]+{NARRATIVE_VERB_PATTERN}$"
+ROLE_NARRATIVE_VERB_PATTERN: Final = rf"[ \t]+(?P<verb>{NARRATIVE_VERB_PATTERN})\b"
 NER_DIGIT_CUE_PATTERN: Final = r"\d+"
 NER_NUMBER_WORD_PATTERN: Final = (
     r"(?i)\b(?:zero|oh|one|two|three|four|five|six|seven|eight|nine|ten|eleven|"

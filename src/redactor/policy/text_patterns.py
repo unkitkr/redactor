@@ -11,17 +11,24 @@ from redactor.utils.constants import (
     AGE_YEARS_PATTERN,
     CLINICAL_NEGATION_PREFIX_PATTERN,
     CLINICAL_RANGE_GAP_PATTERN,
+    ROLE_NARRATIVE_VERB_PATTERN,
     TEXT_CLINICAL_PATTERNS,
+    TEXT_PROVIDER_PATTERN,
+    TEXT_RELATIVE_PATTERN,
     VERIFIER_RELATIVE_TIME_PATTERN,
 )
 
 
 def clinical_ranges(text: str) -> tuple[TextRange, ...]:
-    ranges = tuple(
-        TextRange(start=match.start(), end=match.end())
-        for pattern in (*TEXT_CLINICAL_PATTERNS, VERIFIER_RELATIVE_TIME_PATTERN)
-        for match in re.finditer(pattern, text)
-    ) + snomed_ranges(text)
+    ranges = (
+        tuple(
+            TextRange(start=match.start(), end=match.end())
+            for pattern in (*TEXT_CLINICAL_PATTERNS, VERIFIER_RELATIVE_TIME_PATTERN)
+            for match in re.finditer(pattern, text)
+        )
+        + snomed_ranges(text)
+        + narrative_predicates(text)
+    )
     expanded: list[TextRange] = []
     for span in ranges:
         negation = re.search(CLINICAL_NEGATION_PREFIX_PATTERN, text[: span.start])
@@ -43,6 +50,23 @@ def clinical_ranges(text: str) -> tuple[TextRange, ...]:
         else:
             merged.append(span)
     return tuple(merged)
+
+
+def narrative_predicates(text: str) -> tuple[TextRange, ...]:
+    """A grammatical action after an explicit person role is not a location.
+
+    Only the verb is protected. Every part of the preceding name still requires
+    its own transformation and independent residual check.
+    """
+    ranges: list[TextRange] = []
+    for pattern in (TEXT_PROVIDER_PATTERN, TEXT_RELATIVE_PATTERN):
+        for person in re.finditer(pattern, text):
+            end = person.end("name")
+            predicate = re.match(ROLE_NARRATIVE_VERB_PATTERN, text[end:])
+            if predicate:
+                start, stop = predicate.span("verb")
+                ranges.append(TextRange(start=end + start, end=end + stop))
+    return tuple(ranges)
 
 
 def age_mentions(text: str) -> tuple[tuple[TextRange, TextRange, int], ...]:
