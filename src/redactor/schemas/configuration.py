@@ -21,6 +21,9 @@ from redactor.utils.constants import (
     DEFAULT_MODEL_OUTPUT_TOKENS,
     DEFAULT_MODEL_TIMEOUT_SECONDS,
     DEFAULT_NATIVE_FILE_BYTES,
+    DEFAULT_NER_CACHE_CHARACTERS,
+    DEFAULT_NER_CACHE_ENTRIES,
+    DEFAULT_NER_MAX_CHARACTERS,
     DEFAULT_NESTING_DEPTH,
     DEFAULT_OCR_LANGUAGE,
     DEFAULT_RECORD_BYTES,
@@ -61,6 +64,9 @@ class LocalSettings(BaseModel, frozen=True, extra="forbid"):
     ner: Literal["spacy", "gliner"] = NER_SPACY
     ocr: Literal["tesseract", "ppocr"] = OCR_TESSERACT
     spacy_model: str = DEFAULT_SPACY_MODEL
+    ner_max_characters: PositiveInt = DEFAULT_NER_MAX_CHARACTERS
+    ner_cache_entries: PositiveInt = DEFAULT_NER_CACHE_ENTRIES
+    ner_cache_characters: PositiveInt = DEFAULT_NER_CACHE_CHARACTERS
     ner_directory: Path | None = None
     ocr_directory: Path | None = None
     model_directory: Path = Path(MODEL_DIRECTORY)

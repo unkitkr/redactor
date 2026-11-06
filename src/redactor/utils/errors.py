@@ -72,6 +72,10 @@ ERROR_DATE: Final = "unassessed_date_value"
 ERROR_AGE: Final = "invalid_age_value"
 ERROR_AGE_REFERENCE: Final = "unresolved_age_reference"
 ERROR_AGE_REPRESENTATION: Final = "unsupported_birth_date_generalization"
+ERROR_LOCAL_UNAVAILABLE: Final = "local_model_unavailable"
+ERROR_LOCAL_INPUT: Final = "local_model_input_limit_exceeded"
+ERROR_LOCAL_INFERENCE: Final = "local_model_inference_failed"
+ERROR_ENTITY_EVIDENCE: Final = "invalid_entity_span_evidence"
 
 INSPECTION_REASON_CODES: Final = (
     ERROR_FORMAT_UNSUPPORTED,
@@ -133,6 +137,10 @@ COORDINATOR_FAILURE_CODES: Final = (
 )
 
 FAILURE_CODES: Final = (
+    ERROR_LOCAL_UNAVAILABLE,
+    ERROR_LOCAL_INPUT,
+    ERROR_LOCAL_INFERENCE,
+    ERROR_ENTITY_EVIDENCE,
     ERROR_DATE,
     ERROR_AGE,
     ERROR_AGE_REFERENCE,

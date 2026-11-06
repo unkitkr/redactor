@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "cryptography>=46,<51",
     "defusedxml>=0.7,<1",
+    "en-core-web-sm",
     "httpx>=0.28,<1",
     "ijson>=3.4,<4",
     "openai>=2,<3",
@@ -14,6 +15,7 @@ dependencies = [
     "pydantic>=2.10,<3",
     "pydicom>=3,<4",
     "pymupdf>=1.26,<2",
+    "spacy>=3.8.18,<3.9",
 ]
 
 [project.scripts]
@@ -62,3 +64,6 @@ source = ["redactor"]
 
 [tool.coverage.report]
 show_missing = true
+
+[tool.uv.sources]
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }

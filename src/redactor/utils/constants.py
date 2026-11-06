@@ -79,6 +79,32 @@ NER_GLINER: Final = "gliner"
 OCR_TESSERACT: Final = "tesseract"
 OCR_PPOCR: Final = "ppocr"
 DEFAULT_SPACY_MODEL: Final = "en_core_web_sm"
+DEFAULT_NER_MAX_CHARACTERS: Final = 16_384
+DEFAULT_NER_CACHE_ENTRIES: Final = 512
+DEFAULT_NER_CACHE_CHARACTERS: Final = 1024
+MAX_TEXT_ENTITIES: Final = 512
+SPACY_NER_COMPONENT: Final = "ner"
+SPACY_EXCLUDED_COMPONENTS: Final = (
+    "tagger",
+    "parser",
+    "lemmatizer",
+    "attribute_ruler",
+    "senter",
+)
+ENTITY_PERSON: Final = "person"
+ENTITY_ORGANIZATION: Final = "organization"
+ENTITY_LOCATION: Final = "location"
+ENTITY_DATE: Final = "date"
+ENTITY_TIME: Final = "time"
+SPACY_ENTITY_TYPES: Final = (
+    ("PERSON", ENTITY_PERSON),
+    ("ORG", ENTITY_ORGANIZATION),
+    ("GPE", ENTITY_LOCATION),
+    ("LOC", ENTITY_LOCATION),
+    ("FAC", ENTITY_LOCATION),
+    ("DATE", ENTITY_DATE),
+    ("TIME", ENTITY_TIME),
+)
 DEFAULT_OCR_LANGUAGE: Final = "eng"
 DEFAULT_MODEL_BUDGET_USD: Final = "3.00"
 DEFAULT_MODEL_ATTEMPTS: Final = 3

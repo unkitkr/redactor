@@ -17,12 +17,13 @@
 - The OpenAI SDK targets the supplied endpoint through bounded retries, shared circuit state, and durable cost reservations.
 - Transient failures use configurable capped exponential backoff with jitter and Retry-After; attempt, deadline, and cost limits stop retries independently.
 - Hosted text calls require configured token prices; byte-based token bounds reserve possible charges, and uncertain requests keep their full reservation.
-- spaCy small and Tesseract are the initial local baselines; pinned GLiNER ONNX and PP-OCR alternatives use configurable adapters.
+- spaCy small and Tesseract are the selected local baselines; model packages are pinned at installation and runtime never downloads weights.
 - PyMuPDF handles PDF rendering and rewriting under its documented AGPL license, with separate saved-output verification.
 
 ## Choices
 
 - Typed fields and supported patterns use deterministic processing; model-dependent work uses the enabled endpoint with local fallback.
+- Repeated small text units use a bounded NER cache; oversized units are never silently truncated, and spaCy memory zones release temporary vocabulary.
 - Verification always runs; remote judging examines unresolved units only, uses separate configuration, and obeys the global model-disable switch.
 - Remote judge findings require location-bound evidence and cannot override failed deterministic checks or unassessed native surfaces.
 - Identity matching uses scoped identifiers and corroborating evidence; contradictory people stay separate even when an identifier value receives one consistent replacement.
