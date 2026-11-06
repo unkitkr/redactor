@@ -989,3 +989,21 @@ LAB_DESCRIPTION_TERMS: Final = (
     "filtration",
     "rate",
 )
+
+# Model evaluation: fixed synthetic evidence, never production data or secrets.
+EVALUATION_TEXT_CORPUS: Final = "benchmarks/corpus/text.json"
+EVALUATION_FINDING_TYPES: Final = (
+    (FIELD_PATIENT_NAME, "person"),
+    (FIELD_PROVIDER_NAME, "person"),
+    (IDENTITY_RELATIVE, "person"),
+    (FIELD_DATE, "date"),
+    (FIELD_AGE, "age"),
+    (FIELD_EMAIL, "contact"),
+    (FIELD_PHONE, "contact"),
+    (FIELD_NETWORK, "contact"),
+    (FIELD_WEB, "contact"),
+    (FIELD_SSN, "identifier"),
+    (FIELD_IDENTIFIER, "identifier"),
+    (FIELD_ADDRESS, "location"),
+    (FIELD_ZIP, "location"),
+)
