@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from redactor.configuration import (
+from redactor.utils.configuration import (
     load_settings,
     processing_fingerprint,
     read_mapping_key,
