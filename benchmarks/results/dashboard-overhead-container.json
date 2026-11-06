@@ -1,0 +1,18 @@
+{
+  "image_id": "sha256:cfea66555ef1114bc71922d7e62403484dc34c5f2f3cbf3e05e85187f69ea3c2",
+  "revision": "ea1123d57fbd07ad6ee8a4ed18fbf01f9c52d7fe",
+  "dirty_tree": true,
+  "python_source_sha256": "c70f42151e87577a9085c01566e509fb7d12c8897586967da8377c264c3f4429",
+  "command": [
+    "tools/benchmarks/dashboard.py",
+    "--output",
+    "benchmarks/results/dashboard-overhead.json"
+  ],
+  "cpus": 2,
+  "memory_bytes": 1073741824,
+  "memory_swap_bytes": 1073741824,
+  "network": "none",
+  "wall_seconds_including_container_start": 33.10943845799193,
+  "exit_code": 0,
+  "oom_killed": false
+}

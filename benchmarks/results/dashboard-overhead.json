@@ -1,0 +1,113 @@
+{
+  "startup_seconds": 0.28350216697435826,
+  "initial_page_request": {
+    "seconds": 0.027671499992720783,
+    "status": 200,
+    "response_bytes": 4761
+  },
+  "idle": {
+    "wall_seconds": 10.00158267095685,
+    "server_cpu_seconds": 0.0,
+    "server_cpu_percent_of_one_core": 0.0,
+    "request_count": 0,
+    "requests": [],
+    "rss_bytes": 37888000,
+    "peak_rss_bytes": 37888000
+  },
+  "queue_polling": {
+    "wall_seconds": 20.002399384975433,
+    "server_cpu_seconds": 0.14999999999999997,
+    "server_cpu_percent_of_one_core": 0.7499100338565917,
+    "request_count": 4,
+    "requests": [
+      {
+        "seconds": 0.04276516701793298,
+        "status": 200,
+        "response_bytes": 13376,
+        "task_count": 1000
+      },
+      {
+        "seconds": 0.016536292037926614,
+        "status": 200,
+        "response_bytes": 13376,
+        "task_count": 1000
+      },
+      {
+        "seconds": 0.06835608399705961,
+        "status": 200,
+        "response_bytes": 13376,
+        "task_count": 1000
+      },
+      {
+        "seconds": 0.033658833999652416,
+        "status": 200,
+        "response_bytes": 13376,
+        "task_count": 1000
+      }
+    ],
+    "rss_bytes": 38555648,
+    "peak_rss_bytes": 38555648
+  },
+  "benchmarks_first_request": {
+    "seconds": 0.11397624999517575,
+    "status": 200,
+    "response_bytes": 619018,
+    "report_count": 48
+  },
+  "benchmarks_cached_request": {
+    "seconds": 0.0048882499686442316,
+    "status": 200,
+    "response_bytes": 619018,
+    "report_count": 48
+  },
+  "benchmark_requests_same_cache_interval": true,
+  "memory_after_benchmarks": {
+    "rss_bytes": 45158400,
+    "peak_rss_bytes": 45158400
+  },
+  "server_lifetime": {
+    "user_cpu_seconds": 0.424222,
+    "system_cpu_seconds": 0.143471,
+    "peak_rss_bytes": 45035520
+  },
+  "import_audit": {
+    "checked_packages": [
+      "torch",
+      "spacy",
+      "onnxruntime",
+      "paddle",
+      "transformers",
+      "rapidocr",
+      "cv2",
+      "numpy",
+      "tokenizers"
+    ],
+    "loaded_model_packages": []
+  },
+  "benchmark": "dashboard_overhead",
+  "schema_version": 1,
+  "task_count": 1000,
+  "poll_interval_seconds": 5,
+  "server_mode": "parent_owned",
+  "parent_check_interval_seconds": 0.5,
+  "platform": "Linux-6.12.54-linuxkit-aarch64-with-glibc2.41",
+  "python_version": "3.12.16",
+  "source_sha256": "c77b1686b499cc432431190a84c762129f55e3e04757d177e1b543f4522a12b6",
+  "source_unchanged": true,
+  "revision": "ea1123d57fbd07ad6ee8a4ed18fbf01f9c52d7fe",
+  "source_dirty": "true",
+  "cgroup_peak_bytes": 65990656,
+  "cgroup_limits": {
+    "cpu_max": "200000 100000",
+    "memory_max_bytes": 1073741824,
+    "memory_swap_max_bytes": 0
+  },
+  "benchmark_inputs": {
+    "file_count": 33,
+    "sha256": "0025670d67cb773a13e9743b4c3bb572e7433eadd34bf4b32a4339e527ca4f75",
+    "exclusion": "Prior dashboard-overhead reports and container receipts"
+  },
+  "cgroup_scope": "Whole measurement container, including seeding and HTTP client",
+  "cpu_clock_ticks_per_second": 100,
+  "scope": "Synthetic queue; no concurrent pipeline or browser process"
+}

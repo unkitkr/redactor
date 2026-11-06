@@ -115,6 +115,22 @@ Exact requested and returned model IDs, routed providers, token counts, and resp
 
 Successful API receipts report **$0.045215**. The shared durable ledger accounts for **$2.4229058**, below the $3 cap, because it retains conservative reservations for rejected or uncertain requests. One additional diagnostic HTTP 400 response had no usage receipt. Initial GLM requests with reasoning disabled were rejected; [that failure run](results/glm-flash-rejected.json) is retained separately and is not a GLM accuracy measurement.
 
+## Dashboard overhead
+
+The [dashboard measurement](results/dashboard-overhead.json) used 1,000 synthetic queue tasks and 33 benchmark files under 2 vCPUs, 1 GiB memory, no extra swap and no network. The parent-owned server started in 0.284 seconds. Four queue polls over 20 seconds consumed 0.15 CPU seconds, or 0.75% of one core, with mean request latency of 40.33 ms. Idle CPU usage was below the 10 ms clock resolution during a 10-second observation.
+
+Observed server peak RSS was 43.07 MiB; the entire measurement container peaked at 62.93 MiB, including queue seeding and the HTTP client. The first benchmark request took 113.98 ms and a cached request took 4.89 ms. No checked model runtime was imported. These measurements support starting the monitor by default, with `--no-dashboard` available. They exclude browser overhead and concurrent pipeline execution, so they do not measure the effect on pipeline throughput.
+
+The [container receipt](results/dashboard-overhead-container.json) records the image and limits. Current Python and static assets were mounted into the existing evaluation image; the report fingerprints both and confirms they stayed unchanged during the measurement. Prior dashboard reports are excluded from its input set to keep repeated measurements comparable.
+
+```sh
+uv run --locked --offline python tools/benchmarks/run_container.py \
+  --name redactor-dashboard-measurement \
+  --receipt benchmarks/results/dashboard-overhead-container.json \
+  -- tools/benchmarks/dashboard.py \
+  --output benchmarks/results/dashboard-overhead.json
+```
+
 ## Reproduction
 
 Weights and large generated inputs are not committed. Download them during setup, then run local inference without network access. Keep the private remote ledger to replay responses and retain budget accounting.

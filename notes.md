@@ -5,6 +5,7 @@
 - Input bytes, configuration and secret-key identity bind each run; fenced attempts, atomic successors and durable checkpoints support replay.
 - Large artifacts stay on private disk; CSV checkpoints use complete record boundaries, with one inference worker and one light worker limiting model duplication.
 - Production and evaluation share local model adapters; NER validates spans and caches bounded inputs, while OCR validates image limits and source-pixel coordinates.
+- A separate local dashboard starts with the coordinator and reads bounded, cached SQLite snapshots; monitoring failures cannot stop processing, and `--no-dashboard` removes its overhead.
 
 ## Stack
 
@@ -20,6 +21,7 @@
 - Typed fields use deterministic transformations; optional hosted detection and judging obey the global model-disable switch and require local fallback.
 - Verification checks intact and Unicode-normalized source and saved text, including unknown column labels; identifying evidence must fit a complete edit span, and failures or unknown coverage quarantine.
 - Model errors fail closed; empty or partial OCR is unknown coverage, and local inference uses staged weights without runtime downloads.
+- Python dependencies and the packaged spaCy model install through uv; other local weights are checksum-verified during setup and mounted before restricted execution.
 - Scoped identifiers and corroboration link identities; names alone do not, conflicting middle names cannot bridge through shorter spellings, and provider roles stay separate.
 - Linked patients share a date offset; ages at or above 90 become 90+, revealing birth dates are generalized, and unrepresentable native bounds quarantine.
 - ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications and diseases retain their content.
@@ -34,6 +36,7 @@
 - Four local NER candidates, four OCR variants and three OpenRouter models were compared on 40 text cases and 12 images; exact models, accuracy, verifier failures, memory and timings are in the [benchmark report](benchmarks/README.md).
 - Verifier v3 found zero false accepts on the unchanged 40-case development corpus across four local adapters and three cached hosted configurations, with 0–4 false rejects; macOS regression results include local fallbacks and no new charges.
 - Hosted receipts report $0.045215; conservative reservations account for $2.422906. Local runs were container-constrained; hosted client runs used macOS. Neither comparison establishes clinical safety or the 2 GiB / 30 minute target.
+- Dashboard: 1,000 tasks under 2 vCPUs / 1 GiB used 0.75% of one core while polling, 43.07 MiB server peak RSS and 40.33 ms mean queue latency; browser overhead and concurrent pipeline throughput were not measured ([record](benchmarks/results/dashboard-overhead.json)).
 
 ## Known limitations
 
