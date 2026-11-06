@@ -1,0 +1,262 @@
+{
+  "benchmark": "seeded_process_group_crash_replay",
+  "schema_version": 1,
+  "scope": "Two timings on 12 supplied files; not exhaustive crash coverage",
+  "seed": 20261107,
+  "command": [
+    "/opt/redactor/.venv/bin/python",
+    "-m",
+    "redactor",
+    "--input",
+    "/input",
+    "--state",
+    "/benchmark/local/.redactor",
+    "--config",
+    "/opt/redactor/redactor.toml",
+    "--workers",
+    "2"
+  ],
+  "kills": [
+    {
+      "delay_seconds": 5.823015736820887,
+      "elapsed_seconds": 5.850255211000331,
+      "signal": "SIGKILL",
+      "process_group_count": 4,
+      "group_member_count": 4,
+      "surviving_group_members": 0,
+      "coordinator_exit_code": -9,
+      "queue_before": {
+        "integrity": "ok",
+        "foreign_key_errors": 0,
+        "tasks": 25,
+        "task_statuses": {
+          "pending": 8,
+          "running": 1,
+          "succeeded": 16
+        },
+        "attempt_statuses": {
+          "running": 1,
+          "succeeded": 16
+        },
+        "running": [
+          {
+            "file": "discharge_summary.docx",
+            "step": "analyze"
+          }
+        ],
+        "duplicate_successful_results": 0,
+        "model_attempts": 0
+      },
+      "lock_held_before": true,
+      "lock_available_after": true
+    },
+    {
+      "delay_seconds": 4.901511342879978,
+      "elapsed_seconds": 4.928018003003672,
+      "signal": "SIGKILL",
+      "process_group_count": 4,
+      "group_member_count": 4,
+      "surviving_group_members": 0,
+      "coordinator_exit_code": -9,
+      "queue_before": {
+        "integrity": "ok",
+        "foreign_key_errors": 0,
+        "tasks": 25,
+        "task_statuses": {
+          "pending": 7,
+          "running": 1,
+          "succeeded": 17
+        },
+        "attempt_statuses": {
+          "interrupted": 1,
+          "running": 1,
+          "succeeded": 17
+        },
+        "running": [
+          {
+            "file": "encounters.csv",
+            "step": "analyze"
+          }
+        ],
+        "duplicate_successful_results": 0,
+        "model_attempts": 0
+      },
+      "lock_held_before": true,
+      "lock_available_after": true
+    }
+  ],
+  "wall_seconds": 26.66820517904125,
+  "final_exit_code": 0,
+  "cgroup": {
+    "cpu.max": "200000 100000",
+    "memory.max": 999997440,
+    "memory.swap.max": 0,
+    "memory.peak": 786563072
+  },
+  "memory_scope": "Whole container: helper, coordinator, workers, dashboard",
+  "input_files": {
+    "adt_a01.hl7": {
+      "bytes": 1159,
+      "sha256": "b55e503684f01532eb11c84c82394b11af6b81424893e335c68efb5fbfb7b53a"
+    },
+    "billing_export.csv": {
+      "bytes": 5227,
+      "sha256": "ef3ecec38c50654f5a4bc899a34935c1f38e22c152a92aebb5c20b0607968251"
+    },
+    "claims.json": {
+      "bytes": 2473,
+      "sha256": "6441e4d516a5e1657e8db22212161b34f3570f95025ba10af7484b1991cbd3a6"
+    },
+    "corrupt_upload.docx": {
+      "bytes": 20089,
+      "sha256": "9fd60ccc8970fdecf84ea55cd91de6e6db6e5f39e7c87144a288691ffa311c24"
+    },
+    "discharge_summary.docx": {
+      "bytes": 40439,
+      "sha256": "bb4139d7302d6666e518601dacf27287dbc35601a76f73625cd937d6dba5e400"
+    },
+    "encounters.csv": {
+      "bytes": 1289,
+      "sha256": "ddd0d900033bf8b64c7973491d49758588a03187ad726fc59a211499c0a90c09"
+    },
+    "fhir_bundle.json": {
+      "bytes": 8985,
+      "sha256": "ff34e7fa3aded1eeb3961d31aaf335cfb5e730f35fd050def24e7e3a17450ba9"
+    },
+    "imaging_0042.dat": {
+      "bytes": 263640,
+      "sha256": "053573f3fada2e2e76c78349baeb15cad64988e97c906263a777a47dae67fb43"
+    },
+    "patient_roster.xlsx": {
+      "bytes": 8947,
+      "sha256": "1b05e8bbf9ba432160d6a30c33ee5972f076d52a266f67185bb7a34c556d9ca4"
+    },
+    "progress_note.txt": {
+      "bytes": 1458,
+      "sha256": "a2b68ffb393f590467144f603863f6271483537873dc2c875d33fa9196aa3810"
+    },
+    "referral_packet.pdf": {
+      "bytes": 128935,
+      "sha256": "2d16dfbb1773d8cdb01b58d023a789504bc26bdef2f94f198623bf0caf96ea9b"
+    },
+    "wristband_photo.jpg": {
+      "bytes": 50769,
+      "sha256": "0d3fe7b69942cde6377394d255a36287daea6c44ddf989df1afa95fd7b90b76e"
+    }
+  },
+  "input_unchanged": true,
+  "all_artifact_bytes_equal": true,
+  "artifact_mismatches": [],
+  "artifact_files": {
+    "published/adt_a01.hl7": {
+      "bytes": 1349,
+      "sha256": "027dc7c6f0ab4826f460accc07807cc9bca43e14f51a3bcaa7089a7f0d894624"
+    },
+    "published/billing_export.csv": {
+      "bytes": 5473,
+      "sha256": "e257cc34d9eb17bce06972e528995c60d6137faca665f05f21916527d18c2bc2"
+    },
+    "published/claims.json": {
+      "bytes": 2554,
+      "sha256": "2ee3e5bd42f399349e589cb73871b21ac847ddf8d3628a7548ea32e41056264d"
+    },
+    "published/encounters.csv": {
+      "bytes": 1442,
+      "sha256": "0fa57d3344dd2800f1c2cd9694d754d80c8bc1a44f21519e63fa29e1be7576b0"
+    },
+    "published/patient_roster.xlsx": {
+      "bytes": 9623,
+      "sha256": "57b54c791d6bc817b25ddb9f481cd357da6d6deb20cf57641f1cce58b0458bd7"
+    },
+    "quarantine/corrupt_upload.docx": {
+      "bytes": 20089,
+      "sha256": "9fd60ccc8970fdecf84ea55cd91de6e6db6e5f39e7c87144a288691ffa311c24"
+    },
+    "quarantine/corrupt_upload.docx.reason.json": {
+      "bytes": 57,
+      "sha256": "a45f27c5c14fde390d6dd422cba79cb1b887aa28e8a8924a84772d7546b498d4"
+    },
+    "quarantine/discharge_summary.docx": {
+      "bytes": 40439,
+      "sha256": "bb4139d7302d6666e518601dacf27287dbc35601a76f73625cd937d6dba5e400"
+    },
+    "quarantine/discharge_summary.docx.reason.json": {
+      "bytes": 50,
+      "sha256": "11ec7216b0cb67a1d2a97ca9ca277ad7937ff402b690053e5e897427982b2510"
+    },
+    "quarantine/fhir_bundle.json": {
+      "bytes": 8985,
+      "sha256": "ff34e7fa3aded1eeb3961d31aaf335cfb5e730f35fd050def24e7e3a17450ba9"
+    },
+    "quarantine/fhir_bundle.json.reason.json": {
+      "bytes": 57,
+      "sha256": "ec584c943c8399015844ef4cfe2e6ebca3220d2f6141df942f0d5c5767716c1d"
+    },
+    "quarantine/imaging_0042.dat": {
+      "bytes": 263640,
+      "sha256": "053573f3fada2e2e76c78349baeb15cad64988e97c906263a777a47dae67fb43"
+    },
+    "quarantine/imaging_0042.dat.reason.json": {
+      "bytes": 57,
+      "sha256": "ec584c943c8399015844ef4cfe2e6ebca3220d2f6141df942f0d5c5767716c1d"
+    },
+    "quarantine/progress_note.txt": {
+      "bytes": 1458,
+      "sha256": "a2b68ffb393f590467144f603863f6271483537873dc2c875d33fa9196aa3810"
+    },
+    "quarantine/progress_note.txt.reason.json": {
+      "bytes": 50,
+      "sha256": "11ec7216b0cb67a1d2a97ca9ca277ad7937ff402b690053e5e897427982b2510"
+    },
+    "quarantine/referral_packet.pdf": {
+      "bytes": 128935,
+      "sha256": "2d16dfbb1773d8cdb01b58d023a789504bc26bdef2f94f198623bf0caf96ea9b"
+    },
+    "quarantine/referral_packet.pdf.reason.json": {
+      "bytes": 57,
+      "sha256": "ec584c943c8399015844ef4cfe2e6ebca3220d2f6141df942f0d5c5767716c1d"
+    },
+    "quarantine/wristband_photo.jpg": {
+      "bytes": 50769,
+      "sha256": "0d3fe7b69942cde6377394d255a36287daea6c44ddf989df1afa95fd7b90b76e"
+    },
+    "quarantine/wristband_photo.jpg.reason.json": {
+      "bytes": 57,
+      "sha256": "ec584c943c8399015844ef4cfe2e6ebca3220d2f6141df942f0d5c5767716c1d"
+    }
+  },
+  "semantic_report_equal": true,
+  "ignored_report_fields": [
+    "files[].duration_seconds"
+  ],
+  "final_queue": {
+    "integrity": "ok",
+    "foreign_key_errors": 0,
+    "tasks": 51,
+    "task_statuses": {
+      "succeeded": 51
+    },
+    "attempt_statuses": {
+      "interrupted": 2,
+      "succeeded": 51
+    },
+    "running": [],
+    "duplicate_successful_results": 0,
+    "model_attempts": 0
+  },
+  "complete": true,
+  "inventoried": 12,
+  "published": 5,
+  "quarantined": 7,
+  "passed": true,
+  "container": {
+    "image": "redactor:native-v25",
+    "image_id": "sha256:d97ef5408af1e7c7df6291bef8a00acc5acc08afdf6a244799ae0c5d5582ea6e",
+    "cpus": 2.0,
+    "memory_bytes": 1000000000,
+    "memory_swap_bytes": 1000000000,
+    "network": "none",
+    "oom_killed": false
+  },
+  "baseline": "benchmarks/held-in-local-v25.json"
+}
