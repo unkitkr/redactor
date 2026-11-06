@@ -78,6 +78,7 @@ def resolve_batch(
             explicit_older_age=observation.evidence.explicit_older_age,
             anchor_name=observation.evidence.name if observation.is_anchor else "",
             observed_name=observation.evidence.name,
+            name_components=tuple(sorted(set(observation.evidence.name.split()))),
         )
         existing = cohorts.get(match.identity_key)
         if existing is None:

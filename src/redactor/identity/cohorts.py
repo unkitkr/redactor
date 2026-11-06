@@ -24,8 +24,14 @@ def merge_cohorts(first: IdentityCohort, second: IdentityCohort) -> IdentityCoho
         birth_date=first.birth_date or second.birth_date,
         reference_date=max(references) if references else None,
         explicit_older_age=first.explicit_older_age or second.explicit_older_age,
-        anchor_name=first.anchor_name or second.anchor_name,
+        anchor_name=max(
+            (first.anchor_name, second.anchor_name),
+            key=lambda name: (len(name.split()), len(name), name),
+        ),
         observed_name=min(first.observed_name, second.observed_name),
+        name_components=tuple(
+            sorted(set(first.name_components + second.name_components))
+        ),
     )
 
 
@@ -51,6 +57,10 @@ def resolve_cohort(
         reference_date=cohort.reference_date,
         older_age_group=older_age,
         surrogate_name=person_name(
-            cohort.identity_key, key, cohort.anchor_name or cohort.observed_name
+            cohort.identity_key,
+            key,
+            " ".join(cohort.name_components)
+            or cohort.anchor_name
+            or cohort.observed_name,
         ),
     )

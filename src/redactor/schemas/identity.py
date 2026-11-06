@@ -54,6 +54,7 @@ class IdentityCohort(BaseModel, frozen=True, extra="forbid"):
     explicit_older_age: bool = False
     anchor_name: str = ""
     observed_name: str = ""
+    name_components: tuple[str, ...] = ()
 
 
 class IdentityResolutionProgress(BaseModel, frozen=True, extra="forbid"):

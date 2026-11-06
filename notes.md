@@ -23,6 +23,7 @@
 
 - **File handling:** valid mislabeled files keep their detected native format and original name; corrupt files and unassessed hidden surfaces quarantine.
 - **Identity:** scoped identifiers and corroborating evidence link people, never names alone; conflicting middle names cannot link through shorter spellings, and provider roles stay separate.
+- **Identity order:** cohorts combine name components in sorted order, so processing order cannot choose the source spelling used to avoid surrogate collisions.
 - **Mentions:** a surname can resolve within an established record context; an unlinked person gets a separate contextual surrogate instead of forcing a name-only identity merge.
 - **Model evidence:** NER retains clinical context and original entity labels support datatype checks; clinical expressions and narrative verbs are preserved, without claiming universal recall.
 - **Clinical content:** typed fields use deterministic transformations, while clinical codes, values, units, medications and diseases retain their content.

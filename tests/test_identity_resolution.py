@@ -218,6 +218,51 @@ def test_identity_snapshot_matches_clean_run_after_sigkill_and_atomic_rollback(
         )
 
 
+def test_identity_aliases_resolve_identically_in_reversed_record_order(
+    tmp_path: Path,
+) -> None:
+    key = bytes(range(32))
+    evidence = tuple(
+        IdentityEvidence(
+            role="patient",
+            name=name,
+            identifier="27193",
+            identifier_namespace="mrn",
+            birth_date=date(1974, 2, 8),
+            reference_date=date(2026, 1, 2),
+            context_key=f"record-{index}",
+        )
+        for index, name in enumerate(
+            ("Alex Stone", "Alex M Stone", "Alex Morgan Stone")
+        )
+    )
+    expected: ResolvedIdentity | None = None
+    for index, ordered in enumerate((evidence, tuple(reversed(evidence)))):
+        source = tmp_path / str(index) / "input"
+        source.mkdir(parents=True)
+        with (source / "records.csv").open("w", newline="") as stream:
+            writer = csv.writer(stream)
+            writer.writerow(("patient", "mrn", "birth_date"))
+            for person in ordered:
+                writer.writerow((person.name, person.identifier, person.birth_date))
+        with closing(open_database(tmp_path / str(index) / ".redactor")) as connection:
+            run, sources = _seed_analysis(connection, source, {"records.csv": ordered})
+            resolution = claim_task(connection, step=STEP_RESOLVE)
+            assert resolution is not None
+            result = resolve_task(connection, resolution, mapping_key=key)
+            complete_task(connection, resolution, result=result.artifact)
+            _, lookup = load_identity_lookup(connection, run.resolution_task_id, key)
+            for person in ordered:
+                resolved = lookup(
+                    sources["records.csv"],
+                    prepare_observation(person, key).observation_key,
+                )
+                assert resolved.match.status == "corroborated"
+                if expected is None:
+                    expected = resolved
+                assert resolved == expected
+
+
 def _seed_analysis(
     connection: sqlite3.Connection,
     input_directory: Path,
