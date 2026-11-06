@@ -1,13 +1,13 @@
 # Redactor
 
 A resumable PHI pseudonymization pipeline: inspect, extract, redact, save,
-independently verify, then publish. Unsafe or incompletely assessed files quarantine.
-Local processing is the default; hosted detection is optional.
+independently verify, then publish. Local mode is the default. Unsafe or
+incompletely assessed files quarantine. **This submission does not meet every acceptance gate.**
 
-## Setup and run
+## Run
 
-Requires [uv](https://docs.astral.sh/uv/) and Tesseract with English language data.
-Put the supplied files in `input/`, then run:
+Requires [uv](https://docs.astral.sh/uv/) and Tesseract with English data.
+Place the supplied files in `input/`:
 
 ```bash
 uv sync --locked
@@ -16,50 +16,45 @@ uv run python tools/init_environment.py
 uv run --env-file .env.local redactor --input input --state tmp/local/.redactor --workers 2
 ```
 
-Setup downloads pinned weights and creates a private `.env.local` without replacing
-an existing key. Keep that key and the state directory to resume the same run.
+Keep the generated secret and state to resume with the same command. Model weights
+are downloaded separately from Python dependencies. [Docker and configuration](docs/usage.md).
 
 For hosted mode, create `.env.hosted` with the same `REDACTOR_SECRET_KEY`,
-`LLM_ENABLED=1` and `LLM_API_KEY` set to your OpenRouter key, then run:
+`LLM_ENABLED=1` and your OpenRouter `LLM_API_KEY`:
 
 ```bash
 uv run --env-file .env.hosted redactor --input input --state tmp/hosted/.redactor --workers 2
 ```
 
-Local models: **GLiNER PII Edge UINT8 + PP-OCRv5**. Hosted detector:
-**`z-ai/glm-5.3-flash`**, with local fallback. Independent verification uses
-**spaCy + Tesseract**, deterministic checks and source/output comparisons.
+Local detection uses **GLiNER PII Edge UINT8 + PP-OCRv5**; hosted detection uses
+**`z-ai/glm-5.3-flash`**. Independent verification uses **spaCy + Tesseract**.
+Request/schema/span failures fall back locally; semantic ambiguity can still quarantine.
 Hosted judging and vision extraction are not integrated.
 
 ## Results
 
+Outputs appear beside the state directory: `published/`, `quarantine/`,
+`report.json`, `run.log`. Quarantine retains original sensitive files.
+The dashboard starts at <http://127.0.0.1:8765>; disable with `--no-dashboard`.
 
-Results go to `tmp/local/output/` or `tmp/hosted/output/`: `published/`,
-`quarantine/`, `report.json` and `run.log`. Quarantine retains original sensitive
-files. Exit code zero means processing reconciled, not that every file published.
-The dashboard starts at <http://127.0.0.1:8765>; disable it with `--no-dashboard`.
-
+Fresh v28 containers used **2 CPUs, 1,000,000,000 bytes RAM and no extra swap**.
 The supplied 12 files are development fixtures, not held-out accuracy data.
-Fresh production containers used **2 CPUs, 1,000,000,000 bytes RAM, no extra swap**.
 
-| Measurement | Local | Hosted GLM 5.3 Flash |
+| Measurement | Local | Hosted |
 | --- | ---: | ---: |
-| Published / quarantined | 5 / 7 | 5 / 7 |
-| Elapsed | 27.18 s | 562.21 s |
-| Peak container memory | 803.43 MiB | 768.57 MiB |
-| Endpoint attempts / recorded receipts | 0 / $0 | 162 / $0.0208 |
+| Published / quarantined | 6 / 6 | 5 / 7 |
+| Elapsed | 21.32 s | 408.58 s |
+| Peak memory | 801.74 MiB | 802.29 MiB |
+| Endpoint attempts / recorded cost | 0 / $0 | 121 / $0.0215 |
 
-The exact local result is committed in [`output/`](output/). Six valid files still
-quarantine; the corrupt file correctly fails container validation. Both replays
-preserved all output bytes and added no attempts. Hosted mode did not improve coverage. This does **not** meet full
-supplied-file acceptance. [Local evidence](benchmarks/held-in-local-v25.json) · [Hosted evidence](benchmarks/held-in-hosted-v25.json).
+[`output/`](output/) contains the exact local result. DOCX now publishes locally;
+five valid files still quarantine, plus the corrupt file. Both replays preserved
+all bytes and added no attempts. [Local](benchmarks/held-in-local-v28.json) ·
+[Hosted](benchmarks/held-in-hosted-v28.json) · [SIGKILL recovery](benchmarks/crash-replay-v28.json).
 
-Two [SIGKILL recoveries](benchmarks/crash-replay-v25.json) matched clean artifact bytes.
-Hosted receipt totals exclude three uncertain attempts; the cost bound was $0.0344.
+The [100,000-row run](benchmarks/bulk-100k-v29.json) published every row in 286.56 s
+with zero remote calls. **A7 remains failed:** the complete 2 GiB attempt timed out
+after 30 minutes. [Full-size evidence](benchmarks/large-csv-2g-v18.json).
 
-The full **2 GiB CSV gate failed**: the previous run timed out after 30 minutes,
-with 1.82 million of 11.2 million rows analyzed and none published.
-[Measurement](benchmarks/large-csv-2g-v18.json).
-
-[Detailed usage and Docker](docs/usage.md) · [Design](DESIGN.md) ·
-[Decisions and limitations](notes.md) · [Accuracy](benchmarks/accuracy-v25.json)
+[Design](DESIGN.md) · [Decisions and limitations](notes.md) ·
+[Requirement coverage](docs/requirements.md) · [Accuracy](benchmarks/accuracy-v28.json)

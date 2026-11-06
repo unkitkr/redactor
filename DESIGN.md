@@ -16,19 +16,19 @@ upper-bound extensions. Clinical values remain unchanged. Saved images must matc
 source pixels plus recorded masks; PNG/TIFF preserve other pixels exactly, while
 JPEG uses a defined codec round trip.
 
-The [small baseline](benchmarks/baseline-30000.json) published 30,000 rows, 5.75 MB,
-in 38.41 seconds using two CPUs and 1 GiB. It is not representative of large files
-or heterogeneous clinical data. **A7 failed:** the [full 2 GiB v18 run](benchmarks/large-csv-2g-v18.json)
-timed out at 1,800.25 seconds, having analyzed 1.82 million of 11.2 million rows,
-rewritten zero and accumulated 3.07 GB of state near the 1 GB memory ceiling.
-Required completed throughput was at least 6,222 rows/s; achieved publication
-throughput was zero. Neither result establishes v25 bulk performance.
+The [complete 100,000-row run](benchmarks/bulk-100k-v29.json) published 19.18 MB
+in 286.56 seconds under two CPUs and 1,000,000,000 bytes of RAM, with no swap or
+external calls. Independent verification took 178.70 seconds; peak memory was
+970.94 MB. An auxiliary artifact observer was included in these unadjusted totals.
+This subset does not establish large-file throughput. **A7 remains failed:** the
+[full 2 GiB v18 run](benchmarks/large-csv-2g-v18.json) timed out at 1,800.25 seconds,
+having analyzed 1.82 million of 11.2 million rows and published none.
 
-The [v25 text accuracy record](benchmarks/accuracy-v25.json) binds its measurements
-to source, corpus and model hashes. Its 40 reused development cases are not new
+The [v28 text accuracy record](benchmarks/accuracy-v28.json) binds measurements to
+source, corpus and model hashes. Its 40 reused development cases are not new
 full-document labels or a general recall guarantee. [README.md](README.md) records
-final supplied-file outcomes separately. Adapter support does not imply publication;
-the supplied FHIR file still lacks sufficient coverage evidence.
+supplied-file outcomes separately. Native adapter support does not imply publication;
+model disagreement and incomplete clinical evidence still cause valid files to quarantine.
 
 ## 1. Unit of work and parallelism
 
@@ -81,20 +81,20 @@ no prefix is published. None of these designs permits truncation to meet a deadl
 These are planning assumptions, not market quotes or achieved throughput. Use decimal
 1 PB = 1,000 TB. Assume 80% structured/text bytes and 20% scanned bytes, with scans
 averaging 0.5 MB/page: 400,000 scanned pages per TB. Assume a 2-vCPU, 4-GiB worker
-costs $0.10/hour; complete text processing, including verification, sustains 0.5 GB/hour;
+costs $0.10/hour; complete text processing, including verification, sustains 0.24 GB/hour;
 rendering, two OCR passes and pixel checks consume two worker-seconds/page.
 
 | Component | Assumption per input TB | Cost/TB |
 | --- | --- | ---: |
-| Text processing | 800 GB / 0.5 GB/hour | $160.00 |
+| Text processing | 800 GB / 0.24 GB/hour | $333.33 |
 | Scan processing | 400,000 pages × 2 seconds | $22.22 |
 | Storage | Three TB copies retained three months, $10/TB-month | $90.00 |
 | Object operations and ledger | Provisional allowance | $5.00 |
 | Selective remote inference | Calculation below | $40.08 |
-| Total with 20% contingency | Compute, storage and inference | **$380.76** |
+| Total with 20% contingency | Compute, storage and inference | **$588.76** |
 
-The corresponding 1 PB estimate is **$380,760**, excluding human review and egress.
-Local-only planning cost is approximately **$332.67/TB**, or **$332,670/PB**.
+The corresponding 1 PB estimate is **$588,760**, excluding human review and egress.
+Local-only planning cost is approximately **$540.67/TB**, or **$540,670/PB**.
 
 For the model allowance, assume four bytes/token for text, 1,000 OCR tokens/page,
 1,000-token candidate chunks, and remote selection of 0.1% of chunks. That gives
@@ -102,7 +102,8 @@ For the model allowance, assume four bytes/token for text, 1,000 OCR tokens/page
 $0.15/million input and $0.50/million output tokens yield $40.08/TB. Prompt overhead
 must fit those caps; retries consume contingency. Tenfold selection multiplies the
 model line tenfold. Smaller scanned pages increase pages/TB and OCR cost. Benchmark
-real mixtures before procurement; the small baseline cannot justify these rates.
+real mixtures before procurement. The text rate is rounded from the 100,000-row
+measurement; neither that subset nor the unmeasured scan rate establishes fleet throughput.
 
 ## 5. Fleet limits and hard budgets
 
