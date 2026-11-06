@@ -6,9 +6,10 @@ RUN apt-get update \
 
 WORKDIR /opt/redactor
 COPY pyproject.toml uv.lock README.md ./
-COPY src ./src
 RUN pip install --no-cache-dir uv==0.9.28 \
-    && uv sync --frozen --no-dev --python /usr/local/bin/python
+    && uv sync --frozen --no-dev --no-install-project --python /usr/local/bin/python
+COPY src ./src
+RUN uv sync --frozen --no-dev
 
 ENV PATH="/opt/redactor/.venv/bin:$PATH" \
     OMP_NUM_THREADS=1 \
