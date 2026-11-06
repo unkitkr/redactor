@@ -1,0 +1,32 @@
+{
+  "measurement": "initial_csv_baseline",
+  "measured_date": "2026-11-06",
+  "image_id": "sha256:88c5aeaa5c7c73ab64dab6ce7cf03c758dc49781f6333c75ef4e1d16f665dcd7",
+  "source_revision": "not recorded for this baseline image",
+  "generator": "tools/make_large_csv.py",
+  "generator_sha256": "ec2d9caa5095ddedc6846bb986d95db9f44b04def7ba20fd06999c65a5607c8c",
+  "generator_arguments": {
+    "size_gb": 0.005,
+    "seed": 1
+  },
+  "container": {
+    "vcpus": 2,
+    "memory_bytes": 1073741824,
+    "memory_swap_bytes": 1073741824,
+    "network": "none",
+    "remote_models_enabled": false
+  },
+  "input_bytes": 5753686,
+  "input_sha256": "69f55be733a33b4f91236a0824328a7bf79194974a4fe241dfede21853ae5593",
+  "rows": 30000,
+  "wall_seconds": 38.41280714300228,
+  "peak_cgroup_memory_bytes": 361148416,
+  "rows_per_second": 780.9895248820716,
+  "input_mib_per_second": 0.14284669543776915,
+  "exit_code": 0,
+  "published_files": 1,
+  "quarantined_files": 0,
+  "model_cost_bound_nanos": 0,
+  "oom_killed": false,
+  "scope": "Small baseline only. This does not validate the 2 GiB / 30 minute requirement."
+}

@@ -1,48 +1,43 @@
 ## Architecture
 
-- SQLite owns the durable queue; the coordinator handles startup and recovery, and workers claim one file step at a time.
-- A shared run lock prevents recovery while workers from an earlier run remain alive.
-- Inspection and analysis feed a shared identity-resolution barrier before rewriting, verification, publication or quarantine, and reconciliation.
-- A bounded, immutable inventory binds each run to its files, processing policy and secret key; changed inputs or policy create separate work identities.
-- Step completion and successor registration are atomic; large files use bounded chunks and parser-aware checkpoints rather than row queues.
-- Large artifacts live on private disk with references in SQLite; recovery requires retaining both, and atomic publication requires one filesystem.
-- Verification reopens original and output bytes, independently checks native surfaces and clinical preservation, and binds its verdict to the exact artifact.
-- Every required verification check must pass; failures and unresolved coverage quarantine the file, and expected surrogates are allowed only at their intended locations.
-- One inference-capable worker and one light worker bound model duplication; reports come from committed outcomes and request accounting.
+- SQLite owns the queue and step ledger; workers claim file steps, and a shared run lock prevents recovery while an earlier worker survives.
+- Inspection and analysis feed a frozen cross-file identity snapshot before rewriting, independent saved-output verification, publication or quarantine, and report reconciliation.
+- File bytes, configuration and secret-key identity bind the run; task fencing, atomic successors, durable checkpoints and atomic file installation support replay.
+- Large artifacts stay on private disk; CSV checkpoints use complete record boundaries, and recovery requires retaining both the database and artifact directory.
+- One inference worker and one light worker bound model duplication; reports derive from committed outcomes rather than worker messages.
 
 ## Stack
 
-- SQLite WAL, short transactions, and numbered SQL migrations avoid extra services and an ORM; writes remain serialized.
-- Pydantic validates schemas; TOML configures processing, models, budgets, and resource limits, while secrets remain environment-only.
-- The OpenAI SDK targets the supplied endpoint through bounded retries, shared circuit state, and durable cost reservations.
-- Transient failures use capped exponential backoff with jitter and Retry-After; attempt counts, pending waits, request deadlines, and cost reservations survive restarts.
-- Hosted text calls require configured token prices; byte-based token bounds reserve possible charges, and uncertain requests keep their full reservation.
-- spaCy small and Tesseract are the selected local baselines; model packages are pinned at installation and runtime never downloads weights.
-- PyMuPDF handles PDF rendering and rewriting under its documented AGPL license, with separate saved-output verification.
+- SQLite WAL with short transactions avoids external services; writers still serialize, and state grows with input and identity evidence.
+- Pydantic validates contracts; TOML configures behavior; AES-GCM protects identifying state, with secrets supplied through the environment.
+- spaCy small and Tesseract are the selected local baselines; installed model weights require no runtime downloads.
+- The OpenAI SDK wrapper provides durable response caching, bounded exponential backoff, Retry-After, shared circuit state and cost reservations.
+- PyMuPDF is selected for PDF work under its AGPL license; format adapters retain native containers and original output names.
 
 ## Choices
 
-- Typed fields and supported patterns use deterministic processing; model-dependent work uses the enabled endpoint with local fallback.
-- Repeated small text units use a bounded NER cache; oversized units are never silently truncated, and spaCy memory zones release temporary vocabulary.
-- Verification always runs; remote judging examines unresolved units only, uses separate configuration, and obeys the global model-disable switch.
-- Remote judge findings require location-bound evidence and cannot override failed deterministic checks or unassessed native surfaces.
-- Identity matching uses scoped identifiers and corroborating evidence; contradictory people stay separate even when an identifier value receives one consistent replacement.
-- Initials and omitted middle names require corroboration; compatible anchors share one identity, conflicting middle names cannot be joined through a shorter spelling, and names alone never merge people.
-- Identity evidence uses encrypted SQLite records with keyed indexes; bounded batches commit evidence and complete-record scan offsets together.
-- Frozen identity snapshots exclude rejected sources; matched aliases share one clinical reference date and older-age decision across files.
-- Providers have separate pseudonyms; a person appearing as patient and provider retains separate role identities.
-- Patient dates share one keyed offset; unattributable dates use a stable separate context, with patient linkage explicitly unresolved.
-- Ages of 90 or more become 90+; ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications, and diseases are preserved.
-- Exactly 90 is included; birth dates revealing older ages before or after shifting are generalized against clinical reference dates, with quarantine when a valid native representation is unavailable; clinical event intervals remain intact.
-- Device production identifiers and ambiguous lot fields are pseudonymized; known shared medication batches remain unless patient linkage is evident, following the [HHS distinction between model and production identifiers](https://www.hhs.gov/hipaa/for-professionals/faq/can-device-identifier-di-portion-unique-device-identifier-udi-be-part-limited-or-de-identified/index.html).
-- Keyed replacements use environment secrets; retained identifying evidence and model responses require encryption and private storage.
-- Record identifiers use 18-digit keyed surrogates to reduce collisions; native length limits and collisions must be checked before publication, and provider NPIs retain a valid check digit.
-- Private evidence uses AES-GCM with fresh nonces and context-bound keys; only opaque references and safe counters belong in queue metadata.
-- HL7 uses its declared delimiters and field semantics; unknown populated fields and unsupported component structures fail closed.
-- Valid mislabeled files retain their actual native format and original output name; corrupt, unsupported, or unverifiable content is quarantined without silent repair.
-- Native parser inputs and individual archive members default to 32 MiB, expanded archives to 256 MiB, and images to 16 million pixels; streaming CSV, JSON, and text have separate record limits.
-- Nested input paths are preserved under the output root to avoid collisions between files with the same basename.
-- Initial coverage targets the supplied file families plus CSV/TSV; legacy binary XLS is explicitly unsupported, and pixel PHI may be masked.
-- Large structured files must cover every row and complete verification without hosted calls; local-model quality and the container resource targets remain unmeasured.
-- Remote results may drive processing; saved responses replay, while a crash before saving can require a bounded retry with a different answer or another charge.
-- The clinical pipeline and its verifier are being implemented; this log describes chosen behavior, not a claim of completed format coverage.
+- Typed fields and supported patterns use deterministic transformations; hosted detection and judging have local fallback and obey the global model-disable switch.
+- Verification always runs; failed checks or unknown coverage quarantine the original, and surrogate exemptions apply only to complete, specific edit spans.
+- Scoped identifiers and corroborating evidence link identities; names alone do not, conflicting middle names cannot be joined through a shorter spelling, and provider roles stay separate.
+- Matched patients share one date offset and clinical reference; dates without patient linkage use a separate stable context.
+- Ages at or above 90 become 90+; revealing birth dates are generalized, with quarantine when the native format cannot represent the bound; event intervals remain intact.
+- ZIP codes become permitted three-digit prefixes or 000; clinical codes, values, units, medications and diseases retain their content.
+- Device production identifiers and ambiguous lot fields are pseudonymized; known shared medication batches remain unless patient linkage is evident, following the [HHS distinction](https://www.hhs.gov/hipaa/for-professionals/faq/can-device-identifier-di-portion-unique-device-identifier-udi-be-part-limited-or-de-identified/index.html).
+- Valid mislabeled files use their detected native format; corrupt inputs, unsupported populated HL7 fields and unassessed hidden surfaces fail closed.
+- A saved remote response replays; a crash before saving may require another bounded request, with a different answer or another charge.
+
+## Measurements
+
+- Initial CSV baseline: 30,000 rows / 5,753,686 bytes in 38.41 seconds, 781 rows/s, 0.143 MiB/s, and 344.4 MiB peak cgroup memory under 2 vCPUs / 1 GiB with networking and remote models disabled; every row was verified and published, with no OOM or model charge ([measurement](benchmarks/baseline-30000.json)).
+- Models exercised so far: spaCy `en_core_web_sm` 3.8.0 in the pipeline and Tesseract through PyMuPDF in a single-image OCR probe; accuracy scores and comparisons with other models are not yet established.
+- This baseline uses an earlier image; it does not establish performance of the current code or satisfy the required 2 GiB / 30 minute benchmark.
+
+## Known limitations
+
+- Current publication paths cover CSV/TSV, bounded labelled text, supported XLSX parts and supported HL7 ADT fields; other formats and unsupported Office surfaces currently quarantine.
+- Native files and individual archive members default to 32 MiB, expanded archives to 256 MiB, and images to 16 million pixels; only CSV rewriting currently streams beyond the native-file limit.
+- Local NER and supported clinical patterns are conservative; coded laboratory descriptions outside the recognized vocabulary quarantine, and clinical recall has not been measured against a labelled corpus.
+- Writer and verifier share policy functions and local NER, so correlated detection misses remain a risk despite separate serialized-output and residual checks.
+- The hosted provider is tested independently but is not yet connected to the publication pipeline; remote judging and OCR verification are not implemented.
+- Legacy binary XLS is intentionally unsupported; cross-issuer linkage, a persistent surrogate-collision audit, the shared-medication-batch exception and full-run crash equivalence remain unvalidated or incomplete.
+- Atomic installation requires one filesystem; loss of the state directory or the original secret prevents safe replay, and existing conflicting outputs are never overwritten.

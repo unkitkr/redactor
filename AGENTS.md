@@ -16,6 +16,8 @@ working clinical publication path.
 - Keep `notes.md` as a short, evaluator-facing architecture and decision log.
   Read it before making architectural choices or selecting models and dependencies.
 - Group concise, one-line bullets under `Architecture`, `Stack`, and `Choices`.
+  Keep measured results under `Measurements` and current boundaries under
+  `Known limitations`; these are evidence and constraints, not task lists.
   Record system design, selected technologies, and policy decisions respectively.
   Include assumptions that materially affect correctness. Use natural, neutral language
   without first-person wording, introductory prose, or em dashes.
@@ -24,6 +26,14 @@ working clinical publication path.
   task lists, undecided proposals, and model shortlists out of `notes.md`.
 - Include relevant known limitations and only tradeoffs deliberately accepted.
   Distinguish a chosen design from implemented capability without adding a roadmap.
+- Record benchmark conditions, input size and row count, elapsed time, peak memory,
+  throughput, model mode, and whether the actual acceptance target was exercised.
+  Keep detailed, PHI-free measurements in `benchmarks/` and link them from the notes.
+  Never present an extrapolation or an earlier image as a final benchmark.
+- Accuracy records must identify the labelled corpus and exact model or weight
+  version, report precision/recall and clinical-preservation failures, and distinguish
+  tested models from research candidates. Include verifier false accepts/rejects
+  where reference labels exist; a small synthetic corpus is not a production recall claim.
 - Update the notes when an architectural decision is made or changes. Replace
   superseded points so the log stays short and accurate.
 - Keep coding conventions in this file. Use no em dashes here either, and never
