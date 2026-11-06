@@ -65,16 +65,46 @@ def verify_images(
         FileAnalysis,
         encryption_key=mapping_key,
     )
-    source = read_image_frames(task.input_path, settings.resources)
-    output = read_image_frames(artifact.path, settings.resources)
+    if analysis.reason is not None:
+        raise ValueError(ERROR_COVERAGE)
+    frames = verify_image_content(
+        task.input_path,
+        artifact.path,
+        analysis.images,
+        analysis.file_type.upper(),
+        settings,
+        local_ner,
+    )
     if (
-        analysis.reason is not None
-        or not source
-        or not len(source) == len(output) == len(analysis.images)
+        inspect_artifact(task.input_path, persist=False) != original
+        or inspect_artifact(artifact.path, persist=False) != artifact
     ):
+        raise ValueError(ERROR_ARTIFACT_CORRUPT)
+    return tuple(
+        VerificationCheck(
+            kind=kind,
+            status=VERIFICATION_PASS,
+            expected=frames,
+            checked=frames,
+        )
+        for kind in (*REQUIRED_VERIFICATION_CHECKS, CHECK_PIXELS)
+    )
+
+
+def verify_image_content(
+    original_path: Path,
+    output_path: Path,
+    evidence_frames: tuple[PixelFrame, ...],
+    image_format: str,
+    settings: PipelineSettings,
+    local_ner: NerAdapter,
+) -> int:
+    source = read_image_frames(original_path, settings.resources)
+    output = read_image_frames(output_path, settings.resources)
+    if not source or not len(source) == len(output) == len(evidence_frames):
         raise ValueError(ERROR_COVERAGE)
     expected: list[Image.Image] = []
-    for before, evidence in zip(source, analysis.images, strict=True):
+    for before, evidence in zip(source, evidence_frames, strict=True):
         if (
             before.size != (evidence.width, evidence.height)
             or pixel_digest(before) != evidence.sha256
@@ -91,9 +121,7 @@ def verify_images(
         expected.append(Image.fromarray(pixels))
     # Fresh, independently constructed pixels also bind metadata and trailing
     # bytes. JPEG comparison includes the declared deterministic codec loss.
-    if artifact.path.read_bytes() != encode_image_frames(
-        tuple(expected), analysis.file_type.upper()
-    ):
+    if output_path.read_bytes() != encode_image_frames(tuple(expected), image_format):
         raise ValueError(ERROR_PIXELS)
     faces = load_face_detector(settings.local.model_directory / YUNET_DIRECTORY)
     source_ocr = load_tesseract(
@@ -110,7 +138,7 @@ def verify_images(
     with TemporaryDirectory() as temporary:
         path = Path(temporary) / PIXEL_TEMPORARY_FILENAME
         for before, after, evidence in zip(
-            source, output, analysis.images, strict=True
+            source, output, evidence_frames, strict=True
         ):
             before.save(path, format=PIXEL_PNG_FORMAT)
             regions = validate_ocr_regions(source_ocr(path), before.size)
@@ -123,20 +151,7 @@ def verify_images(
                 validate_ocr_regions(regions, after.size)
                 text, _ = located_words(regions)
                 scan_image_text(text, (), local_ner)
-    if (
-        inspect_artifact(task.input_path, persist=False) != original
-        or inspect_artifact(artifact.path, persist=False) != artifact
-    ):
-        raise ValueError(ERROR_ARTIFACT_CORRUPT)
-    return tuple(
-        VerificationCheck(
-            kind=kind,
-            status=VERIFICATION_PASS,
-            expected=len(source),
-            checked=len(source),
-        )
-        for kind in (*REQUIRED_VERIFICATION_CHECKS, CHECK_PIXELS)
-    )
+    return len(source)
 
 
 def _verify_source_regions(

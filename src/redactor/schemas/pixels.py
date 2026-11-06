@@ -23,4 +23,11 @@ class PixelFrame(BaseModel, frozen=True, extra="forbid"):
     masks: tuple[PixelMask, ...]
 
 
+class EmbeddedImageEvidence(BaseModel, frozen=True, extra="forbid"):
+    location: tuple[str, ...]
+    image_format: str
+    frames: tuple[PixelFrame, ...]
+    counts: dict[str, NonNegativeInt]
+
+
 PixelDetector = Callable[[Path], tuple[PixelMask, ...]]

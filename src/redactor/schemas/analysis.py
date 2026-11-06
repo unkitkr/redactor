@@ -3,7 +3,7 @@
 from pydantic import BaseModel, Field, NonNegativeInt
 
 from redactor.schemas.formats import FileFormat
-from redactor.schemas.pixels import PixelFrame
+from redactor.schemas.pixels import EmbeddedImageEvidence, PixelFrame
 
 
 class FileAnalysis(BaseModel, frozen=True, extra="forbid"):
@@ -12,3 +12,4 @@ class FileAnalysis(BaseModel, frozen=True, extra="forbid"):
     reason: str | None = None
     counts: dict[str, NonNegativeInt] = Field(default_factory=dict)
     images: tuple[PixelFrame, ...] = ()
+    embedded_images: tuple[EmbeddedImageEvidence, ...] = ()

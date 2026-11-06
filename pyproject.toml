@@ -10,6 +10,7 @@ dependencies = [
     "en-core-web-sm",
     "httpx>=0.28,<1",
     "ijson>=3.4,<4",
+    "lxml>=6,<7",
     "numpy>=2,<3",
     "onnxruntime==1.31.1",
     "openai>=2,<3",
@@ -77,5 +78,5 @@ show_missing = true
 en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
 
 [[tool.mypy.overrides]]
-module = ["onnxruntime.*", "tokenizers.*", "rapidocr.*"]
+module = ["onnxruntime.*", "tokenizers.*", "rapidocr.*", "lxml.*"]
 ignore_missing_imports = true

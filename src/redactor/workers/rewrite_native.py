@@ -3,6 +3,7 @@
 import sqlite3
 from collections import Counter
 
+from redactor.formats.embedded_images import rewrite_embedded_images
 from redactor.formats.native import read_native, write_native
 from redactor.identity.native import native_evidence
 from redactor.identity.rows import row_context
@@ -41,6 +42,11 @@ def rewrite_native_task(
     analysis_id = prepare_successor(connection, task, STEP_ANALYZE).task_id
     replacements: dict[tuple[str, ...], str] = {}
     counts: Counter[str] = Counter()
+    images = rewrite_embedded_images(
+        document.images, analysis.embedded_images, settings
+    )
+    for image in analysis.embedded_images:
+        counts.update(image.counts)
     for number, record in enumerate(document.records, start=1):
         evidence = native_evidence(record, task.input_sha256, number)
         context = row_context(
@@ -71,7 +77,9 @@ def rewrite_native_task(
     if counts != analysis.counts or len(document.records) != analysis.record_count:
         raise ValueError(ERROR_COVERAGE)
     path = create_temporary_file(connection, task)
-    write_native(task.input_path, path, inspection, replacements, settings.resources)
+    write_native(
+        task.input_path, path, inspection, replacements, settings.resources, images
+    )
     artifact = seal_temporary_file(connection, task)
     previous = latest_checkpoint(connection, task.task_id)
     save_checkpoint(

@@ -35,7 +35,9 @@ class ColumnPolicy(BaseModel, frozen=True, extra="forbid"):
     index: NonNegativeInt
     kind: FieldKind
     namespace: str = ""
-    identifier_prefix: str = Field(default="", max_length=16, pattern=r"^[A-Za-z_]*$")
+    identifier_prefix: str = Field(
+        default="", max_length=64, pattern=r"^[A-Za-z0-9_./:-]*$"
+    )
     supports_date_bounds: bool = True
     name_part: Literal["", "given", "family", "initial"] = ""
     numeric: bool = False

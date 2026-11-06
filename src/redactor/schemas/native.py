@@ -5,6 +5,11 @@ from pydantic import BaseModel
 from redactor.schemas.redaction import ColumnPolicy, RowEvidence
 
 
+class NativeImage(BaseModel, frozen=True, extra="forbid"):
+    location: tuple[str, ...]
+    content: bytes
+
+
 class NativeRecord(BaseModel, frozen=True, extra="forbid"):
     values: tuple[str, ...]
     policies: tuple[ColumnPolicy, ...]
@@ -15,3 +20,4 @@ class NativeRecord(BaseModel, frozen=True, extra="forbid"):
 
 class NativeDocument(BaseModel, frozen=True, extra="forbid"):
     records: tuple[NativeRecord, ...]
+    images: tuple[NativeImage, ...] = ()

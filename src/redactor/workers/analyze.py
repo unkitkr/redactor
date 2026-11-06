@@ -93,9 +93,10 @@ def analyze_task(
                     connection,
                     task,
                     inspection,
-                    resources=resources,
+                    settings=settings,
                     mapping_key=mapping_key,
                     detector=detector,
+                    local_ocr=local_ocr,
                 )
             before = file_version(task.input_path.stat())
             original = inspect_artifact(task.input_path, persist=False)

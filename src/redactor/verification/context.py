@@ -4,11 +4,12 @@ import sqlite3
 
 from redactor.persistence.files.registration import prepare_successor
 from redactor.persistence.files.results import read_step_result
+from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.formats import FileInspection
 from redactor.schemas.identity import IdentitySnapshot
 from redactor.schemas.persistence import Task
 from redactor.schemas.verification import VerificationContext
-from redactor.utils.constants import IMAGE_FORMATS, STEP_INSPECT
+from redactor.utils.constants import IMAGE_FORMATS, STEP_ANALYZE, STEP_INSPECT
 
 
 def verification_context(
@@ -27,6 +28,14 @@ def verification_context(
             encryption_key=mapping_key,
         )
         has_pixels = inspection.file_type in IMAGE_FORMATS
+        if not has_pixels:
+            analysis = read_step_result(
+                connection,
+                prepare_successor(connection, task, STEP_ANALYZE).task_id,
+                FileAnalysis,
+                encryption_key=mapping_key,
+            )
+            has_pixels = bool(analysis.embedded_images)
     snapshot = read_step_result(
         connection, resolution_task_id, IdentitySnapshot, encryption_key=mapping_key
     )
