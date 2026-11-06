@@ -1,0 +1,40 @@
+{
+  "pipeline_version": "pipeline-v28",
+  "verifier_version": "verifier-v22",
+  "implementation_revision": "72c6f04f7d2ed855df2f32b2b5e379f0464675cd",
+  "production_image_id": "sha256:3f7f7b2ec2cd8088f742a1f48b68e79bfe4a34e3d4fc76cf9910e0c07d649dfb",
+  "source_sha256": "db16f49d0af1d1fe92acb99db8af9394cf4b4b35a752da5301dd261499a7e674",
+  "static_checks": {
+    "ruff": "passed",
+    "format": "passed",
+    "mypy": "passed, 318 source files"
+  },
+  "host_suite": {
+    "passed": 252,
+    "skipped": 2,
+    "seconds": 81.44,
+    "scope": "Complete suite; macOS Tesseract-gated integrations skipped"
+  },
+  "linux_native_integration": {
+    "passed": 33,
+    "skipped": 0,
+    "seconds": 32.22,
+    "peak_cgroup_bytes": 676040704,
+    "cpu_limit": 2,
+    "requested_memory_bytes": 1000000000,
+    "swap_bytes": 0,
+    "network": "none",
+    "tests": [
+      "test_image_pipeline.py",
+      "test_pdf_pipeline.py",
+      "test_dicom_pipeline.py",
+      "test_docx_pipeline.py",
+      "test_fhir_pipeline.py",
+      "test_page_context.py",
+      "test_native_context.py",
+      "test_csv_batch_verification.py"
+    ],
+    "test_runner": "pytest 9.2.0 and its pure Python dependencies loaded from a separate /opt/pytest-deps overlay; production source and dependencies unchanged"
+  },
+  "interpretation": "Integration checks are implementation evidence, not complete-document recall estimates or full supplied-file acceptance."
+}
