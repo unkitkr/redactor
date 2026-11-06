@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, JsonValue, NonNegativeInt, PositiveInt
 
+from redactor.utils.constants import MAX_SQLITE_INTEGER, NANOS_PER_DOLLAR
+
 
 class ModelReservation(BaseModel, frozen=True, extra="forbid"):
     attempt_id: PositiveInt
@@ -14,9 +16,9 @@ class ModelReservation(BaseModel, frozen=True, extra="forbid"):
 
 
 class ModelUsage(BaseModel, frozen=True, extra="forbid"):
-    input_tokens: NonNegativeInt
-    output_tokens: NonNegativeInt
-    cost_nanos: NonNegativeInt
+    input_tokens: NonNegativeInt = Field(le=MAX_SQLITE_INTEGER)
+    output_tokens: NonNegativeInt = Field(le=MAX_SQLITE_INTEGER)
+    cost_nanos: NonNegativeInt = Field(le=MAX_SQLITE_INTEGER)
 
 
 class ModelUnavailable(BaseModel, frozen=True, extra="forbid"):
@@ -29,9 +31,11 @@ class ModelReceipt(BaseModel, frozen=True, extra="forbid"):
     requested_model: str
     returned_model: str
     provider: str | None = None
-    input_tokens: NonNegativeInt | None = None
-    output_tokens: NonNegativeInt | None = None
-    reported_cost_usd: Decimal | None = Field(default=None, ge=0)
+    input_tokens: NonNegativeInt | None = Field(default=None, le=MAX_SQLITE_INTEGER)
+    output_tokens: NonNegativeInt | None = Field(default=None, le=MAX_SQLITE_INTEGER)
+    reported_cost_usd: Decimal | None = Field(
+        default=None, ge=0, le=Decimal(MAX_SQLITE_INTEGER) / NANOS_PER_DOLLAR
+    )
 
 
 class ModelDecision(BaseModel, frozen=True, extra="forbid"):

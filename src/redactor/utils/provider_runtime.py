@@ -105,7 +105,9 @@ async def run_model_request(
                         completion = await request_completion(
                             client, settings, pricing, request
                         )
-                        receipt = completion_receipt(completion, pricing)
+                        received = completion_receipt(completion, pricing)
+                        usage = accounted_usage(received, pricing)
+                        receipt = received
                 except (
                     APIConnectionError,
                     httpx.HTTPError,
@@ -115,7 +117,6 @@ async def run_model_request(
                     settle_attempt(connection, claimed, reservation, None)
                     failure = classify_model_error(error)
                 else:
-                    usage = accounted_usage(receipt, pricing)
                     settle_attempt(connection, claimed, reservation, usage)
                     if usage is not None and usage.cost_nanos > maximum_cost:
                         failure = ModelFailure(reason_code=ERROR_MODEL_PRICE_BOUND)

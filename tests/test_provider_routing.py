@@ -16,6 +16,7 @@ from redactor.schemas.configuration import (
     VerificationSettings,
 )
 from redactor.schemas.provider import ModelRequest, ModelUnavailable
+from redactor.utils.constants import MAX_SQLITE_INTEGER
 from redactor.utils.errors import ERROR_MODEL_PRICE_BOUND, ERROR_MODEL_RESPONSE
 from redactor.utils.provider import request_json
 
@@ -23,7 +24,16 @@ from redactor.utils.provider import request_json
 def test_openrouter_routing_receipts_and_overcharge_fail_closed(
     connection: sqlite3.Connection, source_file: Path
 ) -> None:
-    for scenario in ("detector", "judge", "overcharge", "invalid_cost"):
+    malformed_scenarios = (
+        "invalid_cost",
+        "cost_object",
+        "huge_cost",
+        "huge_input_tokens",
+        "huge_output_tokens",
+        "negative_tokens",
+        "unrepresentable_token_cost",
+    )
+    for scenario in ("detector", "judge", "overcharge", *malformed_scenarios):
         version = f"openrouter-{scenario}"
         register_file(connection, source_file, "analyze", version)
         claimed = claim_task(connection, processing_version=version)
@@ -76,9 +86,22 @@ def test_openrouter_routing_receipts_and_overcharge_fail_closed(
             assert payload["temperature"] == 0
             assert payload["max_tokens"] == 2048
             assert payload["response_format"] == {"type": "json_object"}
-            reported_cost = (
-                "NaN" if case == "invalid_cost" else 0.01 if case == "overcharge" else 0
-            )
+            reported_cost: object = 0.01 if case == "overcharge" else 0
+            if case == "invalid_cost":
+                reported_cost = "NaN"
+            elif case == "cost_object":
+                reported_cost = {"unexpected": "value"}
+            elif case == "huge_cost":
+                reported_cost = "1e100000000"
+            input_tokens = output_tokens = 10
+            if case == "huge_input_tokens":
+                input_tokens = MAX_SQLITE_INTEGER + 1
+            elif case == "huge_output_tokens":
+                output_tokens = MAX_SQLITE_INTEGER + 1
+            elif case == "negative_tokens":
+                input_tokens = -1
+            elif case == "unrepresentable_token_cost":
+                output_tokens = MAX_SQLITE_INTEGER
             return httpx.Response(
                 200,
                 json={
@@ -98,9 +121,9 @@ def test_openrouter_routing_receipts_and_overcharge_fail_closed(
                         }
                     ],
                     "usage": {
-                        "prompt_tokens": 10,
-                        "completion_tokens": 10,
-                        "total_tokens": 20,
+                        "prompt_tokens": input_tokens,
+                        "completion_tokens": output_tokens,
+                        "total_tokens": input_tokens + output_tokens,
                         "cost": reported_cost,
                     },
                 },
@@ -118,10 +141,17 @@ def test_openrouter_routing_receipts_and_overcharge_fail_closed(
             transport=transport,
         )
         assert calls == 1
-        if scenario == "invalid_cost":
+        if scenario in malformed_scenarios:
+            assert decision.backend == "local"
             assert decision.reason_code == ERROR_MODEL_RESPONSE
             assert decision.receipt is None
             assert accounted_cost(connection, version) > 0
+            attempt = connection.execute(
+                "SELECT status, charged_nanos FROM model_attempts WHERE task_id = ?",
+                (claimed.task_id,),
+            ).fetchone()
+            assert attempt["status"] == "uncertain"
+            assert attempt["charged_nanos"] is None
             continue
         assert decision.receipt is not None
         assert decision.receipt.returned_model == "returned-model-version"

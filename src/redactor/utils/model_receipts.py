@@ -24,6 +24,8 @@ def completion_receipt(
             if not reported_cost.is_finite() or reported_cost < 0:
                 raise ValueError(ERROR_MODEL_RESPONSE)
     provider = (completion.model_extra or {}).get("provider")
+    # Validate Decimal magnitude before accounting converts it to an integer;
+    # even a short exponent string can otherwise demand an enormous allocation.
     return ModelReceipt(
         requested_model=pricing.model,
         returned_model=completion.model,
