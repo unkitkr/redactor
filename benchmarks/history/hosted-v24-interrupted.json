@@ -1,0 +1,58 @@
+{
+  "benchmark": "interrupted_hosted_diagnostic",
+  "pipeline_version": "pipeline-v24",
+  "complete": false,
+  "reason": "Superseded by final v25 identity namespace correction; stopped to avoid concurrent duplicate hosted work",
+  "queue": {
+    "tasks": 25,
+    "attempts": 19,
+    "model_attempts": 86,
+    "statuses": {
+      "pending": 6,
+      "running": 1,
+      "succeeded": 18
+    }
+  },
+  "detection": {
+    "unique_observation_backends": {
+      "local": 12,
+      "remote": 73
+    },
+    "local_reasons": {
+      "invalid_remote_model_response": 11,
+      "invalid_entity_span_evidence": 1
+    },
+    "returned_models": {
+      "z-ai/glm-5.3-flash": 85
+    },
+    "providers": {
+      "Novita": 2,
+      "PrimeIntellect": 4,
+      "Morph": 5,
+      "Makora": 11,
+      "CoreWeave": 8,
+      "OpenInference": 4,
+      "DigitalOcean": 4,
+      "Modal": 6,
+      "Crusoe": 4,
+      "Cohere": 4,
+      "Wafer": 6,
+      "InferenceNet": 9,
+      "Together": 3,
+      "Particle AI": 9,
+      "Reka": 3,
+      "BaseTen": 1,
+      "Friendli": 1,
+      "DeepInfra": 1
+    },
+    "persisted_receipt_cost_usd": "0.010208018208470",
+    "persisted_cost_receipts": 85,
+    "receipt_scope": "Last completed response per durable decision; ledger covers all attempts"
+  },
+  "cgroup": {
+    "cpu.max": "200000 100000",
+    "memory.max": 999997440,
+    "memory.swap.max": 0,
+    "memory.peak": 815001600
+  }
+}

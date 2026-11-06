@@ -1,0 +1,111 @@
+{
+  "export": {
+    "system": "claims-hub",
+    "schema": "v3",
+    "record_count": 3
+  },
+  "members": {
+    "Skyler Rosewell": {
+      "member_id": "244735574340350436",
+      "payer": "Organization 038936668542145356",
+      "dob": "1964-11-23",
+      "relationship": "self"
+    },
+    "955983108833140040": {
+      "member_id": "080853729842228913",
+      "payer": "Organization 612604284536711887",
+      "plan": "Organization 095190653223006271"
+    }
+  },
+  "claims": [
+    {
+      "claim_id": "700787811542712341",
+      "subscriber": {
+        "name": {
+          "family": "Rosehaven",
+          "given": [
+            "Reese",
+            "R"
+          ]
+        },
+        "address": {
+          "line": [
+            "9458 Dalebury Road"
+          ],
+          "city": "Langbury",
+          "state": "CA",
+          "postalCode": "941"
+        }
+      },
+      "service_date": "2027-04-12",
+      "rendering_provider": {
+        "npi": "1980103166",
+        "name": "Fairton, Rowan"
+      },
+      "lines": [
+        {
+          "cpt": "99223",
+          "icd10": [
+            "E11.9",
+            "I10"
+          ],
+          "units": 1,
+          "amount": 412.5
+        },
+        {
+          "hcpcs": "J1885",
+          "ndc": "0409-3795-01",
+          "units": 2,
+          "amount": 38.0
+        }
+      ],
+      "attachments": [
+        {
+          "kind": "eligibility_check",
+          "content_type": "application/json",
+          "encoding": "base64",
+          "data": "eyJzc24iOiAiMTcyNTYzNTQ4NzM2NTU0ODI1IiwgImRvYiI6ICIxOTY2LTA5LTA0IiwgInZlcmlmaWVkIjogdHJ1ZX0="
+        }
+      ],
+      "portal": {
+        "last_login_ip": "10.40.47.131",
+        "last_login_ipv6": "fd90:2b77:18d4:849:ed8d:81c7:b47e:111f",
+        "session_url": "https://example.invalid/266012995034769498"
+      },
+      "notes": "Called pt at 732-276-4433 on 04/15/2027; confirmed address."
+    },
+    {
+      "claim_id": "491373751041563383",
+      "subscriber": {
+        "name": {
+          "family": "Millgrove",
+          "given": [
+            "Rowan"
+          ]
+        },
+        "dob": "1982-07-13"
+      },
+      "service_date": "2027-04-09",
+      "lines": [
+        {
+          "cpt": "99213",
+          "icd10": [
+            "J45.909"
+          ],
+          "units": 1,
+          "amount": 134.0
+        }
+      ],
+      "portal": {
+        "last_login_ip": "10.237.37.107"
+      }
+    }
+  ],
+  "unmatched": [
+    {
+      "name": "Northford, Morgan",
+      "service_date": "2026-06-25",
+      "reason": "multiple members match"
+    }
+  ]
+}

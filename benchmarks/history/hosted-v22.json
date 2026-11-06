@@ -1,0 +1,584 @@
+{
+  "benchmark": "held_in_pipeline",
+  "schema_version": 1,
+  "scope": "Supplied assignment inputs; development evidence, not held-out accuracy",
+  "command": [
+    "/opt/redactor/.venv/bin/python",
+    "-m",
+    "redactor",
+    "--input",
+    "/input",
+    "--state",
+    "/benchmark/hosted/.redactor",
+    "--config",
+    "/opt/redactor/redactor.toml",
+    "--workers",
+    "2"
+  ],
+  "platform": "Linux-6.12.54-linuxkit-aarch64-with-glibc2.41",
+  "python_version": "3.12.16",
+  "runtime_versions": {
+    "onnxruntime": "1.31.1",
+    "tokenizers": "0.23.3",
+    "spacy": "3.8.18"
+  },
+  "model_mode": "hosted_with_local_fallback",
+  "local_ner": {
+    "backend": "gliner",
+    "artifact_directory": "gliner-pii-edge-v1.0",
+    "artifacts": {
+      "gliner_config.json": {
+        "bytes": 4316,
+        "sha256": "77e6b57335c4bfd461e9041682196dd6c373a0b09bbd9269ef9e95b807915340"
+      },
+      "tokenizer.json": {
+        "bytes": 3583593,
+        "sha256": "84b3a9b18f04a0ccd03b72d9f871b7e0bec40fd7021ef50bc30a7c3693c11205"
+      },
+      "onnx/model_quint8.onnx": {
+        "bytes": 45820894,
+        "sha256": "988acb03456b26e2d9f2521016d820310c2ed64deb4a846297d3289f0c2eb7e4"
+      }
+    }
+  },
+  "remote_enabled": true,
+  "detection": {
+    "unique_observation_backends": {
+      "remote": 49,
+      "local": 8
+    },
+    "local_reasons": {
+      "invalid_remote_model_response": 4,
+      "invalid_entity_span_evidence": 4
+    },
+    "returned_models": {
+      "z-ai/glm-5.3-flash": 57
+    },
+    "providers": {
+      "Morph": 5,
+      "OpenInference": 10,
+      "CoreWeave": 11,
+      "DigitalOcean": 4,
+      "InferenceNet": 6,
+      "Makora": 4,
+      "Modal": 3,
+      "Together": 2,
+      "Cohere": 2,
+      "Particle AI": 5,
+      "Friendli": 2,
+      "Crusoe": 1,
+      "PrimeIntellect": 1,
+      "Reka": 1
+    },
+    "persisted_receipt_cost_usd": "0.008420955389081",
+    "persisted_cost_receipts": 57,
+    "receipt_scope": "Last completed response per durable decision; ledger covers all attempts"
+  },
+  "requested_model": "z-ai/glm-5.3-flash",
+  "dashboard": "Enabled; one page probe per execution, no browser workload",
+  "source_sha256": "0739988d8a9be86151fefd59b05e13a786c72523ddb78f58ebdae9c313105c0d",
+  "source_unchanged": true,
+  "configuration_sha256": "7caa2f94f6924cc50ebc0984968d098dcacca9f2edb30f9c49a4f2806d054c7a",
+  "input_files": {
+    "adt_a01.hl7": {
+      "bytes": 1159,
+      "sha256": "b55e503684f01532eb11c84c82394b11af6b81424893e335c68efb5fbfb7b53a"
+    },
+    "billing_export.csv": {
+      "bytes": 5227,
+      "sha256": "ef3ecec38c50654f5a4bc899a34935c1f38e22c152a92aebb5c20b0607968251"
+    },
+    "claims.json": {
+      "bytes": 2473,
+      "sha256": "6441e4d516a5e1657e8db22212161b34f3570f95025ba10af7484b1991cbd3a6"
+    },
+    "corrupt_upload.docx": {
+      "bytes": 20089,
+      "sha256": "9fd60ccc8970fdecf84ea55cd91de6e6db6e5f39e7c87144a288691ffa311c24"
+    },
+    "discharge_summary.docx": {
+      "bytes": 40439,
+      "sha256": "bb4139d7302d6666e518601dacf27287dbc35601a76f73625cd937d6dba5e400"
+    },
+    "encounters.csv": {
+      "bytes": 1289,
+      "sha256": "ddd0d900033bf8b64c7973491d49758588a03187ad726fc59a211499c0a90c09"
+    },
+    "fhir_bundle.json": {
+      "bytes": 8985,
+      "sha256": "ff34e7fa3aded1eeb3961d31aaf335cfb5e730f35fd050def24e7e3a17450ba9"
+    },
+    "imaging_0042.dat": {
+      "bytes": 263640,
+      "sha256": "053573f3fada2e2e76c78349baeb15cad64988e97c906263a777a47dae67fb43"
+    },
+    "patient_roster.xlsx": {
+      "bytes": 8947,
+      "sha256": "1b05e8bbf9ba432160d6a30c33ee5972f076d52a266f67185bb7a34c556d9ca4"
+    },
+    "progress_note.txt": {
+      "bytes": 1458,
+      "sha256": "a2b68ffb393f590467144f603863f6271483537873dc2c875d33fa9196aa3810"
+    },
+    "referral_packet.pdf": {
+      "bytes": 128935,
+      "sha256": "2d16dfbb1773d8cdb01b58d023a789504bc26bdef2f94f198623bf0caf96ea9b"
+    },
+    "wristband_photo.jpg": {
+      "bytes": 50769,
+      "sha256": "0d3fe7b69942cde6377394d255a36287daea6c44ddf989df1afa95fd7b90b76e"
+    }
+  },
+  "input_file_count": 12,
+  "input_bytes": 533410,
+  "input_unchanged": true,
+  "initial": {
+    "exit_code": 0,
+    "wall_seconds": 185.78285916801542,
+    "cgroup": {
+      "cpu.max": "200000 100000",
+      "memory.max": 999997440,
+      "memory.swap.max": 0,
+      "memory.peak": 786915328
+    },
+    "dashboard_reachable": true,
+    "stdout_bytes": 0,
+    "stderr_bytes": 509,
+    "queue": {
+      "tasks": 45,
+      "attempts": 45,
+      "model_attempts": 57,
+      "statuses": {
+        "succeeded": 45
+      }
+    }
+  },
+  "replay": {
+    "exit_code": 0,
+    "wall_seconds": 1.464678375981748,
+    "cgroup": {
+      "cpu.max": "200000 100000",
+      "memory.max": 999997440,
+      "memory.swap.max": 0,
+      "memory.peak": 786915328
+    },
+    "dashboard_reachable": true,
+    "stdout_bytes": 0,
+    "stderr_bytes": 0,
+    "queue": {
+      "tasks": 45,
+      "attempts": 45,
+      "model_attempts": 57,
+      "statuses": {
+        "succeeded": 45
+      }
+    },
+    "output_bytes_unchanged": true,
+    "queue_counts_unchanged": true
+  },
+  "complete": true,
+  "inventoried": 12,
+  "published": 4,
+  "quarantined": 8,
+  "quarantine_reasons": {
+    "incomplete_surface_coverage": 6,
+    "invalid_container_structure": 1,
+    "residual_phi_detected": 1
+  },
+  "files": [
+    {
+      "file": "adt_a01.hl7",
+      "file_id": "c242ea71d6cc8c2f22378798863b8939b1a80bd022fee7e6c5dbaa902006f392",
+      "input_sha256": "b55e503684f01532eb11c84c82394b11af6b81424893e335c68efb5fbfb7b53a",
+      "output_sha256": "258fa09f45a6cc5dc8f1f7661bb282d5722a0e50f20785aa95d29e69fe937c43",
+      "actual_type": "hl7",
+      "status": "published",
+      "reason": null,
+      "records": 3,
+      "detected": {
+        "identifier": 13,
+        "date": 9,
+        "patient_id": 1,
+        "ssn": 2,
+        "patient_name": 2,
+        "relative_name": 2,
+        "birth_date": 1,
+        "address": 2,
+        "location": 2,
+        "zip": 2,
+        "phone": 3,
+        "email": 1,
+        "person_name": 2,
+        "relative": 1,
+        "provider_id": 2,
+        "provider_name": 2
+      },
+      "applied": {
+        "identifier": 13,
+        "date": 9,
+        "patient_id": 1,
+        "ssn": 2,
+        "patient_name": 2,
+        "relative_name": 2,
+        "birth_date": 1,
+        "address": 2,
+        "location": 2,
+        "zip": 2,
+        "phone": 3,
+        "email": 1,
+        "person_name": 2,
+        "relative": 1,
+        "provider_id": 2,
+        "provider_name": 2
+      },
+      "confirmed": {
+        "identifier": 13,
+        "date": 9,
+        "patient_id": 1,
+        "ssn": 2,
+        "patient_name": 2,
+        "relative_name": 2,
+        "birth_date": 1,
+        "address": 2,
+        "location": 2,
+        "zip": 2,
+        "phone": 3,
+        "email": 1,
+        "person_name": 2,
+        "relative": 1,
+        "provider_id": 2,
+        "provider_name": 2
+      },
+      "duration_seconds": 21.888,
+      "input_tokens": 2253,
+      "output_tokens": 2806,
+      "cost_bound_nanos": 1740950
+    },
+    {
+      "file": "billing_export.csv",
+      "file_id": "fc36469d6d9b0e1069c23cff6d77d461e9ebd4db14dbb03ffc6dbb8a69be5ab9",
+      "input_sha256": "ef3ecec38c50654f5a4bc899a34935c1f38e22c152a92aebb5c20b0607968251",
+      "output_sha256": "e257cc34d9eb17bce06972e528995c60d6137faca665f05f21916527d18c2bc2",
+      "actual_type": "xlsx",
+      "status": "published",
+      "reason": null,
+      "records": 9,
+      "detected": {
+        "provider_name": 1,
+        "date": 5,
+        "identifier": 6,
+        "patient_name": 3
+      },
+      "applied": {
+        "provider_name": 1,
+        "date": 5,
+        "identifier": 6,
+        "patient_name": 3
+      },
+      "confirmed": {
+        "provider_name": 1,
+        "date": 5,
+        "identifier": 6,
+        "patient_name": 3
+      },
+      "duration_seconds": 1.887,
+      "input_tokens": 438,
+      "output_tokens": 136,
+      "cost_bound_nanos": 133700
+    },
+    {
+      "file": "claims.json",
+      "file_id": "8cffa8467d58827499854b15f15d0724f10807cf5e75602a6289d29448d27d27",
+      "input_sha256": "6441e4d516a5e1657e8db22212161b34f3570f95025ba10af7484b1991cbd3a6",
+      "output_sha256": "6441e4d516a5e1657e8db22212161b34f3570f95025ba10af7484b1991cbd3a6",
+      "actual_type": "json",
+      "status": "quarantined",
+      "reason": "incomplete_surface_coverage",
+      "records": 4,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 10.84,
+      "input_tokens": 2212,
+      "output_tokens": 872,
+      "cost_bound_nanos": 767800
+    },
+    {
+      "file": "corrupt_upload.docx",
+      "file_id": "fa57a8776e544bb0e29aa0bd4b7a6b1b4f89b0739bd4681afe1ea1601d8f4f08",
+      "input_sha256": "9fd60ccc8970fdecf84ea55cd91de6e6db6e5f39e7c87144a288691ffa311c24",
+      "output_sha256": "9fd60ccc8970fdecf84ea55cd91de6e6db6e5f39e7c87144a288691ffa311c24",
+      "actual_type": "zip",
+      "status": "quarantined",
+      "reason": "invalid_container_structure",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 0.021,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_bound_nanos": 0
+    },
+    {
+      "file": "discharge_summary.docx",
+      "file_id": "db596168ac928b2698d35bca37a4989385c4d64420fadd138b5b31a5a4e071f3",
+      "input_sha256": "bb4139d7302d6666e518601dacf27287dbc35601a76f73625cd937d6dba5e400",
+      "output_sha256": "bb4139d7302d6666e518601dacf27287dbc35601a76f73625cd937d6dba5e400",
+      "actual_type": "docx",
+      "status": "quarantined",
+      "reason": "incomplete_surface_coverage",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 5.288,
+      "input_tokens": 458,
+      "output_tokens": 241,
+      "cost_bound_nanos": 189200
+    },
+    {
+      "file": "encounters.csv",
+      "file_id": "e4521d3a0908a554246ed84d737dcdef019f773d8acbdf8e7d856d113b10109c",
+      "input_sha256": "ddd0d900033bf8b64c7973491d49758588a03187ad726fc59a211499c0a90c09",
+      "output_sha256": "b3869f0e0da4225170b5130b35ff54f23e38c2fd16f65447ee80649f81005ef2",
+      "actual_type": "csv",
+      "status": "published",
+      "reason": null,
+      "records": 5,
+      "detected": {
+        "identifier": 5,
+        "patient_id": 5,
+        "patient_name": 5,
+        "birth_date": 5,
+        "date": 11,
+        "provider_name": 6,
+        "provider_id": 5,
+        "lot": 5,
+        "phone": 6,
+        "relative": 2,
+        "age": 1,
+        "address": 1,
+        "location": 1
+      },
+      "applied": {
+        "identifier": 5,
+        "patient_id": 5,
+        "patient_name": 5,
+        "birth_date": 5,
+        "date": 11,
+        "provider_name": 6,
+        "provider_id": 5,
+        "lot": 5,
+        "phone": 6,
+        "relative": 2,
+        "age": 1,
+        "address": 1,
+        "location": 1
+      },
+      "confirmed": {
+        "identifier": 5,
+        "patient_id": 5,
+        "patient_name": 5,
+        "birth_date": 5,
+        "date": 11,
+        "provider_name": 6,
+        "provider_id": 5,
+        "lot": 5,
+        "phone": 6,
+        "relative": 2,
+        "age": 1,
+        "address": 1,
+        "location": 1
+      },
+      "duration_seconds": 19.4,
+      "input_tokens": 2853,
+      "output_tokens": 1990,
+      "cost_bound_nanos": 1422950
+    },
+    {
+      "file": "fhir_bundle.json",
+      "file_id": "8d4ce704ee2f91d95b54ce09b89d49389b609772de6b341f43efbd54e61ae59b",
+      "input_sha256": "ff34e7fa3aded1eeb3961d31aaf335cfb5e730f35fd050def24e7e3a17450ba9",
+      "output_sha256": "ff34e7fa3aded1eeb3961d31aaf335cfb5e730f35fd050def24e7e3a17450ba9",
+      "actual_type": "fhir",
+      "status": "quarantined",
+      "reason": "incomplete_surface_coverage",
+      "records": 85,
+      "detected": {
+        "identifier": 30,
+        "date": 10,
+        "patient_name": 5,
+        "relative_name": 1,
+        "patient_id": 1,
+        "ssn": 1,
+        "phone": 2,
+        "email": 1,
+        "birth_date": 1,
+        "address": 1,
+        "location": 1,
+        "zip": 1,
+        "provider_name": 6,
+        "provider_id": 2
+      },
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 30.21,
+      "input_tokens": 7093,
+      "output_tokens": 2341,
+      "cost_bound_nanos": 2234450
+    },
+    {
+      "file": "imaging_0042.dat",
+      "file_id": "b4cf8c8d331aca74d54a2564c3f55fa0bf864e27e8cba9d57137cbfd5e55643d",
+      "input_sha256": "053573f3fada2e2e76c78349baeb15cad64988e97c906263a777a47dae67fb43",
+      "output_sha256": "053573f3fada2e2e76c78349baeb15cad64988e97c906263a777a47dae67fb43",
+      "actual_type": "dicom",
+      "status": "quarantined",
+      "reason": "incomplete_surface_coverage",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 9.569,
+      "input_tokens": 1317,
+      "output_tokens": 520,
+      "cost_bound_nanos": 457550
+    },
+    {
+      "file": "patient_roster.xlsx",
+      "file_id": "6d9648fc64276a04c2ee7aea97904882b1765cbf81106649c863ceadf13deb35",
+      "input_sha256": "1b05e8bbf9ba432160d6a30c33ee5972f076d52a266f67185bb7a34c556d9ca4",
+      "output_sha256": "1b05e8bbf9ba432160d6a30c33ee5972f076d52a266f67185bb7a34c556d9ca4",
+      "actual_type": "xlsx",
+      "status": "quarantined",
+      "reason": "incomplete_surface_coverage",
+      "records": 8,
+      "detected": {
+        "provider_name": 1,
+        "person_name": 1,
+        "date": 2,
+        "identifier": 1,
+        "patient_id": 1,
+        "patient_name": 1,
+        "birth_date": 1,
+        "address": 1,
+        "location": 1,
+        "zip": 1,
+        "phone": 1,
+        "email": 1
+      },
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 13.044,
+      "input_tokens": 1790,
+      "output_tokens": 1476,
+      "cost_bound_nanos": 1006500
+    },
+    {
+      "file": "progress_note.txt",
+      "file_id": "de474a5b215b286d76eb1550f89de52a20253964428f6fc7a9b8b084942e2bb0",
+      "input_sha256": "a2b68ffb393f590467144f603863f6271483537873dc2c875d33fa9196aa3810",
+      "output_sha256": "b4d89079a507af9695b20bbbcf89671b734419ebfbb39b564fbf03b82c1eb914",
+      "actual_type": "text",
+      "status": "published",
+      "reason": null,
+      "records": 1,
+      "detected": {
+        "patient_name": 3,
+        "patient_id": 1,
+        "birth_date": 1,
+        "date": 5,
+        "identifier": 1,
+        "provider_name": 4,
+        "provider_id": 1,
+        "address": 1,
+        "location": 2,
+        "zip": 1,
+        "relative": 1,
+        "phone": 1,
+        "email": 1,
+        "age": 1,
+        "person_name": 1,
+        "network": 1
+      },
+      "applied": {
+        "patient_name": 3,
+        "patient_id": 1,
+        "birth_date": 1,
+        "date": 5,
+        "identifier": 1,
+        "provider_name": 4,
+        "provider_id": 1,
+        "address": 1,
+        "location": 2,
+        "zip": 1,
+        "relative": 1,
+        "phone": 1,
+        "email": 1,
+        "age": 1,
+        "person_name": 1,
+        "network": 1
+      },
+      "confirmed": {
+        "patient_name": 3,
+        "patient_id": 1,
+        "birth_date": 1,
+        "date": 5,
+        "identifier": 1,
+        "provider_name": 4,
+        "provider_id": 1,
+        "address": 1,
+        "location": 2,
+        "zip": 1,
+        "relative": 1,
+        "phone": 1,
+        "email": 1,
+        "age": 1,
+        "person_name": 1,
+        "network": 1
+      },
+      "duration_seconds": 32.353,
+      "input_tokens": 3641,
+      "output_tokens": 3591,
+      "cost_bound_nanos": 2341650
+    },
+    {
+      "file": "referral_packet.pdf",
+      "file_id": "1477b8afeabad25bdefbde9c16665c20181251bd0d37f7be60faee8ad0536de5",
+      "input_sha256": "2d16dfbb1773d8cdb01b58d023a789504bc26bdef2f94f198623bf0caf96ea9b",
+      "output_sha256": "2d16dfbb1773d8cdb01b58d023a789504bc26bdef2f94f198623bf0caf96ea9b",
+      "actual_type": "pdf",
+      "status": "quarantined",
+      "reason": "incomplete_surface_coverage",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 18.693,
+      "input_tokens": 1762,
+      "output_tokens": 1745,
+      "cost_bound_nanos": 1136800
+    },
+    {
+      "file": "wristband_photo.jpg",
+      "file_id": "f385791dd82094bd0ece308db4c8b8112f81dc3dd19c1a4f70b2b6059fee20cc",
+      "input_sha256": "0d3fe7b69942cde6377394d255a36287daea6c44ddf989df1afa95fd7b90b76e",
+      "output_sha256": "0d3fe7b69942cde6377394d255a36287daea6c44ddf989df1afa95fd7b90b76e",
+      "actual_type": "jpeg",
+      "status": "quarantined",
+      "reason": "residual_phi_detected",
+      "records": 0,
+      "detected": {},
+      "applied": {},
+      "confirmed": {},
+      "duration_seconds": 16.838,
+      "input_tokens": 2246,
+      "output_tokens": 2169,
+      "cost_bound_nanos": 1421400
+    }
+  ],
+  "memory_scope": "Whole container including probe, coordinator, workers and dashboard",
+  "memory_peak_is_cumulative": true,
+  "crash_injection": false
+}

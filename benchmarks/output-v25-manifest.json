@@ -1,0 +1,93 @@
+{
+  "source": "Exact output copied from redactor-native-local-v25:/benchmark/local/output",
+  "files": {
+    ".run-id": {
+      "bytes": 65,
+      "sha256": "f04034e2613e454ace706e36f6002272f38d7794c66ebe3eb2e7aa65bee32ef0"
+    },
+    "published/adt_a01.hl7": {
+      "bytes": 1349,
+      "sha256": "027dc7c6f0ab4826f460accc07807cc9bca43e14f51a3bcaa7089a7f0d894624"
+    },
+    "published/billing_export.csv": {
+      "bytes": 5473,
+      "sha256": "e257cc34d9eb17bce06972e528995c60d6137faca665f05f21916527d18c2bc2"
+    },
+    "published/claims.json": {
+      "bytes": 2554,
+      "sha256": "2ee3e5bd42f399349e589cb73871b21ac847ddf8d3628a7548ea32e41056264d"
+    },
+    "published/encounters.csv": {
+      "bytes": 1442,
+      "sha256": "0fa57d3344dd2800f1c2cd9694d754d80c8bc1a44f21519e63fa29e1be7576b0"
+    },
+    "published/patient_roster.xlsx": {
+      "bytes": 9623,
+      "sha256": "57b54c791d6bc817b25ddb9f481cd357da6d6deb20cf57641f1cce58b0458bd7"
+    },
+    "quarantine/corrupt_upload.docx": {
+      "bytes": 20089,
+      "sha256": "9fd60ccc8970fdecf84ea55cd91de6e6db6e5f39e7c87144a288691ffa311c24"
+    },
+    "quarantine/corrupt_upload.docx.reason.json": {
+      "bytes": 57,
+      "sha256": "a45f27c5c14fde390d6dd422cba79cb1b887aa28e8a8924a84772d7546b498d4"
+    },
+    "quarantine/discharge_summary.docx": {
+      "bytes": 40439,
+      "sha256": "bb4139d7302d6666e518601dacf27287dbc35601a76f73625cd937d6dba5e400"
+    },
+    "quarantine/discharge_summary.docx.reason.json": {
+      "bytes": 50,
+      "sha256": "11ec7216b0cb67a1d2a97ca9ca277ad7937ff402b690053e5e897427982b2510"
+    },
+    "quarantine/fhir_bundle.json": {
+      "bytes": 8985,
+      "sha256": "ff34e7fa3aded1eeb3961d31aaf335cfb5e730f35fd050def24e7e3a17450ba9"
+    },
+    "quarantine/fhir_bundle.json.reason.json": {
+      "bytes": 57,
+      "sha256": "ec584c943c8399015844ef4cfe2e6ebca3220d2f6141df942f0d5c5767716c1d"
+    },
+    "quarantine/imaging_0042.dat": {
+      "bytes": 263640,
+      "sha256": "053573f3fada2e2e76c78349baeb15cad64988e97c906263a777a47dae67fb43"
+    },
+    "quarantine/imaging_0042.dat.reason.json": {
+      "bytes": 57,
+      "sha256": "ec584c943c8399015844ef4cfe2e6ebca3220d2f6141df942f0d5c5767716c1d"
+    },
+    "quarantine/progress_note.txt": {
+      "bytes": 1458,
+      "sha256": "a2b68ffb393f590467144f603863f6271483537873dc2c875d33fa9196aa3810"
+    },
+    "quarantine/progress_note.txt.reason.json": {
+      "bytes": 50,
+      "sha256": "11ec7216b0cb67a1d2a97ca9ca277ad7937ff402b690053e5e897427982b2510"
+    },
+    "quarantine/referral_packet.pdf": {
+      "bytes": 128935,
+      "sha256": "2d16dfbb1773d8cdb01b58d023a789504bc26bdef2f94f198623bf0caf96ea9b"
+    },
+    "quarantine/referral_packet.pdf.reason.json": {
+      "bytes": 57,
+      "sha256": "ec584c943c8399015844ef4cfe2e6ebca3220d2f6141df942f0d5c5767716c1d"
+    },
+    "quarantine/wristband_photo.jpg": {
+      "bytes": 50769,
+      "sha256": "0d3fe7b69942cde6377394d255a36287daea6c44ddf989df1afa95fd7b90b76e"
+    },
+    "quarantine/wristband_photo.jpg.reason.json": {
+      "bytes": 57,
+      "sha256": "ec584c943c8399015844ef4cfe2e6ebca3220d2f6141df942f0d5c5767716c1d"
+    },
+    "report.json": {
+      "bytes": 13958,
+      "sha256": "128a2af0f9053491d182c7b732dac1eb6184392772dfcded941d50d0a8256ac9"
+    },
+    "run.log": {
+      "bytes": 9252,
+      "sha256": "3b13278a0adbe2c606149211b4fa0cda7a98f0bb04459c7eb7388e93ff9d76b2"
+    }
+  }
+}
