@@ -28,6 +28,7 @@
 - Providers have separate pseudonyms; a person appearing as patient and provider retains separate role identities.
 - Patient dates share one keyed offset; unattributable dates use a stable separate context, with patient linkage explicitly unresolved.
 - Ages of 90 or more become 90+; ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications, and diseases are preserved.
+- Exactly 90 is included; birth dates revealing older ages are generalized against clinical reference dates, with quarantine when a valid native representation is unavailable; clinical event intervals remain intact.
 - Device production identifiers and ambiguous lot fields are pseudonymized; known shared medication batches remain unless patient linkage is evident, following the [HHS distinction between model and production identifiers](https://www.hhs.gov/hipaa/for-professionals/faq/can-device-identifier-di-portion-unique-device-identifier-udi-be-part-limited-or-de-identified/index.html).
 - Keyed replacements use environment secrets; retained identifying evidence and model responses require encryption and private storage.
 - Record identifiers use 18-digit keyed surrogates to reduce collisions; native length limits and collisions must be checked before publication, and provider NPIs retain a valid check digit.
