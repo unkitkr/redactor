@@ -79,6 +79,10 @@ ERROR_ENTITY_EVIDENCE: Final = "invalid_entity_span_evidence"
 ERROR_IDENTITY_EVIDENCE: Final = "invalid_identity_evidence"
 ERROR_IDENTITY_SNAPSHOT: Final = "invalid_identity_snapshot"
 
+# Offline evaluation replay is separate from production provider failure state.
+ERROR_EVALUATION_CACHE_MISS: Final = "evaluation_cache_miss"
+EVALUATION_REASON_CODES: Final = (ERROR_EVALUATION_CACHE_MISS,)
+
 INSPECTION_REASON_CODES: Final = (
     ERROR_FORMAT_UNSUPPORTED,
     ERROR_CONTAINER,

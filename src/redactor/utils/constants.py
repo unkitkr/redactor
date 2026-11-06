@@ -1543,6 +1543,10 @@ EVALUATION_OPENMED_TYPES: Final = (
 EVALUATION_OPENROUTER_URL: Final = "https://openrouter.ai/api/v1"
 EVALUATION_OPENROUTER_KEY: Final = "OPENROUTER_KEY"
 EVALUATION_REMOTE_VERSION: Final = "model-comparison-v1"
+EVALUATION_REPLAY_HIT: Final = "cache_hits"
+EVALUATION_REPLAY_MISS: Final = "cache_misses"
+EVALUATION_REPLAY_REMOTE: Final = "grounded_remote_responses"
+EVALUATION_REPLAY_LOCAL: Final = "cached_local_decisions"
 EVALUATION_REMOTE_STATE: Final = "tmp/model-comparison-state"
 EVALUATION_REMOTE_MODELS: Final = (
     "deepseek/deepseek-v4.1-flash-1017",
