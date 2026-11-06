@@ -93,6 +93,38 @@ def test_saved_mentions_require_every_name_fragment_to_be_replaced(
             free_text=True,
         )
 
+    for suffix in (";", ",", " Moreno;"):
+        original = "Alina Stone" + suffix
+        finding = TextFinding(
+            start=0, end=len("Alina Stone"), original="Alina Stone", kind="person_name"
+        )
+        edits = text_edits((finding,), context, bytes(range(32)))
+        source = tmp_path / "punctuation-source.txt"
+        saved = tmp_path / "punctuation-saved.txt"
+        source.write_text(original)
+        saved.write_text(apply_text_edits(original, edits))
+        if suffix == " Moreno;":
+            with pytest.raises(ValueError, match="residual_phi_detected"):
+                verify_text_changes(
+                    source.read_text(),
+                    saved.read_text(),
+                    edits,
+                    _whole_prediction,
+                    free_text=True,
+                )
+        else:
+            verify_text_changes(
+                source.read_text(),
+                saved.read_text(),
+                edits,
+                _whole_prediction,
+                free_text=True,
+            )
+
+
+def _whole_prediction(text: str) -> tuple[TextEntity, ...]:
+    return (TextEntity(start=0, end=len(text), text=text, entity_type="person"),)
+
 
 def _role_prediction(text: str) -> tuple[TextEntity, ...]:
     end = text.index(" ")

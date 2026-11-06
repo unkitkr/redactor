@@ -3,6 +3,7 @@
 import re
 from unicodedata import normalize
 
+from redactor.policy.text_patterns import age_mentions
 from redactor.schemas.entities import TextEntity
 from redactor.utils.constants import (
     ENTITY_AGE,
@@ -12,6 +13,7 @@ from redactor.utils.constants import (
     ENTITY_TIME,
     NAME_TRAILING_VERB_PATTERN,
     NER_DATE_WORD_PATTERN,
+    NER_DIGIT_CUE_PATTERN,
     NER_EMAIL_CUE_PATTERN,
     NER_EMAIL_LABEL,
     NER_IP_LABEL,
@@ -26,6 +28,7 @@ from redactor.utils.constants import (
     NON_IDENTIFYING_LOCATION_PATTERN,
     NON_IDENTIFYING_ROLE_PATTERN,
     UNICODE_NORMAL_FORM,
+    VERIFIER_MENTION_PREFIX_PATTERN,
     ZIP_CODE_PATTERN,
 )
 
@@ -41,6 +44,19 @@ def possible_entity(entity: TextEntity, text: str | None = None) -> bool:
     numeric = any(character.isdecimal() for character in value) or bool(
         re.search(NER_NUMBER_WORD_PATTERN, value)
     )
+    if (
+        text is not None
+        and (
+            entity.entity_type in (ENTITY_AGE, ENTITY_DATE, ENTITY_TIME)
+            or entity.label
+            in (*NER_NUMERIC_IDENTIFIER_LABELS, NER_PHONE_LABEL, NER_IP_LABEL)
+        )
+        and _numbers_belong_to_explicit_ages(entity, text)
+    ):
+        # "Age 12" cannot also be a phone, licence, date or clock value. The
+        # deterministic age policy still handles 90+, and the remaining text
+        # stays visible to independent name/contact checks.
+        return False
     if entity.entity_type == ENTITY_AGE:
         return numeric or bool(re.search(NER_OLDER_AGE_WORD_PATTERN, value))
     if entity.entity_type == ENTITY_PERSON and re.fullmatch(
@@ -75,14 +91,40 @@ def possible_entity(entity: TextEntity, text: str | None = None) -> bool:
 
 
 def refine_entity(entity: TextEntity) -> TextEntity:
-    """Keep a trailing narrative verb out of a model's full-name span."""
+    """Trim grammatical context only when its datatype boundary is explicit."""
     if entity.entity_type != ENTITY_PERSON:
         return entity
     suffix = re.search(NAME_TRAILING_VERB_PATTERN, entity.text)
     if suffix is None:
         return entity
     name = entity.text[: suffix.start()]
-    words = name.split()
-    if len(words) < 2 or not (words[0][0].isupper() and words[-1][0].isupper()):
+    # A role is context, not the first component of a person's name.
+    prefix = re.match(VERIFIER_MENTION_PREFIX_PATTERN, name)
+    words = name[prefix.end() if prefix else 0 :].split()
+    if not words or not (words[0][0].isupper() and words[-1][0].isupper()):
         return entity
     return entity.model_copy(update={"text": name, "end": entity.start + len(name)})
+
+
+def _numbers_belong_to_explicit_ages(entity: TextEntity, text: str) -> bool:
+    ages = age_mentions(text)
+    if not ages:
+        return False
+    cues = tuple(
+        (entity.start + match.start(), entity.start + match.end())
+        for pattern in (
+            NER_DIGIT_CUE_PATTERN,
+            NER_NUMBER_WORD_PATTERN,
+            NER_DATE_WORD_PATTERN,
+            NER_TIME_WORD_PATTERN,
+            NER_OLDER_AGE_WORD_PATTERN,
+        )
+        for match in re.finditer(pattern, entity.text)
+    )
+    return bool(cues) and all(
+        any(
+            expression.start <= start < end <= expression.end
+            for expression, _, _ in ages
+        )
+        for start, end in cues
+    )

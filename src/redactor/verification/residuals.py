@@ -17,6 +17,7 @@ from redactor.utils.constants import (
     VERIFIER_MENTION_SUFFIX_PATTERN,
     VERIFIER_RELATIVE_TIME_PATTERN,
     VERIFIER_ROLE_LABEL_PATTERN,
+    VERIFIER_SURFACE_PUNCTUATION,
 )
 from redactor.utils.errors import ERROR_RESIDUAL_PHI
 from redactor.verification.evidence import contains_range, sensitive_ranges
@@ -127,5 +128,9 @@ def _covered_name_with_role(
         covered = True
         if cursor >= mention.end:
             return True
+    if covered and re.fullmatch(
+        VERIFIER_SURFACE_PUNCTUATION, text[cursor : mention.end]
+    ):
+        return True
     suffix = re.match(VERIFIER_MENTION_SUFFIX_PATTERN, text[cursor:])
     return bool(covered and suffix and cursor + suffix.end() >= mention.end)

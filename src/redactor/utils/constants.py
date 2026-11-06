@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v16"
+PIPELINE_VERSION: Final = "pipeline-v17"
 RUNTIME_SOURCE_SUFFIXES: Final = (".py", ".sql")
 RUNTIME_IGNORED_SUFFIXES: Final = (".pyc", ".pyo")
 RUNTIME_MISSING_ARTIFACT: Final = "missing"
@@ -169,7 +169,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v13"
+VERIFIER_VERSION: Final = "verifier-v14"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -226,6 +226,7 @@ VERIFIER_MENTION_PREFIX_PATTERN: Final = (
     rf"(?i)(?:{VERIFIER_ROLE_CONNECTOR})?{VERIFIER_MENTION_ROLE}[ \t]+"
 )
 VERIFIER_EDIT_JOIN_PATTERN: Final = r"(?i)[ \t]*(?:(?:[,;&]|and)[ \t]*)*"
+VERIFIER_SURFACE_PUNCTUATION: Final = r"[ \t,.;:!?]*"
 VERIFIER_MENTION_SUFFIX_PATTERN: Final = (
     rf"(?i)[ \t]+(?:&|and)[ \t]+{VERIFIER_MENTION_ROLE}(?:-in-law)?(?=[ \t,.;:]|$)"
 )
@@ -1890,9 +1891,11 @@ CLINICAL_NEGATION_PREFIX_PATTERN: Final = (
 )
 CLINICAL_RANGE_GAP_PATTERN: Final = r"[\s.,;:!?()\[\]{}'\"’/-]*"
 NAME_TRAILING_VERB_PATTERN: Final = (
-    r"[ \t]+(?:visited|returned|called|arrived|reported|assisted|"
-    r"accompanied|attended|declined|agreed|confirmed|requested)$"
+    r"[ \t]+(?:visit(?:s|ed)|return(?:s|ed)|call(?:s|ed)|arriv(?:es|ed)|"
+    r"report(?:s|ed)|assist(?:s|ed)|accompan(?:ies|ied)|attend(?:s|ed)|"
+    r"declin(?:es|ed)|agree(?:s|d)|confirm(?:s|ed)|request(?:s|ed))$"
 )
+NER_DIGIT_CUE_PATTERN: Final = r"\d+"
 NER_NUMBER_WORD_PATTERN: Final = (
     r"(?i)\b(?:zero|oh|one|two|three|four|five|six|seven|eight|nine|ten|eleven|"
     r"twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|"

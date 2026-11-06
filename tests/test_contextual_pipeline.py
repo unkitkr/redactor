@@ -56,12 +56,13 @@ def test_local_pipeline_handles_context_without_title_or_person_allowlists(
     with (source / "context.csv").open("w", newline="") as stream:
         writer = csv.writer(stream)
         writer.writerow(("comments", "dx_codes"))
-        for age in (27, 54, 75, 88, 90, 103):
+        for age in (6, 7, 10, 20, 27, 45, 54, 75, 88, 90, 103):
             writer.writerow((f"Age {age}. No fever.", "I10"))
         for phrase in ("Spoke with brother", "Reviewed w/ husband", "Called to sister"):
             writer.writerow(
                 (f"{phrase} Alina Stone at 312-555-0193 re: travel.", "I10")
             )
+        writer.writerow(("spouse Alina assists. Creatinine 1.20 mg/dL.", "I10"))
     originals = {path.name: path.read_bytes() for path in source.iterdir()}
     environment = dict(
         os.environ,
@@ -119,11 +120,12 @@ def test_local_pipeline_handles_context_without_title_or_person_allowlists(
     assert "Metformin 850 mg BID. GCS 15." in narrative
     with (published / "context.csv").open(newline="") as stream:
         contextual_rows = list(csv.DictReader(stream))
-    assert [row["comments"] for row in contextual_rows[:6]] == [
-        f"Age {age}. No fever." for age in (27, 54, 75, 88, "90+", "90+")
+    assert [row["comments"] for row in contextual_rows[:11]] == [
+        f"Age {age}. No fever."
+        for age in (6, 7, 10, 20, 27, 45, 54, 75, 88, "90+", "90+")
     ]
     for row, phrase in zip(
-        contextual_rows[6:],
+        contextual_rows[11:14],
         ("Spoke with brother", "Reviewed w/ husband", "Called to sister"),
         strict=True,
     ):
@@ -131,6 +133,8 @@ def test_local_pipeline_handles_context_without_title_or_person_allowlists(
         assert row["comments"].endswith(" re: travel.")
         assert "Alina Stone" not in row["comments"]
         assert "312-555-0193" not in row["comments"]
+    assert "Alina" not in contextual_rows[14]["comments"]
+    assert contextual_rows[14]["comments"].endswith(" assists. Creatinine 1.20 mg/dL.")
     accepted = {path.name: path.read_bytes() for path in published.iterdir()}
     replay = subprocess.run(
         command, env=environment, capture_output=True, text=True, timeout=45
