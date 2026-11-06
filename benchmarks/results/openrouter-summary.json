@@ -1,0 +1,123 @@
+{
+  "date": "2026-11-06",
+  "scope": "Synthetic model and policy component comparison. Local runs constrained; hosted client runs on macOS, not inside the constrained container.",
+  "models": [
+    {
+      "requested_model": "deepseek/deepseek-v4-pro",
+      "returned_models": [
+        "deepseek/deepseek-v4-pro"
+      ],
+      "providers": [
+        "Alibaba",
+        "Azure",
+        "Baidu",
+        "DigitalOcean",
+        "Novita",
+        "Relace",
+        "SiliconFlow",
+        "StreamLake"
+      ],
+      "requests": 72,
+      "statuses": {
+        "200": 72
+      },
+      "input_tokens": 31182,
+      "output_tokens": 2292,
+      "reported_billed_usd": 0.024168193095,
+      "successful_responses_without_cost": 0
+    },
+    {
+      "requested_model": "deepseek/deepseek-v4.1-flash-1017",
+      "returned_models": [
+        "deepseek/deepseek-v4.1-flash-1017"
+      ],
+      "providers": [
+        "Alibaba",
+        "Cohere",
+        "Crusoe",
+        "DeepInfra",
+        "DigitalOcean",
+        "InferenceNet",
+        "Ionstream",
+        "Modal",
+        "ModelRun",
+        "Morph",
+        "OpenInference",
+        "Particle AI",
+        "Relace",
+        "SiliconFlow",
+        "StepFun",
+        "Together",
+        "Wafer"
+      ],
+      "requests": 85,
+      "statuses": {
+        "200": 85
+      },
+      "input_tokens": 39541,
+      "output_tokens": 3062,
+      "reported_billed_usd": 0.00474610406,
+      "successful_responses_without_cost": 0
+    },
+    {
+      "requested_model": "z-ai/glm-5.3-flash",
+      "returned_models": [
+        "z-ai/glm-5.3-flash"
+      ],
+      "providers": [
+        "BaseTen",
+        "Cohere",
+        "CoreWeave",
+        "Crusoe",
+        "DigitalOcean",
+        "Fireworks",
+        "Friendli",
+        "Inceptron",
+        "InferenceNet",
+        "Makora",
+        "Modal",
+        "Nebius",
+        "NextBit",
+        "OpenInference",
+        "Parasail",
+        "PrimeIntellect",
+        "Reka",
+        "Together",
+        "Venice",
+        "Wafer"
+      ],
+      "requests": 158,
+      "statuses": {
+        "400": 72,
+        "200": 86
+      },
+      "input_tokens": 42318,
+      "output_tokens": 34464,
+      "reported_billed_usd": 0.0163004528,
+      "successful_responses_without_cost": 0
+    }
+  ],
+  "reported_billed_usd": 0.045214749955,
+  "conservative_ledger_usd": 2.4229058,
+  "unledgered_diagnostic_calls": [
+    {
+      "model": "z-ai/glm-5.3-flash",
+      "status": 400,
+      "reason": "Reasoning is mandatory for this endpoint and cannot be disabled.",
+      "response_usage": null
+    }
+  ],
+  "notes": [
+    "The one diagnostic rejection is recorded here and had no usage receipt.",
+    "Initial GLM calls with reasoning disabled were rejected. The primary GLM scores use reasoning enabled.",
+    "The conservative ledger retains reservations for failed requests rather than assuming zero billing.",
+    "Hosted detectors were rescored with mandatory spaCy verification using persisted responses; rescoring is not live endpoint latency.",
+    "No paid requests were made by the automated test suite."
+  ],
+  "client_runtime": {
+    "python": "3.14.2",
+    "platform": "macOS-14.8.3-arm64-arm-64bit-Mach-O",
+    "openai": "2.54.0",
+    "httpx": "0.28.1"
+  }
+}
