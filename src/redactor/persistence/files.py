@@ -95,7 +95,7 @@ def create_temporary_file(connection: sqlite3.Connection, claimed: Task) -> Path
     will determine the usable prefix in a separate milestone.
     """
     current = require_attempt(connection, claimed)
-    temporary_path = _temporary_path(current)
+    temporary_path = temporary_path_for(current)
     private_directory(temporary_path.parent)
     descriptor = os.open(
         temporary_path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, PRIVATE_FILE_MODE
@@ -116,7 +116,7 @@ def seal_temporary_file(connection: sqlite3.Connection, claimed: Task) -> Artifa
     through verification and finalization. This function does not check for PHI.
     """
     current = require_attempt(connection, claimed)
-    return _inspect_artifact(_temporary_path(current), persist=True)
+    return _inspect_artifact(temporary_path_for(current), persist=True)
 
 
 def finalize_output(
@@ -133,7 +133,7 @@ def finalize_output(
     Temporary and output directories must be on the same local filesystem.
     """
     current = require_attempt(connection, claimed)
-    temporary_path = _temporary_path(current)
+    temporary_path = temporary_path_for(current)
     output_path = current.output_path
     assert output_path is not None
     if verified.path != temporary_path:
@@ -167,8 +167,9 @@ def finalize_output(
     return Artifact(path=output_path, sha256=verified.sha256, size=verified.size)
 
 
-def _temporary_path(task: Task) -> Path:
-    if task.temporary_directory is None or task.output_path is None:
+def temporary_path_for(task: Task) -> Path:
+    """Locate an attempt's working file, including non-public pipeline artifacts."""
+    if task.temporary_directory is None or task.attempt_token is None:
         raise ValueError(ERROR_FILE_NOT_REGISTERED)
     return task.temporary_directory / TEMPORARY_FILE_TEMPLATE.format(
         attempt_token=task.attempt_token

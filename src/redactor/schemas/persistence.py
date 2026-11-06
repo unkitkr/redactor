@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, NonNegativeInt
+from pydantic import BaseModel, Field, JsonValue, NonNegativeInt, PositiveInt
 
 from redactor.utils.constants import AttemptStatus, TaskStatus
 
@@ -44,7 +44,7 @@ class Attempt(BaseModel, frozen=True, extra="forbid"):
 class Checkpoint(BaseModel, frozen=True, extra="forbid"):
     """Byte positions must be complete-record boundaries supplied by an adapter."""
 
-    sequence: NonNegativeInt
+    sequence: PositiveInt
     task_id: str
     artifact_path: Path
     input_offset: NonNegativeInt
@@ -52,6 +52,8 @@ class Checkpoint(BaseModel, frozen=True, extra="forbid"):
     record_count: NonNegativeInt
     output_prefix_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     counts: dict[str, NonNegativeInt] = Field(default_factory=dict)
+    adapter_version: str = Field(min_length=1)
+    cursor: dict[str, JsonValue] = Field(default_factory=dict)
 
 
 class Artifact(BaseModel, frozen=True, extra="forbid"):

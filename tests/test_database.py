@@ -8,7 +8,7 @@ from redactor import migrations
 from redactor.migrations import discover_migrations
 from redactor.persistence.database import open_database, state_directory, transaction
 from redactor.persistence.files import prepare_task
-from redactor.persistence.queue import enqueue_task, get_task
+from redactor.persistence.queue import get_task
 from redactor.utils.constants import (
     DATABASE_FILENAME,
     PRIVATE_DIRECTORY_MODE,
@@ -70,11 +70,28 @@ def test_previous_schema_is_migrated_without_losing_tasks(
     tmp_path: Path, source_file: Path
 ) -> None:
     state = tmp_path / STATE_DIRECTORY
-    with closing(open_database(state)) as connection:
-        task = enqueue_task(connection, prepare_task(source_file, "inspect", "v1"))
-        connection.execute("ALTER TABLE tasks DROP COLUMN temporary_directory")
-        connection.execute("ALTER TABLE tasks DROP COLUMN output_path")
-        connection.execute("PRAGMA user_version = 1")
+    create_initial_database(state)
+    with closing(sqlite3.connect(state / DATABASE_FILENAME)) as connection:
+        connection.row_factory = sqlite3.Row
+        spec = prepare_task(source_file, "inspect", "v1")
+        connection.execute(
+            """
+            INSERT INTO tasks (
+                task_id, input_path, input_sha256, input_size, step,
+                processing_version, status, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'pending', 'initial', 'initial')
+            """,
+            (
+                spec.task_id,
+                str(spec.input_path),
+                spec.input_sha256,
+                spec.input_size,
+                spec.step,
+                spec.processing_version,
+            ),
+        )
+        connection.commit()
+        task = get_task(connection, spec.task_id)
 
     with closing(open_database(state)) as connection:
         assert get_task(connection, task.task_id) == task
@@ -87,10 +104,7 @@ def test_failed_migration_rolls_back_schema_and_version(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     state = tmp_path / STATE_DIRECTORY
-    with closing(open_database(state)) as connection:
-        connection.execute("ALTER TABLE tasks DROP COLUMN temporary_directory")
-        connection.execute("ALTER TABLE tasks DROP COLUMN output_path")
-        connection.execute("PRAGMA user_version = 1")
+    create_initial_database(state)
 
     for source in discover_migrations():
         (tmp_path / source.name).write_text(source.read_text())
@@ -115,3 +129,11 @@ def test_failed_migration_rolls_back_schema_and_version(
         }
         assert "temporary_directory" not in columns
         assert "output_path" not in columns
+
+
+def create_initial_database(state: Path) -> None:
+    """Build the historical schema rather than relabeling a newer database."""
+    state.mkdir()
+    with closing(sqlite3.connect(state / DATABASE_FILENAME)) as connection:
+        connection.executescript(discover_migrations()[0].read_text())
+        connection.execute("PRAGMA user_version = 1")
