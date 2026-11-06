@@ -1007,3 +1007,86 @@ EVALUATION_FINDING_TYPES: Final = (
     (FIELD_ADDRESS, "location"),
     (FIELD_ZIP, "location"),
 )
+EVALUATION_ONNX_THREADS: Final = 1
+EVALUATION_GLINER_THRESHOLD: Final = 0.3
+EVALUATION_WORD_PATTERN: Final = r"\w+(?:[-_]\w+)*|\S"
+EVALUATION_GLINER_LABELS: Final = (
+    ("name", "person"),
+    ("organization medical facility", "organization"),
+    ("location address", "location"),
+    ("location city", "location"),
+    ("location zip", "location"),
+    ("date", "date"),
+    ("time", "time"),
+    ("age", "age"),
+    ("email address", "contact"),
+    ("phone number", "contact"),
+    ("ip address", "contact"),
+    ("url", "contact"),
+    ("medical record number", "identifier"),
+    ("account number", "identifier"),
+    ("ssn", "identifier"),
+    ("device identifier", "identifier"),
+    ("driver license", "identifier"),
+)
+EVALUATION_OPENMED_TYPES: Final = (
+    ("person", ("first_name", "last_name")),
+    ("organization", ("company_name",)),
+    (
+        "location",
+        ("street_address", "city", "state", "county", "postcode", "coordinate"),
+    ),
+    ("date", ("date", "date_of_birth", "date_time")),
+    ("time", ("time",)),
+    ("age", ("age",)),
+    ("contact", ("email", "phone_number", "fax_number", "ipv4", "ipv6", "url")),
+    (
+        "identifier",
+        (
+            "account_number",
+            "certificate_license_number",
+            "device_identifier",
+            "health_plan_beneficiary_number",
+            "medical_record_number",
+            "ssn",
+            "unique_id",
+            "vehicle_identifier",
+            "license_plate",
+            "user_name",
+            "customer_id",
+            "employee_id",
+            "tax_id",
+            "biometric_identifier",
+            "mac_address",
+            "credit_debit_card",
+            "bank_routing_number",
+            "swift_bic",
+        ),
+    ),
+)
+EVALUATION_OPENROUTER_URL: Final = "https://openrouter.ai/api/v1"
+EVALUATION_OPENROUTER_KEY: Final = "OPENROUTER_KEY"
+EVALUATION_REMOTE_VERSION: Final = "model-comparison-v1"
+EVALUATION_REMOTE_STATE: Final = "tmp/model-comparison-state"
+EVALUATION_REMOTE_MODELS: Final = (
+    "deepseek/deepseek-v4.1-flash-1017",
+    "deepseek/deepseek-v4-pro",
+    "z-ai/glm-5.3-flash",
+)
+EVALUATION_REMOTE_INPUT_PRICE: Final = "3.00"
+EVALUATION_REMOTE_OUTPUT_PRICE: Final = "10.00"
+EVALUATION_REMOTE_TIMEOUT: Final = 30.0
+EVALUATION_REMOTE_DEADLINE: Final = 65.0
+EVALUATION_REMOTE_OUTPUT_TOKENS: Final = 2048
+EVALUATION_REMOTE_RECEIPTS: Final = "receipts.jsonl"
+EVALUATION_OCR_CORPUS: Final = "tmp/ocr-corpus/manifest.json"
+EVALUATION_OCR_DIRECTORY: Final = "tmp/ocr-corpus"
+EVALUATION_OCR_TIMEOUT: Final = 30
+EVALUATION_OCR_COVERAGE: Final = 0.9
+EVALUATION_PPOCR_DETECTOR: Final = "ch_PP-OCRv5_det_mobile.onnx"
+EVALUATION_PPOCR_CLASSIFIER: Final = "ch_PP-LCNet_x0_25_textline_ori_cls_mobile.onnx"
+EVALUATION_PPOCR_RECOGNIZERS: Final = (
+    ("en", "en_PP-OCRv5_rec_mobile.onnx"),
+    ("latin", "latin_PP-OCRv5_rec_mobile.onnx"),
+)
+EVALUATION_OCR_VARIANTS: Final = ("clean", "rotated", "blurred", "low_contrast")

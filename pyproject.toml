@@ -67,3 +67,7 @@ show_missing = true
 
 [tool.uv.sources]
 en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
+
+[[tool.mypy.overrides]]
+module = ["onnxruntime.*", "tokenizers.*", "rapidocr.*"]
+ignore_missing_imports = true

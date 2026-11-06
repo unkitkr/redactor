@@ -1,0 +1,182 @@
+[
+  {
+    "repository": "knowledgator/gliner-pii-edge-v1.0",
+    "revision": "9b7f39b0a2da971a5beea78d35f1539d4009c891",
+    "filename": "gliner_config.json",
+    "path": ".models/gliner-pii-edge-v1.0/gliner_config.json",
+    "bytes": 4316,
+    "sha256": "77e6b57335c4bfd461e9041682196dd6c373a0b09bbd9269ef9e95b807915340",
+    "url": "https://huggingface.co/knowledgator/gliner-pii-edge-v1.0/resolve/9b7f39b0a2da971a5beea78d35f1539d4009c891/gliner_config.json"
+  },
+  {
+    "repository": "knowledgator/gliner-pii-edge-v1.0",
+    "revision": "9b7f39b0a2da971a5beea78d35f1539d4009c891",
+    "filename": "tokenizer.json",
+    "path": ".models/gliner-pii-edge-v1.0/tokenizer.json",
+    "bytes": 3583593,
+    "sha256": "84b3a9b18f04a0ccd03b72d9f871b7e0bec40fd7021ef50bc30a7c3693c11205",
+    "url": "https://huggingface.co/knowledgator/gliner-pii-edge-v1.0/resolve/9b7f39b0a2da971a5beea78d35f1539d4009c891/tokenizer.json"
+  },
+  {
+    "repository": "knowledgator/gliner-pii-edge-v1.0",
+    "revision": "9b7f39b0a2da971a5beea78d35f1539d4009c891",
+    "filename": "tokenizer_config.json",
+    "path": ".models/gliner-pii-edge-v1.0/tokenizer_config.json",
+    "bytes": 21214,
+    "sha256": "3398f6d1ad4b4c4f9874d390d060a75c58cad5e5ce9b22841b3e40643b4ada27",
+    "url": "https://huggingface.co/knowledgator/gliner-pii-edge-v1.0/resolve/9b7f39b0a2da971a5beea78d35f1539d4009c891/tokenizer_config.json"
+  },
+  {
+    "repository": "knowledgator/gliner-pii-edge-v1.0",
+    "revision": "9b7f39b0a2da971a5beea78d35f1539d4009c891",
+    "filename": "special_tokens_map.json",
+    "path": ".models/gliner-pii-edge-v1.0/special_tokens_map.json",
+    "bytes": 694,
+    "sha256": "ea97ecdbcc73713039d8d64dbb05e3689495c96657fbd9a18f5bed381be81049",
+    "url": "https://huggingface.co/knowledgator/gliner-pii-edge-v1.0/resolve/9b7f39b0a2da971a5beea78d35f1539d4009c891/special_tokens_map.json"
+  },
+  {
+    "repository": "knowledgator/gliner-pii-edge-v1.0",
+    "revision": "9b7f39b0a2da971a5beea78d35f1539d4009c891",
+    "filename": "onnx/model_quint8.onnx",
+    "path": ".models/gliner-pii-edge-v1.0/onnx/model_quint8.onnx",
+    "bytes": 45820894,
+    "sha256": "988acb03456b26e2d9f2521016d820310c2ed64deb4a846297d3289f0c2eb7e4",
+    "url": "https://huggingface.co/knowledgator/gliner-pii-edge-v1.0/resolve/9b7f39b0a2da971a5beea78d35f1539d4009c891/onnx/model_quint8.onnx"
+  },
+  {
+    "repository": "knowledgator/gliner-pii-small-v1.0",
+    "revision": "d21aad5b4a7ec82b3d0970fd1ac74a12c087d85e",
+    "filename": "gliner_config.json",
+    "path": ".models/gliner-pii-small-v1.0/gliner_config.json",
+    "bytes": 4316,
+    "sha256": "c10803bade021f40072b194bc78bc2edd2bf3e60637a6f34cc9b00705bf3c168",
+    "url": "https://huggingface.co/knowledgator/gliner-pii-small-v1.0/resolve/d21aad5b4a7ec82b3d0970fd1ac74a12c087d85e/gliner_config.json"
+  },
+  {
+    "repository": "knowledgator/gliner-pii-small-v1.0",
+    "revision": "d21aad5b4a7ec82b3d0970fd1ac74a12c087d85e",
+    "filename": "tokenizer.json",
+    "path": ".models/gliner-pii-small-v1.0/tokenizer.json",
+    "bytes": 3583593,
+    "sha256": "84b3a9b18f04a0ccd03b72d9f871b7e0bec40fd7021ef50bc30a7c3693c11205",
+    "url": "https://huggingface.co/knowledgator/gliner-pii-small-v1.0/resolve/d21aad5b4a7ec82b3d0970fd1ac74a12c087d85e/tokenizer.json"
+  },
+  {
+    "repository": "knowledgator/gliner-pii-small-v1.0",
+    "revision": "d21aad5b4a7ec82b3d0970fd1ac74a12c087d85e",
+    "filename": "tokenizer_config.json",
+    "path": ".models/gliner-pii-small-v1.0/tokenizer_config.json",
+    "bytes": 21214,
+    "sha256": "3398f6d1ad4b4c4f9874d390d060a75c58cad5e5ce9b22841b3e40643b4ada27",
+    "url": "https://huggingface.co/knowledgator/gliner-pii-small-v1.0/resolve/d21aad5b4a7ec82b3d0970fd1ac74a12c087d85e/tokenizer_config.json"
+  },
+  {
+    "repository": "knowledgator/gliner-pii-small-v1.0",
+    "revision": "d21aad5b4a7ec82b3d0970fd1ac74a12c087d85e",
+    "filename": "special_tokens_map.json",
+    "path": ".models/gliner-pii-small-v1.0/special_tokens_map.json",
+    "bytes": 694,
+    "sha256": "ea97ecdbcc73713039d8d64dbb05e3689495c96657fbd9a18f5bed381be81049",
+    "url": "https://huggingface.co/knowledgator/gliner-pii-small-v1.0/resolve/d21aad5b4a7ec82b3d0970fd1ac74a12c087d85e/special_tokens_map.json"
+  },
+  {
+    "repository": "knowledgator/gliner-pii-small-v1.0",
+    "revision": "d21aad5b4a7ec82b3d0970fd1ac74a12c087d85e",
+    "filename": "onnx/model_quint8.onnx",
+    "path": ".models/gliner-pii-small-v1.0/onnx/model_quint8.onnx",
+    "bytes": 82680500,
+    "sha256": "891589426ee96f2748b16439f44fad8c3f97e198e002a6637e58dee989500216",
+    "url": "https://huggingface.co/knowledgator/gliner-pii-small-v1.0/resolve/d21aad5b4a7ec82b3d0970fd1ac74a12c087d85e/onnx/model_quint8.onnx"
+  },
+  {
+    "repository": "OpenMed/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android",
+    "revision": "82f57fcab68125b05f1aa9fdd41319732358311b",
+    "filename": "config.json",
+    "path": ".models/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android/config.json",
+    "bytes": 6628,
+    "sha256": "d15cdf1415b538e01445543f4a47430b23c43c18a0bd35d791b63ce62ec8d1f5",
+    "url": "https://huggingface.co/OpenMed/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android/resolve/82f57fcab68125b05f1aa9fdd41319732358311b/config.json"
+  },
+  {
+    "repository": "OpenMed/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android",
+    "revision": "82f57fcab68125b05f1aa9fdd41319732358311b",
+    "filename": "id2label.json",
+    "path": ".models/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android/id2label.json",
+    "bytes": 2598,
+    "sha256": "40f57c6fa3d84775c7d3cd58d6ef3c4736250261f08572cbbaef1290b577c898",
+    "url": "https://huggingface.co/OpenMed/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android/resolve/82f57fcab68125b05f1aa9fdd41319732358311b/id2label.json"
+  },
+  {
+    "repository": "OpenMed/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android",
+    "revision": "82f57fcab68125b05f1aa9fdd41319732358311b",
+    "filename": "tokenizer.json",
+    "path": ".models/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android/tokenizer.json",
+    "bytes": 8340140,
+    "sha256": "ccab0d2b1c2aec656e37e1f5a3bc8a71e64186f221717059852bfc1c99829d59",
+    "url": "https://huggingface.co/OpenMed/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android/resolve/82f57fcab68125b05f1aa9fdd41319732358311b/tokenizer.json"
+  },
+  {
+    "repository": "OpenMed/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android",
+    "revision": "82f57fcab68125b05f1aa9fdd41319732358311b",
+    "filename": "model_int8.onnx",
+    "path": ".models/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android/model_int8.onnx",
+    "bytes": 466985237,
+    "sha256": "024aee10c7141ac847d2eb91c124eb001f7a80b279b9f39617a8dd37fb60d06c",
+    "url": "https://huggingface.co/OpenMed/OpenMed-PII-SuperClinical-Small-44M-v1-onnx-android/resolve/82f57fcab68125b05f1aa9fdd41319732358311b/model_int8.onnx"
+  },
+  {
+    "repository": "tesseract-ocr/tessdata_fast",
+    "revision": "87416418657359cb625c412a48b6e1d6d41c29bd",
+    "filename": "eng.traineddata",
+    "path": ".models/tessdata_fast/eng.traineddata",
+    "bytes": 4113088,
+    "sha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2",
+    "url": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/eng.traineddata"
+  },
+  {
+    "repository": "tesseract-ocr/tessdata_best",
+    "revision": "e12c65a915945e4c28e237a9b52bc4a8f39a0cec",
+    "filename": "eng.traineddata",
+    "path": ".models/tessdata_best/eng.traineddata",
+    "bytes": 15400601,
+    "sha256": "8280aed0782fe27257a68ea10fe7ef324ca0f8d85bd2fd145d1c2b560bcb66ba",
+    "url": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/e12c65a915945e4c28e237a9b52bc4a8f39a0cec/eng.traineddata"
+  },
+  {
+    "repository": "RapidAI/RapidOCR",
+    "revision": "v3.10.0",
+    "filename": "ch_PP-OCRv5_det_mobile.onnx",
+    "path": ".models/ppocr-v5/ch_PP-OCRv5_det_mobile.onnx",
+    "bytes": 4819576,
+    "sha256": "4d97c44a20d30a81aad087d6a396b08f786c4635742afc391f6621f5c6ae78ae",
+    "url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv5/det/ch_PP-OCRv5_det_mobile.onnx"
+  },
+  {
+    "repository": "RapidAI/RapidOCR",
+    "revision": "v3.10.0",
+    "filename": "en_PP-OCRv5_rec_mobile.onnx",
+    "path": ".models/ppocr-v5/en_PP-OCRv5_rec_mobile.onnx",
+    "bytes": 7872351,
+    "sha256": "c3461add59bb4323ecba96a492ab75e06dda42467c9e3d0c18db5d1d21924be8",
+    "url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv5/rec/en_PP-OCRv5_rec_mobile.onnx"
+  },
+  {
+    "repository": "RapidAI/RapidOCR",
+    "revision": "v3.10.0",
+    "filename": "latin_PP-OCRv5_rec_mobile.onnx",
+    "path": ".models/ppocr-v5/latin_PP-OCRv5_rec_mobile.onnx",
+    "bytes": 7904513,
+    "sha256": "b20bd37c168a570f583afbc8cd7925603890efbcdc000a59e22c269d160b5f5a",
+    "url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile.onnx"
+  },
+  {
+    "repository": "RapidAI/RapidOCR",
+    "revision": "v3.10.0",
+    "filename": "ch_PP-LCNet_x0_25_textline_ori_cls_mobile.onnx",
+    "path": ".models/ppocr-v5/ch_PP-LCNet_x0_25_textline_ori_cls_mobile.onnx",
+    "bytes": 1018508,
+    "sha256": "54379ae5174d026780215fc748a7f31910dee36818e63d49e17dc598ecc82df7",
+    "url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv5/cls/ch_PP-LCNet_x0_25_textline_ori_cls_mobile.onnx"
+  }
+]
