@@ -17,6 +17,7 @@ from time import perf_counter
 
 from pipeline import cgroup_values, file_digest, model_fingerprint, source_digest
 
+from redactor.schemas.diagnostics import FailureDiagnostic
 from redactor.utils.constants import (
     DATABASE_FILENAME,
     DEFAULT_WORKER_COUNT,
@@ -25,6 +26,7 @@ from redactor.utils.constants import (
     PUBLISHED_DIRECTORY,
     REPORT_FILENAME,
     RUN_LOCK_FILENAME,
+    WORKER_FAILURE_FILENAME,
 )
 
 
@@ -87,6 +89,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--deadline-seconds", type=float, default=1800)
     parser.add_argument("--shutdown-seconds", type=float, default=10)
+    parser.add_argument("--image-id", default="")
     arguments = parser.parse_args()
     if platform.system() != "Linux" or os.environ.get(MODEL_ENABLED_ENVIRONMENT) != "0":
         parser.error("Use Linux with LLM_ENABLED=0.")
@@ -158,6 +161,16 @@ def main() -> None:
         and report["quarantined"] == 0
         and published_rows == generation["input_rows"]
     )
+    quota, period = str(limits["cpu.max"]).split()
+    resource_gate = (
+        quota != "max"
+        and int(quota) == 2 * int(period)
+        and limits["memory.max"] == 1_000_000_000
+        and limits["memory.swap.max"] == 0
+    )
+    full_target = generation["input_bytes"] >= 2 * 1024**3 and resource_gate
+    source_unchanged = source_before == source_digest(Path.cwd(), arguments.config)
+    input_unchanged = file_digest(arguments.input) == generation["input_sha256"]
     result = {
         "measurement": "large_csv_pipeline",
         "generator": generation,
@@ -167,11 +180,11 @@ def main() -> None:
         "model_mode": "local_only",
         "local_ner": model_fingerprint(arguments.config),
         "source_sha256": source_before,
-        "source_unchanged": source_before
-        == source_digest(Path.cwd(), arguments.config),
+        "source_unchanged": source_unchanged,
+        "image_id": arguments.image_id,
         "probe_sha256": file_digest(Path(__file__)),
         "configuration_sha256": file_digest(arguments.config),
-        "input_unchanged": file_digest(arguments.input) == generation["input_sha256"],
+        "input_unchanged": input_unchanged,
         "exit_code": process.returncode,
         "timed_out": timed_out,
         "termination_started_at": termination_started_at,
@@ -185,6 +198,13 @@ def main() -> None:
         "stdout_bytes": (workspace / "pipeline.stdout").stat().st_size,
         "stderr_bytes": (workspace / "pipeline.stderr").stat().st_size,
         "progress": progress(arguments.state),
+        "state_bytes": sum(
+            path.stat().st_size for path in arguments.state.rglob("*") if path.is_file()
+        ),
+        "worker_failures": [
+            FailureDiagnostic.model_validate_json(path.read_bytes()).model_dump()
+            for path in arguments.state.glob(WORKER_FAILURE_FILENAME.format(pid="*"))
+        ],
         "report": report,
         "published_rows": published_rows,
         "all_rows_published": complete_coverage,
@@ -192,9 +212,17 @@ def main() -> None:
         "completed_input_mib_per_second": (
             generation["input_bytes"] / 1024**2 / elapsed if complete_coverage else None
         ),
-        "full_acceptance_target_exercised": False,
+        "full_acceptance_target_exercised": full_target,
+        "acceptance_passed": (
+            full_target
+            and complete_coverage
+            and elapsed <= 1800
+            and source_unchanged
+            and input_unchanged
+            and int(limits["memory.peak"]) <= 1_000_000_000
+        ),
         "scope": (
-            "One generated GiB-scale CSV; a quarantine outcome is not complete "
+            "One complete generated CSV; a quarantine outcome is not complete "
             "row processing and cannot establish redaction throughput."
         ),
     }

@@ -1,0 +1,25 @@
+{
+  "measurement": "large_csv_generation",
+  "generator": "tools/make_large_csv.py",
+  "generator_sha256": "ec2d9caa5095ddedc6846bb986d95db9f44b04def7ba20fd06999c65a5607c8c",
+  "command": [
+    "python",
+    "tools/make_large_csv.py",
+    "--size-gb",
+    "2",
+    "--seed",
+    "1",
+    "--out",
+    "tmp/large-csv-2g-20261107/input/big_encounters.csv"
+  ],
+  "requested_size_gib": 2,
+  "seed": 1,
+  "input_bytes": 2147950662,
+  "input_rows": 11200000,
+  "columns": 14,
+  "multiline_records": 2798860,
+  "input_sha256": "282517b6eb4d8ab15fd68c67a4286bd7dd417b06a2fa6c83d68324ccb906e415",
+  "full_file_validated": true,
+  "validation_wall_seconds": 26.368649375042878,
+  "scope": "Generation and complete structural validation only; no pipeline performance claim."
+}
