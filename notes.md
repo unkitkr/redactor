@@ -39,6 +39,7 @@
 - **Model policy:** local processing is the default; `LLM_ENABLED=1` enables hosted detection with local fallback, while `LLM_ENABLED=0` prevents all remote calls and verification always runs.
 - **Hosted limits:** GLM uses a shared $3 run budget, three attempts, a 65-second request deadline and routing caps of $0.15/$0.50 per million input/output tokens; reasoning uses the output allowance ([rates](https://openrouter.ai/api/v1/models/z-ai/glm-5.3-flash/endpoints)).
 - **Remote replay:** saved responses are reused; a crash before persistence can require another bounded request, with a different answer or another charge.
+- **Runtime reproducibility:** recovery rejects changes to model bytes or installed code at the same paths; container images and read-only weight mounts keep the runtime fixed during execution.
 
 ## Measurements
 
@@ -49,6 +50,8 @@
 - **Held-in pipeline:** both modes published 0/12 supplied files under 2 vCPUs / 1 GiB; local took 11.884 seconds / 645.72 MiB, hosted took 80.460 seconds / 654.48 MiB, and both replayed unchanged ([local](benchmarks/held-in-local.json), [hosted](benchmarks/held-in-hosted.json)).
 - **Hosted pipeline cost:** 15 GLM 5.3 Flash requests cost $0.003684328 in receipts against $0.00442625 accounted; four observations fell back locally, and replay made no new requests.
 - **Large CSV diagnostic:** 1 GiB / 5.6 million rows failed after 929.256 seconds with 1.29 million analyzed and none published; the older frozen revision and changed helper make this a failed baseline, not an A7 result ([record](benchmarks/large-csv-1g.json)).
+- **Current bulk diagnostic:** the full 2 GiB fixture ran under two CPUs, a 1 GB limit and no swap, but v16 quarantined during analysis on an overextended age prediction; this is a failed acceptance run ([record](benchmarks/large-csv-2g-v16.json)).
+- **Recovery integration:** clean CSV/JSON outputs match runs killed after analysis, analysis and rewrite checkpoints, rewriting, verification and publication; SQLite integrity and one accepted result per task are checked after recovery.
 - **Dashboard overhead:** 1,000 tasks under 2 vCPUs / 1 GiB used 0.75% of one core while polling, 43.07 MiB server peak RSS and 40.33 ms mean queue latency; browser overhead and concurrent pipeline throughput were not measured ([record](benchmarks/results/dashboard-overhead.json)).
 
 ## Known limitations

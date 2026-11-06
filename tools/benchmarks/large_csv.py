@@ -162,10 +162,13 @@ def main() -> None:
         and published_rows == generation["input_rows"]
     )
     quota, period = str(limits["cpu.max"]).split()
+    requested_memory_bytes = 1_000_000_000
+    page_size = os.sysconf("SC_PAGE_SIZE")
+    effective_memory_bytes = requested_memory_bytes // page_size * page_size
     resource_gate = (
         quota != "max"
         and int(quota) == 2 * int(period)
-        and limits["memory.max"] == 1_000_000_000
+        and limits["memory.max"] == effective_memory_bytes
         and limits["memory.swap.max"] == 0
     )
     full_target = generation["input_bytes"] >= 2 * 1024**3 and resource_gate
@@ -193,6 +196,8 @@ def main() -> None:
         "deadline_seconds": arguments.deadline_seconds,
         "wall_seconds": elapsed,
         "cgroup": limits,
+        "requested_memory_limit_bytes": requested_memory_bytes,
+        "page_size_bytes": page_size,
         "cgroup_memory_events": memory_events,
         "memory_scope": "Entire container, including probe, workers and dashboard",
         "stdout_bytes": (workspace / "pipeline.stdout").stat().st_size,
