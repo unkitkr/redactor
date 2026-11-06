@@ -1630,3 +1630,101 @@ EVALUATION_REMOTE_ATTEMPTS: Final = 2
 EVALUATION_OPENMED_CONFIG: Final = "config.json"
 EVALUATION_OPENMED_LABELS: Final = "id2label.json"
 EVALUATION_OPENMED_WEIGHTS: Final = "model_int8.onnx"
+
+# Optional read-only monitoring
+MonitorStatus = Literal["ready", "missing", "busy", "unavailable"]
+MonitorStep = Literal[
+    "inspect",
+    "analyze",
+    "resolve",
+    "rewrite",
+    "verify",
+    "publish",
+    "quarantine",
+    "reconcile",
+    "print_task",
+]
+MONITOR_READY: Final = "ready"
+MONITOR_MISSING: Final = "missing"
+MONITOR_BUSY: Final = "busy"
+MONITOR_UNAVAILABLE: Final = "unavailable"
+MONITOR_MAX_RUNS: Final = 30
+MONITOR_MAX_TASKS: Final = 50
+MONITOR_QUERY_SECONDS: Final = 0.1
+MONITOR_SQLITE_TIMEOUT_SECONDS: Final = 0.025
+MONITOR_PROGRESS_INSTRUCTIONS: Final = 1000
+MONITOR_SQLITE_ERROR_MASK: Final = 0xFF
+MONITOR_RUN_ID_PATTERN: Final = rf"^(?:[0-9a-f]{{64}}|{BOOTSTRAP_PROCESSING_VERSION})$"
+MONITOR_STEPS: Final = (
+    STEP_INSPECT,
+    STEP_ANALYZE,
+    STEP_RESOLVE,
+    STEP_REWRITE,
+    STEP_VERIFY,
+    STEP_PUBLISH,
+    STEP_QUARANTINE,
+    STEP_RECONCILE,
+    PRINT_TASK_STEP,
+)
+MONITOR_TASK_STATUSES: Final = (
+    STATUS_PENDING,
+    STATUS_RUNNING,
+    STATUS_SUCCEEDED,
+    STATUS_FAILED,
+)
+MONITOR_MAX_STEP_GROUPS: Final = len(MONITOR_STEPS) * len(MONITOR_TASK_STATUSES)
+MONITOR_HOST: Final = "127.0.0.1"
+MONITOR_PORT: Final = 8765
+MONITOR_POLL_SECONDS: Final = 5
+MONITOR_CACHE_SECONDS: Final = 5
+MONITOR_BENCHMARK_DIRECTORY: Final = "benchmarks"
+MONITOR_IMAGE_DIRECTORY: Final = "tmp/ocr-corpus"
+MONITOR_MAX_BENCHMARK_BYTES: Final = 2 * 1024 * 1024
+MONITOR_MAX_BENCHMARK_FILES: Final = 100
+MONITOR_MAX_IMAGE_BYTES: Final = 8 * 1024 * 1024
+MONITOR_MAX_REQUEST_PATH: Final = 256
+MONITOR_BENCHMARK_IMAGE_CASE_PATTERN: Final = (
+    r"^(?:synthetic-[12]|wristband)-(?:clean|rotated|blurred|low_contrast)$"
+)
+MONITOR_BENCHMARK_IMAGE_URL_TEMPLATE: Final = "/benchmark-images/{case_id}.png"
+MONITOR_BENCHMARK_MANIFEST: Final = "manifest.json"
+MONITOR_MAX_BENCHMARK_CASES: Final = 1000
+MONITOR_BENCHMARK_CASE_PATTERN: Final = r"^[a-z0-9][a-z0-9_-]{0,79}$"
+MONITOR_BENCHMARK_FILENAME_PATTERN: Final = r"^[a-z0-9][a-z0-9._-]{0,127}\.json$"
+MONITOR_STATIC_DIRECTORY: Final = "static"
+MONITOR_JSON_CONTENT_TYPE: Final = "application/json; charset=utf-8"
+MONITOR_IMAGE_CONTENT_TYPE: Final = "image/png"
+MONITOR_STATIC_FILES: Final = (
+    ("index.html", "text/html; charset=utf-8"),
+    ("styles.css", "text/css; charset=utf-8"),
+    ("app.js", "text/javascript; charset=utf-8"),
+    ("queue.js", "text/javascript; charset=utf-8"),
+    ("queue_views.js", "text/javascript; charset=utf-8"),
+    ("benchmarks.js", "text/javascript; charset=utf-8"),
+    ("benchmark_details.js", "text/javascript; charset=utf-8"),
+    ("format.js", "text/javascript; charset=utf-8"),
+)
+MONITOR_BENCHMARK_CACHE_SECONDS: Final = 30
+MONITOR_QUEUE_ROUTE: Final = "/api/queue"
+MONITOR_BENCHMARK_ROUTE: Final = "/api/benchmarks"
+MONITOR_ASSET_PREFIX: Final = "/static/"
+MONITOR_HTTP_HEADERS: Final = (
+    ("Cache-Control", "no-store"),
+    ("X-Content-Type-Options", "nosniff"),
+    (
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self'; style-src 'self'; "
+        "img-src 'self'; connect-src 'self'; object-src 'none'; "
+        "base-uri 'none'; frame-ancestors 'none'",
+    ),
+)
+MONITOR_RUN_PATTERN: Final = rf"(?:[0-9a-f]{{64}}|{BOOTSTRAP_PROCESSING_VERSION})"
+MONITOR_QUERY_LIMIT: Final = 2
+MONITOR_MODULE: Final = "redactor.monitoring"
+MONITOR_DEFAULT_ENABLED: Final = True
+MONITOR_STARTUP_SECONDS: Final = 1.0
+MONITOR_STOP_SECONDS: Final = 0.5
+MONITOR_SERVER_POLL_SECONDS: Final = 0.5
+MONITOR_REQUEST_TIMEOUT_SECONDS: Final = 1.0
+MONITOR_READY_TOKEN: Final = b"ready\n"
+MONITOR_MAX_PORT: Final = 65535

@@ -83,6 +83,13 @@ ERROR_IDENTITY_SNAPSHOT: Final = "invalid_identity_snapshot"
 ERROR_EVALUATION_CACHE_MISS: Final = "evaluation_cache_miss"
 EVALUATION_REASON_CODES: Final = (ERROR_EVALUATION_CACHE_MISS,)
 
+# Dashboard state is read-only and never participates in pipeline failure state.
+ERROR_MONITOR_MISSING: Final = "monitor_state_missing"
+ERROR_MONITOR_RUN_MISSING: Final = "monitor_run_missing"
+ERROR_MONITOR_BUSY: Final = "monitor_state_busy"
+ERROR_MONITOR_UNAVAILABLE: Final = "monitor_state_unavailable"
+ERROR_MONITOR_STARTUP: Final = "monitor_startup_failed"
+
 INSPECTION_REASON_CODES: Final = (
     ERROR_FORMAT_UNSUPPORTED,
     ERROR_CONTAINER,
