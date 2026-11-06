@@ -21,7 +21,11 @@ from redactor.utils.constants import (
     VERIFIER_SURFACE_PUNCTUATION,
 )
 from redactor.utils.errors import ERROR_RESIDUAL_PHI
-from redactor.verification.evidence import contains_range, sensitive_ranges
+from redactor.verification.evidence import (
+    contains_range,
+    covered_by_ranges,
+    sensitive_ranges,
+)
 
 
 def protected_clinical_ranges(text: str) -> tuple[TextRange, ...]:
@@ -93,7 +97,7 @@ def scan_residuals(
         ):
             continue
         mention = TextRange(start=entity.start, end=entity.end)
-        if not any(contains_range(span, mention) for span in allowed) and not (
+        if not covered_by_ranges(text, mention, allowed) and not (
             _covered_name_with_role(text, mention, exemptions)
         ):
             raise ValueError(ERROR_RESIDUAL_PHI)

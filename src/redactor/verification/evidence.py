@@ -2,6 +2,7 @@
 
 import re
 from ipaddress import IPv6Address
+from unicodedata import category
 
 from redactor.policy.name_mentions import known_name_ranges as known_name_ranges
 from redactor.schemas.redaction import TextRange
@@ -20,6 +21,35 @@ from redactor.utils.constants import (
 
 def contains_range(outer: TextRange, inner: TextRange) -> bool:
     return outer.start <= inner.start and inner.end <= outer.end
+
+
+def covered_by_ranges(
+    text: str, mention: TextRange, evidence: tuple[TextRange, ...]
+) -> bool:
+    """Cover every substantive character with exact, location-bound evidence.
+
+    Model spans can join a verified edit to an unchanged clinical expression.
+    Whitespace and punctuation may join those proofs; letters, marks, symbols
+    and numbers outside them remain unresolved, including a single initial.
+    """
+    cursor = mention.start
+    covered = False
+    for span in sorted(evidence, key=lambda item: (item.start, item.end)):
+        if span.end <= cursor or span.start >= mention.end:
+            continue
+        gap = text[cursor : min(span.start, mention.end)]
+        if any(
+            not (value.isspace() or category(value).startswith("P")) for value in gap
+        ):
+            return False
+        cursor = max(cursor, span.end)
+        covered = True
+        if cursor >= mention.end:
+            return True
+    return covered and all(
+        value.isspace() or category(value).startswith("P")
+        for value in text[cursor : mention.end]
+    )
 
 
 def sensitive_ranges(
