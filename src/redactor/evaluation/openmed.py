@@ -9,15 +9,21 @@ import numpy as np
 from redactor.evaluation.onnx import load_session, load_tokenizer
 from redactor.inference.evidence import validate_entity_evidence
 from redactor.schemas.entities import EntityType, NerAdapter, TextEntities, TextEntity
-from redactor.utils.constants import EVALUATION_OPENMED_TYPES
+from redactor.utils.constants import (
+    EVALUATION_OPENMED_CONFIG,
+    EVALUATION_OPENMED_LABELS,
+    EVALUATION_OPENMED_TYPES,
+    EVALUATION_OPENMED_WEIGHTS,
+    EVALUATION_TOKENIZER,
+)
 from redactor.utils.errors import ERROR_LOCAL_INPUT
 
 
 def load_openmed(directory: Path) -> NerAdapter:
-    configuration = json.loads((directory / "config.json").read_text())
-    labels = json.loads((directory / "id2label.json").read_text())
-    tokenizer = load_tokenizer(directory / "tokenizer.json")
-    session = load_session(directory / "model_int8.onnx")
+    configuration = json.loads((directory / EVALUATION_OPENMED_CONFIG).read_text())
+    labels = json.loads((directory / EVALUATION_OPENMED_LABELS).read_text())
+    tokenizer = load_tokenizer(directory / EVALUATION_TOKENIZER)
+    session = load_session(directory / EVALUATION_OPENMED_WEIGHTS)
     types = {
         label: kind for kind, values in EVALUATION_OPENMED_TYPES for label in values
     }

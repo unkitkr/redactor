@@ -16,19 +16,22 @@ from redactor.evaluation.onnx import load_session, load_tokenizer
 from redactor.inference.evidence import validate_entity_evidence
 from redactor.schemas.entities import EntityType, NerAdapter, TextEntities, TextEntity
 from redactor.utils.constants import (
+    EVALUATION_GLINER_CONFIG,
     EVALUATION_GLINER_LABELS,
     EVALUATION_GLINER_THRESHOLD,
+    EVALUATION_GLINER_WEIGHTS,
+    EVALUATION_TOKENIZER,
     EVALUATION_WORD_PATTERN,
 )
 from redactor.utils.errors import ERROR_LOCAL_INPUT, ERROR_LOCAL_UNAVAILABLE
 
 
 def load_gliner(directory: Path) -> NerAdapter:
-    configuration = json.loads((directory / "gliner_config.json").read_text())
+    configuration = json.loads((directory / EVALUATION_GLINER_CONFIG).read_text())
     if configuration["span_mode"] != "token_level":
         raise ValueError(ERROR_LOCAL_UNAVAILABLE)
-    session = load_session(directory / "onnx/model_quint8.onnx")
-    tokenizer = load_tokenizer(directory / "tokenizer.json")
+    session = load_session(directory / EVALUATION_GLINER_WEIGHTS)
+    tokenizer = load_tokenizer(directory / EVALUATION_TOKENIZER)
     prompt = [
         value
         for label, _ in EVALUATION_GLINER_LABELS

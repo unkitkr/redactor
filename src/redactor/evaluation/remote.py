@@ -22,12 +22,16 @@ from redactor.schemas.configuration import PipelineSettings, RemoteSettings
 from redactor.schemas.entities import NerAdapter, TextEntities, TextEntity
 from redactor.schemas.persistence import Task
 from redactor.utils.constants import (
+    EVALUATION_IMAGE_FIELD,
     EVALUATION_OPENROUTER_URL,
+    EVALUATION_REMOTE_ATTEMPTS,
     EVALUATION_REMOTE_DEADLINE,
     EVALUATION_REMOTE_INPUT_PRICE,
     EVALUATION_REMOTE_OUTPUT_PRICE,
     EVALUATION_REMOTE_OUTPUT_TOKENS,
     EVALUATION_REMOTE_TIMEOUT,
+    EVALUATION_VISION_INPUT_PRICE,
+    EVALUATION_VISION_OUTPUT_PRICE,
     MODEL_KEY_ENVIRONMENT,
     MODEL_REMOTE,
     MODEL_RESPONSE_BYTES,
@@ -38,7 +42,7 @@ from redactor.utils.provider import request_json
 
 def remote_settings(model: str) -> PipelineSettings:
     input_price, output_price = (
-        ("0.4", "1.5")
+        (EVALUATION_VISION_INPUT_PRICE, EVALUATION_VISION_OUTPUT_PRICE)
         if model.startswith("z-ai/")
         else (EVALUATION_REMOTE_INPUT_PRICE, EVALUATION_REMOTE_OUTPUT_PRICE)
     )
@@ -51,7 +55,7 @@ def remote_settings(model: str) -> PipelineSettings:
             timeout_seconds=EVALUATION_REMOTE_TIMEOUT,
             deadline_seconds=EVALUATION_REMOTE_DEADLINE,
             max_output_tokens=EVALUATION_REMOTE_OUTPUT_TOKENS,
-            max_attempts=2,
+            max_attempts=EVALUATION_REMOTE_ATTEMPTS,
         )
     )
 
@@ -105,13 +109,13 @@ def recording_transport(
         payload["reasoning"] = {"enabled": payload["model"].startswith("z-ai/")}
         payload["temperature"] = 0
         user_content = json.loads(payload["messages"][1]["content"])
-        if "evaluation_image_base64" in user_content:
+        if EVALUATION_IMAGE_FIELD in user_content:
             payload["messages"][1]["content"] = [
                 {
                     "type": "image_url",
                     "image_url": {
                         "url": "data:image/png;base64,"
-                        + user_content["evaluation_image_base64"]
+                        + user_content[EVALUATION_IMAGE_FIELD]
                     },
                 }
             ]

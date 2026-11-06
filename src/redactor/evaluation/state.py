@@ -12,7 +12,7 @@ from redactor.persistence.files.registration import register_file
 from redactor.persistence.models.budget import recover_model_attempts
 from redactor.persistence.queue.tasks import claim_task, recover_interrupted
 from redactor.schemas.persistence import Task
-from redactor.utils.constants import EVALUATION_REMOTE_VERSION
+from redactor.utils.constants import EVALUATION_KEY_FILENAME, EVALUATION_REMOTE_VERSION
 
 
 @contextmanager
@@ -22,7 +22,7 @@ def evaluation_state(
     with own_run(directory):
         connection = open_database(directory)
         try:
-            key_path = directory / "encryption.key"
+            key_path = directory / EVALUATION_KEY_FILENAME
             if not key_path.exists():
                 with key_path.open("xb") as output:
                     os.chmod(key_path, 0o600)

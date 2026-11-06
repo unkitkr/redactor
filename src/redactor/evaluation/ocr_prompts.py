@@ -9,6 +9,10 @@ from PIL import Image
 
 from redactor.schemas.evaluation import OcrResponse
 from redactor.schemas.provider import ModelRequest
+from redactor.utils.constants import (
+    EVALUATION_IMAGE_FIELD,
+    EVALUATION_OCR_PROMPT_VERSION,
+)
 
 
 def ocr_request(path: Path) -> ModelRequest:
@@ -28,10 +32,10 @@ def ocr_request(path: Path) -> ModelRequest:
     )
     return ModelRequest(
         purpose="detector",
-        prompt_version="evaluation-ocr-v1",
+        prompt_version=EVALUATION_OCR_PROMPT_VERSION,
         system_prompt=instructions,
         input_text=json.dumps(
-            {"evaluation_image_base64": base64.b64encode(content).decode()}
+            {EVALUATION_IMAGE_FIELD: base64.b64encode(content).decode()}
         ),
         context_id=hashlib.sha256(content).hexdigest(),
     )

@@ -1090,3 +1090,17 @@ EVALUATION_PPOCR_RECOGNIZERS: Final = (
     ("latin", "latin_PP-OCRv5_rec_mobile.onnx"),
 )
 EVALUATION_OCR_VARIANTS: Final = ("clean", "rotated", "blurred", "low_contrast")
+EVALUATION_KEY_FILENAME: Final = "encryption.key"
+EVALUATION_IMAGE_FIELD: Final = "evaluation_image_base64"
+EVALUATION_OCR_PROMPT_VERSION: Final = "evaluation-ocr-v1"
+EVALUATION_VISION_INPUT_BYTES: Final = 2 * 1024 * 1024
+EVALUATION_VISION_OUTPUT_TOKENS: Final = 4096
+EVALUATION_VISION_INPUT_PRICE: Final = "0.4"
+EVALUATION_VISION_OUTPUT_PRICE: Final = "1.5"
+EVALUATION_REMOTE_ATTEMPTS: Final = 2
+EVALUATION_GLINER_CONFIG: Final = "gliner_config.json"
+EVALUATION_GLINER_WEIGHTS: Final = "onnx/model_quint8.onnx"
+EVALUATION_TOKENIZER: Final = "tokenizer.json"
+EVALUATION_OPENMED_CONFIG: Final = "config.json"
+EVALUATION_OPENMED_LABELS: Final = "id2label.json"
+EVALUATION_OPENMED_WEIGHTS: Final = "model_int8.onnx"
