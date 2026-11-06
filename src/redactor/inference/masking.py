@@ -42,6 +42,6 @@ def restore_entity(
     ):
         raise ValueError(ERROR_ENTITY_EVIDENCE)
     start, end = source_positions[0], source_positions[-1] + 1
-    return TextEntity(
-        start=start, end=end, text=text[start:end], entity_type=entity.entity_type
+    return entity.model_copy(
+        update={"start": start, "end": end, "text": text[start:end]}
     )

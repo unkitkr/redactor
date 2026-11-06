@@ -3,11 +3,14 @@
 import re
 
 from redactor.inference.evidence import validate_entity_evidence
+from redactor.inference.semantics import possible_entity, refine_entity
 from redactor.policy.text_patterns import age_mentions, clinical_ranges
 from redactor.schemas.entities import NerAdapter, TextEntities
 from redactor.schemas.redaction import TextRange
 from redactor.utils.constants import (
     AGE_GROUP_MINIMUM,
+    ENTITY_LOCATION,
+    PRESERVED_US_GEOGRAPHY,
     VERIFIER_MENTION_PREFIX_PATTERN,
     VERIFIER_MENTION_SUFFIX_PATTERN,
     VERIFIER_RELATIVE_TIME_PATTERN,
@@ -24,7 +27,10 @@ def protected_clinical_ranges(text: str) -> tuple[TextRange, ...]:
     )
     candidates = clinical_ranges(text) + tuple(
         TextRange(start=match.start(), end=match.end())
-        for pattern in (VERIFIER_RELATIVE_TIME_PATTERN, VERIFIER_ROLE_LABEL_PATTERN)
+        for pattern in (
+            VERIFIER_RELATIVE_TIME_PATTERN,
+            VERIFIER_ROLE_LABEL_PATTERN,
+        )
         for match in re.finditer(pattern, text)
     )
     return tuple(
@@ -74,6 +80,14 @@ def scan_residuals(
     # needed to recognize an initial or surname that the writer left behind.
     entities = validate_entity_evidence(text, TextEntities(entities=local_ner(text)))
     for entity in entities:
+        if not possible_entity(entity, text):
+            continue
+        entity = refine_entity(entity)
+        if (
+            entity.entity_type == ENTITY_LOCATION
+            and entity.text.casefold().strip() in PRESERVED_US_GEOGRAPHY
+        ):
+            continue
         mention = TextRange(start=entity.start, end=entity.end)
         if not any(contains_range(span, mention) for span in allowed) and not (
             _covered_name_with_role(text, mention, exemptions)

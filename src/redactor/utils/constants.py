@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v5"
+PIPELINE_VERSION: Final = "pipeline-v6"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -148,7 +148,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v3"
+VERIFIER_VERSION: Final = "verifier-v4"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -1123,10 +1123,6 @@ TEXT_PHONE_PATTERN: Final = (
     r"(?:[ \t]*(?i:ext(?:ension)?\.?|x|#)[ \t]*[:=]?[ \t]*[0-9]+)?"
     r"(?![\w]|[ \t().-]*[0-9])"
 )
-TEXT_DATE_PATTERN: Final = (
-    r"(?<![\w/])(?:[0-9]{4}[-/][0-9]{1,2}[-/][0-9]{1,2}"
-    r"|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4})(?![\w/])"
-)
 TEXT_STREET_PATTERN: Final = (
     r"(?i)\b[0-9]{1,6}\s+(?:[\w.'’\-]+\s+){1,6}"
     r"(?:avenue|ave|street|st|road|rd|lane|ln|drive|dr|boulevard|blvd|court|ct|way)"
@@ -1177,6 +1173,10 @@ VERHOEFF_PERMUTATIONS: Final = (
     (7, 0, 4, 6, 9, 1, 3, 2, 5, 8),
 )
 TEXT_CLINICAL_PATTERNS: Final = (
+    r"(?i)\b(?:in|since|during|through|year|quit|dx|diagnosed)\s+(?:19|20)[0-9]{2}\b",
+    r"(?i)\b(?:T|temp(?:erature)?)\s*[:=]?\s*[0-9]+(?:\.[0-9]+)?\s*°?[CF]\b",
+    r"(?i)\b(?:A1c|HbA1c|GCS|LDL|HDL|HR|BP)\s*[:=]?\s*"
+    r"[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?\s*(?:%|mg/dL|mmol/L|mmHg|bpm)?",
     r"\b(?:MRN|DOB|NPI|SSN)(?=[ :\t])",
     r"\b(?:MD|RN)\b",
     r"(?i)\b(?:renal|diabetic|cardiac|low[- ]sodium|low[- ]fat|clear[- ]liquid)"
@@ -1266,7 +1266,14 @@ DATE_YMD_PATTERN: Final = (
 )
 DATE_MDY_PATTERN: Final = (
     r"(?P<month>[0-9]{1,2})(?P<separator>/)(?P<day>[0-9]{1,2})/"
-    r"(?P<year>[0-9]{4})" + DATE_CLOCK_PATTERN
+    r"(?P<year>[0-9]{4}|[0-9]{2})" + DATE_CLOCK_PATTERN
+)
+DATE_SHORT_YEAR_PIVOT: Final = 69
+DATE_SHORT_YEAR_BASE: Final = 2000
+DATE_CENTURY_YEARS: Final = 100
+TEXT_DATE_PATTERN: Final = (
+    r"(?<![\w/])(?:[0-9]{4}[-/][0-9]{1,2}[-/][0-9]{1,2}"
+    r"|[0-9]{1,2}/[0-9]{1,2}/(?:[0-9]{4}|[0-9]{2}))" + DATE_CLOCK_PATTERN + r"(?![\w/])"
 )
 DATE_COMPACT_PATTERN: Final = (
     r"(?P<year>[0-9]{4})(?P<month>[0-9]{2})(?P<day>[0-9]{2})"
@@ -1361,6 +1368,8 @@ HL7_NAME_MODE: Final = "name"
 HL7_PHONE_MODE: Final = "phone"
 HL7_VALUE_MODE: Final = "value"
 FIELD_RELATIVE_NAME: Final = "relative_name"
+FIELD_PERSON_NAME: Final = "person_name"
+UNLINKED_PERSON_NAMESPACE: Final = "unlinked-person"
 HL7_STRUCTURAL_FIELDS: Final = (
     ("MSH", 9, r"ADT{component}A[0-9]{2}(?:{component}ADT_A[0-9]{2})?"),
     ("MSH", 11, r"[PTD]"),
@@ -1571,6 +1580,43 @@ GLINER_LABELS: Final = (
     ("device identifier", "identifier"),
     ("driver license", "identifier"),
 )
+# Reject only model predictions whose named datatype has no possible syntax.
+# These are language/format rules, never document titles or fixture vocabulary.
+NER_PHONE_LABEL: Final = "phone number"
+NER_EMAIL_LABEL: Final = "email address"
+NER_IP_LABEL: Final = "ip address"
+NER_URL_LABEL: Final = "url"
+NER_ZIP_LABEL: Final = "location zip"
+NER_NUMERIC_IDENTIFIER_LABELS: Final = ("ssn", "driver license")
+NON_IDENTIFYING_LOCATION_PATTERN: Final = (
+    r"(?i)\b(?:(?:drive|driven|return|returned|discharge|discharged|go|going|went|"
+    r"walk|walked|at|back|to|from)\s+)?(?:home|here|there|nearby)\b"
+)
+CLINICAL_NEGATION_PREFIX_PATTERN: Final = (
+    r"(?i)\b(?:no|without|denies|negative for|history of|with|has)\s+$"
+)
+CLINICAL_RANGE_GAP_PATTERN: Final = r"[\s.,;:!?()\[\]{}'\"’/-]*"
+NAME_TRAILING_VERB_PATTERN: Final = (
+    r"[ \t]+(?:visited|returned|called|arrived|reported|assisted|"
+    r"accompanied|attended|declined|agreed|confirmed|requested)$"
+)
+NER_NUMBER_WORD_PATTERN: Final = (
+    r"(?i)\b(?:zero|oh|one|two|three|four|five|six|seven|eight|nine|ten|eleven|"
+    r"twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|"
+    r"twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand)\b"
+)
+NER_TIME_WORD_PATTERN: Final = (
+    r"(?i)\b(?:noon|midnight|morning|afternoon|evening|night|o.clock|am|pm)\b"
+)
+NER_DATE_WORD_PATTERN: Final = (
+    r"(?i)\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
+    r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|"
+    r"dec(?:ember)?|mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|"
+    r"fri(?:day)?|sat(?:urday)?|sun(?:day)?|today|tomorrow|yesterday|"
+    r"day|week|month|year|spring|summer|autumn|fall|winter|birthday)\b"
+)
+NER_EMAIL_CUE_PATTERN: Final = r"(?i)@|\b(?:at|dot)\b"
+NER_URL_CUE_PATTERN: Final = r"(?i)[.:/]|\b(?:dot|slash)\b"
 # Optional model evaluation candidates
 EVALUATION_OPENMED_TYPES: Final = (
     ("person", ("first_name", "last_name")),

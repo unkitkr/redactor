@@ -20,13 +20,13 @@ def mention_name(
     known_name = context.provider_name if provider else context.patient_name
     identity = context.provider if provider else context.patient
     known = normalize_name(known_name).split()
-    # A provider surname in an explicitly marked provider mention can refer to
-    # this row's named provider. Unqualified patient surnames are not merged.
+    # Classification establishes this record's role before applying a spelling.
+    # This is local mention resolution, never a name-only global identity merge.
     if (
         not relative
         and identity is not None
         and (
-            compatible_name_spelling(value, known_name)
+            compatible_name_spelling(value, known_name, allow_surname=True)
             or (
                 provider
                 and len(normalized.split()) == 1

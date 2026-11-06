@@ -2,15 +2,19 @@
 
 import re
 from datetime import date, datetime, timedelta
+from typing import Literal, cast
 
 from redactor.policy.keys import derive_digest
 from redactor.schemas.dates import ParsedDate
 from redactor.utils.constants import (
+    DATE_CENTURY_YEARS,
     DATE_COMPACT_PATTERN,
     DATE_MDY_PATTERN,
     DATE_NAMED_DMY_PATTERN,
     DATE_NAMED_MDY_PATTERN,
     DATE_OFFSET_NAMESPACE,
+    DATE_SHORT_YEAR_BASE,
+    DATE_SHORT_YEAR_PIVOT,
     DATE_STYLE_COMPACT,
     DATE_STYLE_MDY,
     DATE_STYLE_NAMED_DMY,
@@ -44,7 +48,12 @@ def parse_date(value: str) -> ParsedDate:
             continue
         parts = match.groupdict()
         try:
-            parsed = date(int(parts["year"]), int(parts["month"]), int(parts["day"]))
+            year = int(parts["year"])
+            if len(parts["year"]) == 2:
+                year += DATE_SHORT_YEAR_BASE - (
+                    DATE_CENTURY_YEARS if year >= DATE_SHORT_YEAR_PIVOT else 0
+                )
+            parsed = date(year, int(parts["month"]), int(parts["day"]))
             clock = parts.get("clock") or ""
             _validate_clock(parsed, clock, compact=style == DATE_STYLE_COMPACT)
         except ValueError:
@@ -55,6 +64,7 @@ def parse_date(value: str) -> ParsedDate:
             separator=parts.get("separator") or "",
             month_width=len(parts["month"]),
             day_width=len(parts["day"]),
+            year_width=cast(Literal[2, 4], len(parts["year"])),
             clock=clock,
         )
     for style, pattern in (
@@ -102,6 +112,11 @@ def shift_date(value: str, offset_days: int) -> str:
     except OverflowError:
         raise ValueError(ERROR_DATE) from None
     year = f"{shifted.year:04d}"
+    pivot_year = DATE_SHORT_YEAR_BASE + DATE_SHORT_YEAR_PIVOT
+    if original.year_width == 2 and (
+        pivot_year - DATE_CENTURY_YEARS <= shifted.year < pivot_year
+    ):
+        year = f"{shifted.year % DATE_CENTURY_YEARS:02d}"
     month = f"{shifted.month:0{original.month_width}d}"
     day = f"{shifted.day:0{original.day_width}d}"
     if original.month_name:

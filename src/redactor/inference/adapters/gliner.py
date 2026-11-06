@@ -134,10 +134,10 @@ def decode_tokens(
     ):
         raise ValueError(ERROR_LOCAL_INFERENCE)
     threshold = GLINER_THRESHOLD
-    candidates: list[tuple[float, int, int, str]] = []
+    candidates: list[tuple[float, int, int, str, str]] = []
     for start_value, label_value in np.argwhere(scores[:, :, 0] > threshold):
         start, label_index = int(start_value), int(label_value)
-        entity_type = GLINER_LABELS[label_index][1]
+        label, entity_type = GLINER_LABELS[label_index]
         # Compute each interval's minimum once. Repeatedly scanning every span
         # would make dense model output cubic in the number of words.
         inside_scores = np.minimum.accumulate(scores[start:, label_index, 2])
@@ -156,10 +156,10 @@ def decode_tokens(
                 )
             )
             candidates.append(
-                (score, words[start].start(), words[end].end(), entity_type)
+                (score, words[start].start(), words[end].end(), entity_type, label)
             )
     accepted: list[TextEntity] = []
-    for _, start, end, kind in sorted(
+    for _, start, end, kind, label in sorted(
         candidates, key=lambda item: item[0], reverse=True
     ):
         if any(start < item.end and item.start < end for item in accepted):
@@ -170,6 +170,7 @@ def decode_tokens(
                 end=end,
                 text=text[start:end],
                 entity_type=cast(EntityType, kind),
+                label=label,
             )
         )
     return validate_entity_evidence(text, TextEntities(entities=tuple(accepted)))

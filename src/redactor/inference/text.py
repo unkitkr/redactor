@@ -5,6 +5,7 @@ from ipaddress import ip_address
 
 from redactor.inference.evidence import validate_entity_evidence
 from redactor.inference.masking import mask_assessed_ranges, restore_entity
+from redactor.inference.semantics import possible_entity, refine_entity
 from redactor.policy.dates import parse_date
 from redactor.policy.name_matching import compatible_name_spelling
 from redactor.policy.text_patterns import age_mentions, clinical_ranges
@@ -19,14 +20,17 @@ from redactor.utils.constants import (
     FIELD_DATE,
     FIELD_EMAIL,
     FIELD_IDENTIFIER,
+    FIELD_LOCATION,
     FIELD_NETWORK,
     FIELD_PATIENT_NAME,
+    FIELD_PERSON_NAME,
     FIELD_PHONE,
     FIELD_PROVIDER_NAME,
     FIELD_SSN,
     FIELD_WEB,
     FIELD_ZIP,
     IDENTITY_RELATIVE,
+    PRESERVED_US_GEOGRAPHY,
     SSN_NAMESPACE,
     TEXT_DATE_PATTERN,
     TEXT_EMAIL_PATTERN,
@@ -123,22 +127,27 @@ def find_text_phi(
     )
     for observed in observations:
         entity = restore_entity(text, observed, positions)
-        if entity is None:
+        if entity is None or not possible_entity(entity, text):
             continue
+        entity = refine_entity(entity)
         entity_kind = None
         if entity.entity_type == ENTITY_PERSON:
-            if patient_name and compatible_name_spelling(entity.text, patient_name):
+            patient_match = bool(patient_name) and compatible_name_spelling(
+                entity.text, patient_name, allow_surname=True
+            )
+            provider_match = bool(provider_name) and compatible_name_spelling(
+                entity.text, provider_name, allow_surname=True
+            )
+            if patient_match and not provider_match:
                 entity_kind = FIELD_PATIENT_NAME
-            elif provider_name and compatible_name_spelling(entity.text, provider_name):
+            elif provider_match and not patient_match:
                 entity_kind = FIELD_PROVIDER_NAME
+            else:
+                entity_kind = FIELD_PERSON_NAME
         elif entity.entity_type == ENTITY_LOCATION:
-            if any(
-                finding.kind == FIELD_ADDRESS
-                and finding.end <= entity.start
-                and not text[finding.end : entity.start].strip(" ,\r\n")
-                for finding in findings
-            ):
-                entity_kind = ENTITY_LOCATION
+            if entity.text.casefold().strip() in PRESERVED_US_GEOGRAPHY:
+                continue
+            entity_kind = FIELD_LOCATION
         if entity_kind is None:
             raise ValueError(ERROR_COVERAGE)
         findings.append(

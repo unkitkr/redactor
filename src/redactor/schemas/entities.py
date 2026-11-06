@@ -17,6 +17,7 @@ class TextEntity(BaseModel, frozen=True, extra="forbid"):
     end: PositiveInt
     text: str = Field(min_length=1)
     entity_type: EntityType
+    label: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class TextEntities(BaseModel, frozen=True, extra="forbid"):

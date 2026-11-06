@@ -23,8 +23,11 @@
 
 - **File handling:** valid mislabeled files keep their detected native format and original name; corrupt files and unassessed hidden surfaces quarantine.
 - **Identity:** scoped identifiers and corroborating evidence link people, never names alone; conflicting middle names cannot link through shorter spellings, and provider roles stay separate.
+- **Mentions:** a surname can resolve within an established record context; an unlinked person gets a separate contextual surrogate instead of forcing a name-only identity merge.
+- **Model evidence:** original entity labels support datatype checks, while clinical expressions and narrative verbs are preserved; these rules do not establish model recall.
 - **Clinical content:** typed fields use deterministic transformations, while clinical codes, values, units, medications and diseases retain their content.
 - **Dates and ages:** linked patients share a date offset; ages at or above 90 become 90+, revealing birth dates are generalized, and formats that cannot represent the required bounds quarantine.
+- **Short dates:** two-digit years use the fixed 1969–2068 window; shifting outside that window writes a four-digit year so reparsing cannot change the century.
 - **Locations:** ZIP codes retain only permitted three-digit prefixes, otherwise 000.
 - **Device and batch identifiers:** the policy pseudonymizes device production identifiers and ambiguous lots, while preserving known shared medication batches unless patient linkage is evident, following the [HHS distinction](https://www.hhs.gov/hipaa/for-professionals/faq/can-device-identifier-di-portion-unique-device-identifier-udi-be-part-limited-or-de-identified/index.html); the shared-batch exception remains incomplete or unvalidated.
 - **Verification:** intact and Unicode-normalized source and saved text are checked, including unknown column labels; identifying evidence must fit a complete edit span, and failed or incomplete checks quarantine.
@@ -47,10 +50,10 @@
 ## Known limitations
 
 - **Publication coverage:** CSV/TSV, bounded labelled text, supported XLSX and HL7 ADT have publication paths; other formats, including legacy XLS, and unsupported populated surfaces quarantine.
-- **GLiNER coverage:** a structured CSV with free-text names publishes and replays, but all four valid files in the mixed-format regression still quarantine for unresolved coverage; explicit spaCy publishes those files.
+- **GLiNER coverage:** fresh contextual CSV/text cases publish and replay; full mixed-format acceptance and a new accuracy measurement remain outstanding.
 - **Detection limits:** observed name/contact escapes are blocked, but unfamiliar entities can evade shared statistical NER and overextended model spans can reject clean text.
-- **Verifier precision:** GLiNER misclassified a benign workbook title as contact information; an unrelated synthetic title reproduced the issue, so the current verifier can reject clean metadata ([diagnostic](benchmarks/verifier-metadata-diagnostic.json)).
-- **Bulk execution:** the 1 GiB diagnostic ended with only `worker_failed`; missing exception categories leave its cause unknown, and identity state grew beyond 2 GiB before analysis finished.
+- **Verifier precision:** datatype checks address the recorded title misclassification; other statistical false positives remain possible ([historical diagnostic](benchmarks/verifier-metadata-diagnostic.json)).
+- **Bulk execution:** the earlier 1 GiB failure remains unexplained; workers now retain safe failure categories and numeric error codes, but identity state growth and full throughput are unresolved.
 - **Unsupported details:** unsupported Office extensions, custom namespace prefixes, unsupported part paths, and unsupported international phones or extensions quarantine rather than accept partial handling.
 - **File limits:** defaults are 32 MiB for native files, 256 MiB for expanded archives and 16 million pixels for images; only CSV rewriting streams beyond the native-file limit.
 - **OCR limits:** only single-frame images, aspect ratios up to 64 and at most 256 text regions are accepted, bounding preprocessing and rejecting uncertain partial coverage; image benchmarks do not validate safe image publication.

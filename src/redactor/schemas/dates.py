@@ -12,6 +12,7 @@ class ParsedDate(BaseModel, frozen=True, extra="forbid"):
     separator: str = ""
     month_width: PositiveInt = 2
     day_width: PositiveInt = 2
+    year_width: Literal[2, 4] = 4
     clock: str = ""
     month_name: str = ""
     year_separator: str = " "

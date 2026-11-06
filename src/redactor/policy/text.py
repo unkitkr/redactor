@@ -8,6 +8,7 @@ from redactor.policy.identifiers import replace_identifier, replace_ssn
 from redactor.policy.keys import evidence_key
 from redactor.policy.names import person_name
 from redactor.policy.network import replace_network_address, replace_web_address
+from redactor.policy.normalization import normalize_name
 from redactor.policy.text_names import mention_name
 from redactor.schemas.redaction import TextContext, TextEdit, TextFinding
 from redactor.utils.constants import (
@@ -18,14 +19,17 @@ from redactor.utils.constants import (
     FIELD_DATE,
     FIELD_EMAIL,
     FIELD_IDENTIFIER,
+    FIELD_LOCATION,
     FIELD_NETWORK,
     FIELD_PATIENT_NAME,
+    FIELD_PERSON_NAME,
     FIELD_PHONE,
     FIELD_PROVIDER_NAME,
     FIELD_SSN,
     FIELD_WEB,
     FIELD_ZIP,
     IDENTITY_RELATIVE,
+    UNLINKED_PERSON_NAMESPACE,
 )
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_ENTITY_EVIDENCE
 
@@ -67,6 +71,14 @@ def text_edits(
             replacement = shift_date(value, offset)
         elif finding.kind == FIELD_AGE:
             replacement = AGE_GROUP_LABEL
+        elif finding.kind == FIELD_PERSON_NAME:
+            identity_key = evidence_key(
+                key,
+                normalize_name(value),
+                namespace=UNLINKED_PERSON_NAMESPACE,
+                scope=context.context_key,
+            )
+            replacement = person_name(identity_key, key, value)
         elif finding.kind in (
             FIELD_PATIENT_NAME,
             FIELD_PROVIDER_NAME,
@@ -79,7 +91,7 @@ def text_edits(
                 provider=finding.kind == FIELD_PROVIDER_NAME,
                 relative=finding.kind == IDENTITY_RELATIVE,
             )
-        elif finding.kind == ENTITY_LOCATION:
+        elif finding.kind in (ENTITY_LOCATION, FIELD_LOCATION):
             location_key = evidence_key(
                 key, value.casefold(), namespace=ENTITY_LOCATION
             )
