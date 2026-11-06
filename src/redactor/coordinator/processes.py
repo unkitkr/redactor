@@ -7,6 +7,7 @@ import time
 from collections.abc import Sequence
 from pathlib import Path
 
+from redactor.schemas.diagnostics import WorkerExit
 from redactor.utils.constants import (
     EXIT_SUCCESS,
     WORKER_MODULE,
@@ -56,7 +57,16 @@ def run_workers(
 
         while True:
             exit_codes = [worker.poll() for worker in workers]
-            if any(code not in (None, EXIT_SUCCESS) for code in exit_codes):
+            failures = [
+                WorkerExit(
+                    reason=ERROR_WORKER_FAILED, worker_index=index, exit_code=code
+                )
+                for index, code in enumerate(exit_codes)
+                if code not in (None, EXIT_SUCCESS) and code is not None
+            ]
+            if failures:
+                for failure in failures:
+                    print(failure.model_dump_json(), file=sys.stderr, flush=True)
                 raise RuntimeError(ERROR_WORKER_FAILED)
             if all(code == EXIT_SUCCESS for code in exit_codes):
                 return

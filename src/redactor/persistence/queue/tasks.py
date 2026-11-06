@@ -158,33 +158,36 @@ def claim_task(
     steps: Sequence[str] | None = None,
 ) -> Task | None:
     """Claim ready work, optionally restricted to a worker's step and version."""
+    query = """
+    SELECT tasks.* FROM tasks
+    WHERE tasks.status = ?
+        AND (? IS NULL OR tasks.step = ?)
+        AND (? IS NULL OR tasks.step IN (SELECT value FROM json_each(?)))
+        AND (? IS NULL OR tasks.processing_version = ?)
+        AND NOT EXISTS (
+        SELECT 1 FROM dependencies
+        JOIN tasks AS prerequisite ON prerequisite.task_id = depends_on
+        WHERE dependencies.task_id = tasks.task_id AND prerequisite.status != ?
+    )
+    ORDER BY tasks.created_at, tasks.task_id
+    LIMIT 1
+    """
+    parameters = (
+        STATUS_PENDING,
+        step,
+        step,
+        json.dumps(steps) if steps is not None else None,
+        json.dumps(steps) if steps is not None else None,
+        processing_version,
+        processing_version,
+        STATUS_SUCCEEDED,
+    )
+    # Idle readers must not contend with the active writer. Recheck under the
+    # write lock because another worker may claim the candidate in between.
+    if connection.execute(query, parameters).fetchone() is None:
+        return None
     with transaction(connection):
-        row = connection.execute(
-            """
-            SELECT tasks.* FROM tasks
-            WHERE tasks.status = ?
-                AND (? IS NULL OR tasks.step = ?)
-                AND (? IS NULL OR tasks.step IN (SELECT value FROM json_each(?)))
-                AND (? IS NULL OR tasks.processing_version = ?)
-                AND NOT EXISTS (
-                SELECT 1 FROM dependencies
-                JOIN tasks AS prerequisite ON prerequisite.task_id = depends_on
-                WHERE dependencies.task_id = tasks.task_id AND prerequisite.status != ?
-            )
-            ORDER BY tasks.created_at, tasks.task_id
-            LIMIT 1
-            """,
-            (
-                STATUS_PENDING,
-                step,
-                step,
-                json.dumps(steps) if steps is not None else None,
-                json.dumps(steps) if steps is not None else None,
-                processing_version,
-                processing_version,
-                STATUS_SUCCEEDED,
-            ),
-        ).fetchone()
+        row = connection.execute(query, parameters).fetchone()
         if row is None:
             return None
 

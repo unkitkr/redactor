@@ -37,6 +37,12 @@ BOOTSTRAP_PROCESSING_VERSION: Final = "bootstrap-v1"
 
 # Worker processes and exit status
 WORKER_MODULE: Final = "redactor.workers"
+WORKER_FAILURE_FILENAME: Final = "worker-failure-{pid}.json"
+FAILURE_SQLITE: Final = "sqlite"
+FAILURE_FILESYSTEM: Final = "filesystem"
+FAILURE_MEMORY: Final = "memory"
+FAILURE_VALIDATION: Final = "validation"
+FAILURE_UNEXPECTED: Final = "unexpected"
 DEFAULT_WORKER_COUNT: Final = 2
 WORKER_POLL_SECONDS: Final = 0.05
 WORKER_SHUTDOWN_SECONDS: Final = 2.0

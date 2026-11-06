@@ -2,12 +2,11 @@
 
 import argparse
 import os
-import sys
 from pathlib import Path
 
 from redactor.schemas.worker import WorkerConfig
 from redactor.utils.constants import EXIT_FAILURE, EXIT_SUCCESS
-from redactor.utils.errors import ERROR_WORKER_FAILED
+from redactor.workers.failures import record_worker_failure
 from redactor.workers.run import consume_tasks
 from redactor.workers.runtime import consume_pipeline
 
@@ -28,9 +27,8 @@ def main() -> int:
             consume_tasks(config.state_directory, config.coordinator_pid)
         else:
             consume_pipeline(config)
-    except Exception:
-        # This process boundary must not leak paths or input data in tracebacks.
-        print(ERROR_WORKER_FAILED, file=sys.stderr)
+    except Exception as error:
+        record_worker_failure(config.state_directory, error)
         return EXIT_FAILURE
     finally:
         os.close(config.lock_descriptor)
