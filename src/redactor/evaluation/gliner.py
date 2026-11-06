@@ -80,27 +80,29 @@ def decode_tokens(
 ) -> tuple[TextEntity, ...]:
     threshold = EVALUATION_GLINER_THRESHOLD
     candidates: list[tuple[float, int, int, str]] = []
-    for label_index, (_, entity_type) in enumerate(EVALUATION_GLINER_LABELS):
-        starts = np.flatnonzero(scores[:, label_index, 0] > threshold)
+    for start_value, label_value in np.argwhere(scores[:, :, 0] > threshold):
+        start, label_index = int(start_value), int(label_value)
+        entity_type = EVALUATION_GLINER_LABELS[label_index][1]
         ends = np.flatnonzero(scores[:, label_index, 1] > threshold)
-        for start in map(int, starts):
-            for end in map(int, ends):
-                if end < start:
-                    continue
-                inside = scores[start : end + 1, label_index, 2]
-                score = float(
-                    min(
-                        min(map(float, inside)),
-                        scores[start, label_index, 0],
-                        scores[end, label_index, 1],
-                    )
+        for end in map(int, ends):
+            if end < start:
+                continue
+            inside = scores[start : end + 1, label_index, 2]
+            score = float(
+                min(
+                    min(map(float, inside)),
+                    scores[start, label_index, 0],
+                    scores[end, label_index, 1],
                 )
-                if score >= threshold:
-                    candidates.append(
-                        (score, words[start].start(), words[end].end(), entity_type)
-                    )
+            )
+            if score >= threshold:
+                candidates.append(
+                    (score, words[start].start(), words[end].end(), entity_type)
+                )
     accepted: list[TextEntity] = []
-    for _, start, end, kind in sorted(candidates, reverse=True):
+    for _, start, end, kind in sorted(
+        candidates, key=lambda item: item[0], reverse=True
+    ):
         if any(start < item.end and item.start < end for item in accepted):
             continue
         accepted.append(
