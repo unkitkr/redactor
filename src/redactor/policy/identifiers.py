@@ -9,6 +9,8 @@ from redactor.utils.constants import (
     NPI_NAMESPACE,
     NPI_PREFIX_CHOICES,
     PRODUCT_LOT_NAMESPACE,
+    SHORT_IDENTIFIER_DIGITS,
+    SHORT_IDENTIFIER_NAMESPACES,
     SSN_AREA_LIMIT,
     SSN_DIGITS,
     SSN_DISALLOWED_AREA,
@@ -23,8 +25,13 @@ def replace_identifier(
     """Use a larger decimal space instead of truncating a hash to a short MRN."""
     canonical = normalize_identifier(value)
     digest = derive_digest(key, canonical, namespace=namespace, scope=scope)
-    number = int.from_bytes(digest, "big") % (10**IDENTIFIER_DIGITS)
-    surrogate = f"{number:0{IDENTIFIER_DIGITS}d}"
+    digits = (
+        SHORT_IDENTIFIER_DIGITS
+        if namespace in SHORT_IDENTIFIER_NAMESPACES
+        else IDENTIFIER_DIGITS
+    )
+    number = int.from_bytes(digest, "big") % (10**digits)
+    surrogate = f"{number:0{digits}d}"
     if surrogate == canonical:
         raise ValueError(ERROR_REPLACEMENT_COLLISION)
     return surrogate

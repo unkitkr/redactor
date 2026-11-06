@@ -1,0 +1,98 @@
+"""Round-trip native DICOM sequences, UIDs, and protected clinical pixels."""
+
+import io
+from pathlib import Path
+
+import numpy as np
+import pydicom
+import pytest
+from PIL import Image
+from pydicom.dataset import Dataset, FileDataset, FileMetaDataset
+
+from redactor.formats.dicom import read_dicom, write_dicom
+from redactor.schemas.configuration import ResourceSettings
+from redactor.verification.dicom import check_dicom_structure
+
+
+def test_dicom_native_round_trip_and_saved_clinical_damage(tmp_path: Path) -> None:
+    source, output = tmp_path / "source.dcm", tmp_path / "output.dcm"
+    metadata = FileMetaDataset()
+    metadata.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
+    metadata.MediaStorageSOPClassUID = pydicom.uid.SecondaryCaptureImageStorage
+    metadata.MediaStorageSOPInstanceUID = pydicom.uid.UID("2.25.123456")
+    dataset = FileDataset(str(source), {}, file_meta=metadata, preamble=bytes(128))
+    dataset.SOPClassUID = metadata.MediaStorageSOPClassUID
+    dataset.SOPInstanceUID = metadata.MediaStorageSOPInstanceUID
+    dataset.PatientName = "Keller^Amina"
+    dataset.PatientID = "90123"
+    dataset.PatientBirthDate = "19720304"
+    dataset.StudyDate = "20240312"
+    dataset.Modality = "OT"
+    dataset.Rows, dataset.Columns = 16, 16
+    dataset.SamplesPerPixel = 1
+    dataset.PhotometricInterpretation = "MONOCHROME2"
+    dataset.BitsAllocated = dataset.BitsStored = 8
+    dataset.HighBit = 7
+    dataset.PixelRepresentation = 0
+    pixels = np.arange(256, dtype=np.uint8).reshape(16, 16)
+    dataset.PixelData = pixels.tobytes()
+    nested = Dataset()
+    nested.ReferencedSOPClassUID = dataset.SOPClassUID
+    nested.ReferencedSOPInstanceUID = dataset.SOPInstanceUID
+    dataset.ReferencedImageSequence = [nested]
+    pydicom.dcmwrite(source, dataset, enforce_file_format=True)
+    document = read_dicom(source, ResourceSettings())
+    replacements = {
+        location: (
+            "2.25.987654"
+            if policy.namespace == "dicom_uid"
+            else "Nadia Stone"
+            if value == "Amina Keller"
+            else "81234"
+            if value == "90123"
+            else "19720404"
+            if value == "19720304"
+            else "20240412"
+            if value == "20240312"
+            else value
+        )
+        for record in document.records
+        for location, value, policy in zip(
+            record.locations, record.values, record.policies, strict=True
+        )
+    }
+    image = Image.open(io.BytesIO(document.images[0].content))
+    image.putpixel((2, 2), (0, 0, 0))
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    write_dicom(
+        source, output, replacements, {document.images[0].location: buffer.getvalue()}
+    )
+    check_dicom_structure(source, output, document)
+    saved = pydicom.dcmread(output)
+    assert str(saved.PatientName) == "Stone^Nadia"
+    assert saved.PatientBirthDate == "19720404"
+    assert (
+        saved.SOPInstanceUID
+        == saved.ReferencedImageSequence[0].ReferencedSOPInstanceUID
+    )
+    assert saved.file_meta.MediaStorageSOPInstanceUID == saved.SOPInstanceUID
+    pixels[2, 2] = 0
+    assert np.array_equal(saved.pixel_array, pixels)
+    assert len(
+        read_dicom(output, ResourceSettings(), extract_evidence=False).records
+    ) == len(document.records)
+    saved.Modality = "MR"
+    pydicom.dcmwrite(output, saved, enforce_file_format=True)
+    with pytest.raises(ValueError):
+        check_dicom_structure(source, output, document)
+
+    for tag, vr, content in (
+        ((0x0042, 0x0011), "OB", b"Unassessed patient text"),
+        ((0x0011, 0x1010), "CS", "ALICE"),
+    ):
+        changed = pydicom.dcmread(source)
+        changed.add_new(tag, vr, content)
+        pydicom.dcmwrite(output, changed, enforce_file_format=True)
+        with pytest.raises(ValueError):
+            read_dicom(output, ResourceSettings())

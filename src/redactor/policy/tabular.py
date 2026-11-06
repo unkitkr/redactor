@@ -22,6 +22,7 @@ from redactor.schemas.entities import NerAdapter
 from redactor.schemas.redaction import ColumnPolicy, TextContext, TextEdit, TextFinding
 from redactor.utils.constants import (
     AGE_GROUP_MINIMUM,
+    DICOM_UID_NAMESPACE,
     FIELD_ADDRESS,
     FIELD_AGE,
     FIELD_BIRTH_DATE,
@@ -122,6 +123,10 @@ def cell_edits(
             key,
             namespace=policy.namespace,
         )
+        if policy.namespace == DICOM_UID_NAMESPACE:
+            replacement = policy.identifier_prefix + str(
+                int(replacement.removeprefix(policy.identifier_prefix))
+            )
     elif policy.kind == FIELD_LOT:
         replacement = replace_lot(value, key)
     elif policy.kind in (FIELD_DATE, FIELD_BIRTH_DATE):
