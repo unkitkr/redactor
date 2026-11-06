@@ -6,18 +6,18 @@ This repository implements the PHI pseudonymization assignment in `ASSIGNMENT.pd
 Project-specific instructions for other applications in parent directories do not
 define Redactor's product, dependencies, milestones, or architecture.
 
-Build only the current agreed milestone. The queue and artifact foundation,
-coordinator startup, exclusive run ownership, input registration, and placeholder
-workers are in place. Clinical processing, workflow orchestration, and checkpoint
-save/resume remain separate milestones.
+Implement the agreed pipeline in small, tested milestones: durable contracts and
+execution, model adapters, a complete CSV path, native-format adapters, and measured
+container validation. Never report a placeholder or an incomplete verifier as a
+working clinical publication path.
 
 ## Decision record
 
 - Keep `notes.md` as a short, evaluator-facing architecture and decision log.
   Read it before making architectural choices or selecting models and dependencies.
-- Group concise, one-line bullets under `Architecture` and `Technology choices`.
-  Put high-level system design in the first section and selected databases, models,
-  runtimes, and other technologies in the second. Use natural, neutral language
+- Group concise, one-line bullets under `Architecture`, `Stack`, and `Choices`.
+  Record system design, selected technologies, and policy decisions respectively.
+  Include assumptions that materially affect correctness. Use natural, neutral language
   without first-person wording, introductory prose, or em dashes.
 - Record high-level decisions already made, with a brief reason where useful.
   Keep coding principles, style rules, module layouts, development procedures,
@@ -94,16 +94,20 @@ save/resume remain separate milestones.
   complete-record boundaries; buffered stream positions are not automatically
   safe CSV or JSON resume positions.
 - A completed staged artifact is not a verified or published clinical file.
-  Publication requires the independent verifier in a later milestone.
+  Publication requires an independent verdict bound to the exact saved bytes,
+  original input, identity snapshot, and verification policy. Unknown coverage,
+  failed checks, and unresolved verifier errors prevent publication.
+- Verification always runs. The external-model disable switch also disables remote
+  judging. Judge findings need validated evidence and cannot override failed local
+  checks or missing coverage. Never globally allowlist surrogate strings.
 - Do not promise exactly-once model billing without an endpoint contract that
   supports it. Persist completed responses and account for uncertain requests.
 
 ## Agent code, when introduced
 
 - Keep agent-specific implementations under `src/redactor/agents/<agent_name>/`.
-- Separate prompts, structured output schemas, runtime/transport, and the agent's
-  orchestration logic. Name modules plainly, for example `prompts.py`,
-  `schemas.py`, and `run.py`.
+- Separate prompts, runtime/transport, and the agent's orchestration logic. Keep
+  structured output schemas in the shared `schemas/` package. Name modules plainly.
 - Share runtime, validation, caching, and accounting only where there are actual
   common call sites. Keep provider details out of prompt and domain logic.
 - Version prompts and validate structured outputs. Keep secrets in environment
@@ -113,9 +117,10 @@ save/resume remain separate milestones.
 
 ## Tests and milestones
 
-- Add meaningful tests with each significant behavior and discovered regression.
-  Test failures, invalid state transitions, stale attempts, and actual subprocess
-  interruption, not just the happy path.
+- Prefer a small number of meaningful integration tests using real files, SQLite,
+  and subprocesses. Cover related behavior together rather than adding a test for
+  every function. Include stale attempts, interruption, and deliberately broken
+  outputs that the verifier must reject; avoid repetitive implementation tests.
 - Annotate test parameters and return types as well as production functions.
   Ruff enforces annotation presence; a type checker validates their use.
 - Run focused tests during implementation and the full applicable suite before

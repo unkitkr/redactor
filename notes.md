@@ -1,28 +1,34 @@
 ## Architecture
 
-- The coordinator handles startup, recovery, and worker supervision; workers pull tasks from the queue.
-- A shared run lock prevents recovery while workers from an earlier run are still alive.
-- Each task represents one processing step for one file; large files are processed in chunks rather than queued row by row.
-- Stable task identities prevent duplicate registration and preserve completed work across restarts.
-- Completing a step and creating its dependent tasks happen in one transaction.
-- A retry may repeat execution, but only one result is accepted; remote calls can still be billed again.
-- Long steps are designed to resume from record checkpoints; checkpoint recovery is not implemented yet.
-- Files are validated and handled according to their actual format, even when the extension is wrong.
-- Processing preserves native formats and covers text, metadata, embedded content, and pixels.
-- Typed fields and known patterns use deterministic detection; free text needs contextual inspection.
-- NER and OCR models sit behind interchangeable adapters so they can be compared or replaced independently.
-- Person matching is separate from detection and uses scoped identifiers and supporting evidence, not names alone.
-- Replacements are deterministic, date offsets stay consistent per patient, and secrets come from the environment.
-- Structured files are streamed without skipping rows and must work with hosted models disabled.
-- Outputs are verified before publishing; unsafe or unverifiable results go to quarantine.
-- Reports use committed state so retries do not duplicate counts.
-- Clinical processing, verification, and reporting are not implemented yet; end-to-end benchmark results are not available.
+- SQLite owns the durable queue; the coordinator handles startup and recovery, and workers claim one file step at a time.
+- A shared run lock prevents recovery while workers from an earlier run remain alive.
+- Inspection and analysis feed a shared identity-resolution barrier before rewriting, verification, publication or quarantine, and reconciliation.
+- Step completion and successor registration are atomic; large files use bounded chunks and parser-aware checkpoints rather than row queues.
+- Large artifacts live on private disk with references in SQLite; recovery requires retaining both, and atomic publication requires one filesystem.
+- Verification reopens original and output bytes, independently checks native surfaces and clinical preservation, and binds its verdict to the exact artifact.
+- Every required verification check must pass; failures and unresolved coverage quarantine the file, and expected surrogates are allowed only at their intended locations.
+- One inference-capable worker and one light worker bound model duplication; reports come from committed outcomes and request accounting.
 
-## Technology choices
+## Stack
 
-- SQLite for the queue and state, avoiding extra services within the 2 vCPU and 1 GB limit.
-- WAL and short transactions for concurrent workers, accepting that SQLite serializes database writes.
-- Local files for large artifacts and SQLite for their references; recovery requires retaining both.
-- Atomic publication on the same filesystem to prevent partial outputs; cross-filesystem publication is unsupported.
-- Numbered SQL migrations without an ORM, keeping the persistence layer small.
-- OpenAI SDK for optional hosted-model calls through the supplied endpoint.
+- SQLite WAL, short transactions, and numbered SQL migrations avoid extra services and an ORM; writes remain serialized.
+- Pydantic validates schemas; TOML configures processing, models, budgets, and resource limits, while secrets remain environment-only.
+- The OpenAI SDK targets the supplied endpoint through bounded retries, shared circuit state, and durable cost reservations.
+- spaCy small and Tesseract are the initial local baselines; pinned GLiNER ONNX and PP-OCR alternatives use configurable adapters.
+- PyMuPDF handles PDF rendering and rewriting under its documented AGPL license, with separate saved-output verification.
+
+## Choices
+
+- Typed fields and supported patterns use deterministic processing; model-dependent work uses the enabled endpoint with local fallback.
+- Verification always runs; remote judging examines unresolved units only, uses separate configuration, and obeys the global model-disable switch.
+- Remote judge findings require location-bound evidence and cannot override failed deterministic checks or unassessed native surfaces.
+- Identity matching uses scoped identifiers and corroborating evidence; contradictory people stay separate even when an identifier value receives one consistent replacement.
+- Providers have separate pseudonyms; a person appearing as patient and provider retains separate role identities.
+- Patient dates share one keyed offset; unattributable dates use a stable separate context, with patient linkage explicitly unresolved.
+- Ages of 90 or more become 90+; ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications, and diseases are preserved.
+- Keyed replacements use environment secrets; retained identifying evidence and model responses require encryption and private storage.
+- Valid mislabeled files retain their actual native format and original output name; corrupt, unsupported, or unverifiable content is quarantined without silent repair.
+- Initial coverage targets the supplied file families plus CSV/TSV; legacy binary XLS is explicitly unsupported, and pixel PHI may be masked.
+- Large structured files must cover every row and complete verification without hosted calls; local-model quality and the container resource targets remain unmeasured.
+- Persisted remote decisions are replayed, but a crash before saving a response can change a retry or repeat billing; strict A5 equivalence needs endpoint replay support.
+- The clinical pipeline and its verifier are being implemented; this log describes chosen behavior, not a claim of completed format coverage.
