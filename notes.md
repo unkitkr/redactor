@@ -29,4 +29,4 @@
 - Six valid inputs quarantine; statistical misses and false positives remain. These reused text cases are not full-document ground truth.
 - Native limits: 32 MiB files, 256 MiB expanded archives, 16 million image pixels; unsupported structures quarantine. FHIR bounds need downstream interpretation; cross-issuer linkage and collision auditing remain incomplete.
 - Two [full-set SIGKILLs](benchmarks/crash-replay-v25.json) reproduced clean artifact bytes, not exhaustive crash coverage. Atomic publication requires one filesystem; lost remote responses can incur repeat charges.
-- Bulk throughput, hosted judging, hosted vision and broader format support remain incomplete.
+- Bulk throughput, hosted judging, hosted vision and broader format support remain incomplete; [requirement coverage](docs/requirements.md) distinguishes implemented paths from demonstrated results and omissions.
