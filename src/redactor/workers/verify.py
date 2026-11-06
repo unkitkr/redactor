@@ -3,14 +3,20 @@
 import sqlite3
 
 from redactor.persistence.files.registration import prepare_successor
-from redactor.persistence.files.results import accepted_artifact, write_step_result
+from redactor.persistence.files.results import (
+    accepted_artifact,
+    read_step_result,
+    write_step_result,
+)
 from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.entities import NerAdapter
+from redactor.schemas.formats import FileInspection
 from redactor.schemas.persistence import Task
 from redactor.schemas.pipeline import StepResult
 from redactor.schemas.verification import VerificationCheck
 from redactor.utils.constants import (
     CHECK_COVERAGE,
+    STEP_INSPECT,
     STEP_PUBLISH,
     STEP_QUARANTINE,
     STEP_REWRITE,
@@ -21,6 +27,7 @@ from redactor.utils.errors import ERROR_PROCESSING, VERIFICATION_REASON_CODES
 from redactor.utils.failures import failure_reason
 from redactor.verification.context import verification_context
 from redactor.verification.csv import verify_csv
+from redactor.verification.native import verify_native
 from redactor.verification.verdict import conclude_verification
 
 
@@ -37,15 +44,33 @@ def verify_task(
     artifact = accepted_artifact(connection, producer.task_id)
     context = verification_context(connection, task, resolution_task_id, mapping_key)
     try:
-        checks = verify_csv(
+        inspection = read_step_result(
             connection,
-            task,
-            artifact,
-            settings=settings,
-            mapping_key=mapping_key,
-            local_ner=local_ner,
-            resolution_task_id=resolution_task_id,
+            prepare_successor(connection, task, STEP_INSPECT).task_id,
+            FileInspection,
+            encryption_key=mapping_key,
         )
+        if inspection.csv_layout is not None:
+            checks = verify_csv(
+                connection,
+                task,
+                artifact,
+                settings=settings,
+                mapping_key=mapping_key,
+                local_ner=local_ner,
+                resolution_task_id=resolution_task_id,
+            )
+        else:
+            checks = verify_native(
+                connection,
+                task,
+                artifact,
+                inspection,
+                settings=settings,
+                mapping_key=mapping_key,
+                local_ner=local_ner,
+                resolution_task_id=resolution_task_id,
+            )
     except Exception as error:
         reason = failure_reason(error)
         checks = (

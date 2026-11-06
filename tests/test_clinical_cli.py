@@ -14,6 +14,7 @@ def test_clinical_cli_publishes_verifies_and_replays(tmp_path: Path) -> None:
     source.mkdir()
     fixtures = Path(__file__).parents[1] / "input"
     shutil.copyfile(fixtures / "encounters.csv", source / "records.csv")
+    shutil.copyfile(fixtures / "billing_export.csv", source / "mislabeled.csv")
     (source / "broken.docx").write_bytes(b"PK\x03\x04 incomplete private archive")
     environment = dict(os.environ)
     environment["REDACTOR_SECRET_KEY"] = base64.b64encode(bytes(range(32))).decode()
@@ -35,8 +36,8 @@ def test_clinical_cli_publishes_verifies_and_replays(tmp_path: Path) -> None:
     report_path = tmp_path / "output" / "report.json"
     report = json.loads(report_path.read_text())
     assert report["complete"] is True
-    assert report["inventoried"] == 2
-    assert report["published"] == 1, report
+    assert report["inventoried"] == 3
+    assert report["published"] == 2, report
     assert report["quarantined"] == 1
     published = tmp_path / "output" / "published" / "records.csv"
     before = published.read_bytes()

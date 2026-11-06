@@ -422,6 +422,99 @@ FIELD_ZIP: Final = "zip"
 FIELD_LOT: Final = "lot"
 FIELD_CLINICAL: Final = "clinical"
 FIELD_TEXT: Final = "text"
+FIELD_LOCATION: Final = "location"
+XLSX_NAMESPACE: Final = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+XLSX_WORKSHEET_PREFIX: Final = "xl/worksheets/sheet"
+XLSX_SHARED_STRINGS: Final = "xl/sharedStrings.xml"
+XLSX_STYLES: Final = "xl/styles.xml"
+XLSX_WORKBOOK: Final = "xl/workbook.xml"
+XLSX_DATE_FORMAT_IDS: Final = (14, 15, 16, 17, 22, 27, 30, 36, 50, 57)
+XLSX_EPOCH: Final = (1899, 12, 30)
+ZIP_FIXED_TIMESTAMP: Final = (1980, 1, 1, 0, 0, 0)
+NATIVE_ADAPTER_VERSION: Final = "native-v1"
+OFFICE_PUBLIC_FONTS: Final = (
+    "",
+    "Arial",
+    "Calibri",
+    "Cambria",
+    "Times New Roman",
+    "Courier New",
+    "Verdana",
+    "Tahoma",
+    "Aptos",
+    "Helvetica",
+    "DaunPenh",
+    "DokChampa",
+    "Estrangelo Edessa",
+    "Euphemia",
+    "Gautami",
+    "Iskoola Pota",
+    "Kalinga",
+    "Kartika",
+    "Latha",
+    "MV Boli",
+    "Mangal",
+    "Microsoft Himalaya",
+    "Microsoft Uighur",
+    "Microsoft Yi Baiti",
+    "Mongolian Baiti",
+    "MoolBoran",
+    "Nyala",
+    "Plantagenet Cherokee",
+    "Raavi",
+    "Shruti",
+    "Tunga",
+    "Vrinda",
+    "宋体",
+    "新細明體",
+    "맑은 고딕",
+    "ＭＳ Ｐゴシック",
+)
+OFFICE_STRUCTURAL_VALUES: Final = (
+    "Normal",
+    "Office",
+    "Office Theme",
+    "minor",
+    "major",
+    "gray125",
+    "none",
+    "phClr",
+    "solid",
+    "window",
+    "windowText",
+    "flat",
+    "sng",
+    "ctr",
+    "circle",
+    "orthographicFront",
+    "threePt",
+    "t",
+    "visible",
+    "hidden",
+    "veryHidden",
+    "thin",
+    "medium",
+    "thick",
+    "dashed",
+    "dotted",
+    "double",
+    "left",
+    "right",
+    "center",
+    "general",
+    "bottom",
+    "top",
+    "true",
+    "false",
+    "rgb",
+    "theme",
+)
+OOXML_PUBLIC_URL_PREFIXES: Final = (
+    "http://schemas.openxmlformats.org/",
+    "http://schemas.microsoft.com/",
+    "http://purl.org/dc/",
+    "http://www.w3.org/",
+)
 MRN_NAMESPACE: Final = "mrn"
 PATIENT_ID_NAMESPACE: Final = "patient-id"
 ENCOUNTER_ID_NAMESPACE: Final = "encounter-id"
@@ -431,6 +524,22 @@ IDENTITY_PATIENT: Final = "patient"
 IDENTITY_RELATIVE: Final = "relative"
 ROW_CONTEXT_TEMPLATE: Final = "{input_sha256}:row:{number}:{role}"
 TABULAR_FIELD_ALIASES: Final = (
+    (FIELD_CLINICAL, "application", ("application",)),
+    (FIELD_CLINICAL, "version", ("appversion",)),
+    (FIELD_IDENTIFIER, "claim", ("claim_no", "claim_id")),
+    (FIELD_IDENTIFIER, "member", ("member_id", "member_number", "subscriber_id")),
+    (FIELD_IDENTIFIER, "ssn", ("ssn", "social_security_number")),
+    (
+        FIELD_PROVIDER_NAME,
+        "",
+        ("pcp", "verified_by", "creator", "last_modified_by", "author"),
+    ),
+    (FIELD_PROVIDER_ID, NPI_NAMESPACE, ("pcp_npi",)),
+    (FIELD_DATE, "", ("dos", "collected", "verified_on", "created", "modified")),
+    (FIELD_LOCATION, "", ("city", "county", "district")),
+    (FIELD_CLINICAL, "state", ("state",)),
+    (FIELD_CLINICAL, "quantity", ("charge_usd", "amount")),
+    (FIELD_CLINICAL, "icd", ("primary_dx",)),
     (FIELD_PATIENT_NAME, "", ("patient", "patient_name", "patient_full_name")),
     (
         FIELD_PROVIDER_NAME,
@@ -490,6 +599,12 @@ TABULAR_FIELD_ALIASES: Final = (
     (FIELD_CLINICAL, "unit", ("unit", "units")),
 )
 CLINICAL_FIELD_PATTERNS: Final = (
+    (
+        "application",
+        r"(?:Microsoft Excel|Microsoft Excel Compatible / Openpyxl [0-9.]+)",
+    ),
+    ("version", r"[0-9]+(?:\.[0-9]+)*"),
+    ("state", r"[A-Z]{2}"),
     ("icd", r"[A-Z][0-9][0-9A-Z](?:\.[0-9A-Z]{1,4})?"),
     ("procedure", r"(?:[0-9]{5}|[A-Z][0-9]{4}|[0-9]{4}[A-Z])"),
     ("loinc", r"[0-9]{1,7}-[0-9]"),
@@ -497,7 +612,7 @@ CLINICAL_FIELD_PATTERNS: Final = (
     ("rxnorm", r"[0-9]+"),
     ("quantity", r"[<>≤≥]?[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?"),
     ("sex", r"(?:M|F|O|U|male|female|other|unknown)"),
-    ("unit", r"(?:%|[a-zA-Zµμ]+(?:\^[0-9]+)?(?:/[a-zA-Zµμ]+(?:\^[0-9]+)?)?)"),
+    ("unit", r"(?:[0-9]+|%|[a-zA-Zµμ]+(?:\^[0-9]+)?(?:/[a-zA-Zµμ]+(?:\^[0-9]+)?)?)"),
 )
 CLINICAL_CODE_SEPARATOR_PATTERN: Final = r"[;,|\s]+"
 AGE_EXPLICIT_PATTERN: Final = (

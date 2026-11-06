@@ -8,7 +8,8 @@ from redactor.policy.contacts import replace_email, replace_phone, replace_stree
 from redactor.policy.dates import parse_date, patient_date_offset, shift_date
 from redactor.policy.geography import generalize_zip
 from redactor.policy.identifiers import replace_identifier, replace_lot, replace_npi
-from redactor.policy.names import format_person_name
+from redactor.policy.keys import evidence_key
+from redactor.policy.names import format_person_name, person_name
 from redactor.policy.text import text_edits
 from redactor.schemas.entities import NerAdapter
 from redactor.schemas.redaction import ColumnPolicy, TextContext, TextEdit, TextFinding
@@ -20,6 +21,7 @@ from redactor.utils.constants import (
     FIELD_DATE,
     FIELD_EMAIL,
     FIELD_IDENTIFIER,
+    FIELD_LOCATION,
     FIELD_LOT,
     FIELD_PATIENT_ID,
     FIELD_PATIENT_NAME,
@@ -122,6 +124,10 @@ def cell_edits(
         replacement = replace_email(value, key)
     elif policy.kind == FIELD_ADDRESS:
         replacement = replace_street(value, key)
+    elif policy.kind == FIELD_LOCATION:
+        replacement = person_name(
+            evidence_key(key, value.casefold(), namespace=FIELD_LOCATION), key
+        ).split()[-1]
     else:
         raise ValueError(ERROR_COVERAGE)
     return (TextEdit(**findings[0].model_dump(), replacement=replacement),)

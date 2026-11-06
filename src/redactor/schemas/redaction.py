@@ -22,6 +22,7 @@ FieldKind = Literal[
     "lot",
     "clinical",
     "text",
+    "location",
 ]
 
 

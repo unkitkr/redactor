@@ -33,6 +33,10 @@ def validate_clinical_field(value: str, namespace: str) -> None:
     pattern = patterns.get(namespace)
     if pattern is None:
         raise ValueError(ERROR_CLINICAL_CHANGED)
+    if namespace == "application":
+        if re.fullmatch(pattern, value) is None:
+            raise ValueError(ERROR_CLINICAL_CHANGED)
+        return
     for token in re.split(CLINICAL_CODE_SEPARATOR_PATTERN, value.strip()):
         if re.fullmatch(pattern, token, flags=re.IGNORECASE) is None:
             raise ValueError(ERROR_CLINICAL_CHANGED)

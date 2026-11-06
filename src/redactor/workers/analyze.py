@@ -37,6 +37,7 @@ from redactor.utils.errors import (
     ERROR_RESOURCE_LIMIT,
 )
 from redactor.utils.failures import failure_reason
+from redactor.workers.analyze_native import analyze_native_task
 
 
 def analyze_task(
@@ -61,7 +62,14 @@ def analyze_task(
                 inspection.file_type not in (FORMAT_CSV, FORMAT_TSV)
                 or inspection.csv_layout is None
             ):
-                raise ValueError(ERROR_FORMAT_UNSUPPORTED)
+                return analyze_native_task(
+                    connection,
+                    task,
+                    inspection,
+                    resources=resources,
+                    mapping_key=mapping_key,
+                    local_ner=local_ner,
+                )
             before = file_version(task.input_path.stat())
             original = inspect_artifact(task.input_path, persist=False)
             if original.sha256 != task.input_sha256 or original.size != task.input_size:

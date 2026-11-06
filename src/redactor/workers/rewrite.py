@@ -40,6 +40,7 @@ from redactor.utils.errors import (
     ERROR_RESOURCE_LIMIT,
 )
 from redactor.utils.failures import failure_reason
+from redactor.workers.rewrite_native import rewrite_native_task
 
 
 def rewrite_or_quarantine(
@@ -93,8 +94,19 @@ def rewrite_task(
         FileInspection,
         encryption_key=mapping_key,
     )
-    if analysis.reason is not None or inspection.csv_layout is None:
+    if analysis.reason is not None:
         raise ValueError(ERROR_FORMAT_UNSUPPORTED)
+    if inspection.csv_layout is None:
+        return rewrite_native_task(
+            connection,
+            task,
+            inspection,
+            analysis,
+            settings=settings,
+            mapping_key=mapping_key,
+            local_ner=local_ner,
+            resolution_task_id=resolution_task_id,
+        )
     snapshot, lookup = load_identity_lookup(connection, resolution_task_id, mapping_key)
     layout = inspection.csv_layout
     policies = column_policies(layout.columns)
