@@ -62,7 +62,7 @@ async def run_model_request(
     had_transient_failure = False
     try:
         async with open_model_client(settings, api_key, transport) as client:
-            for attempt_index in range(settings.max_attempts):
+            for _ in range(settings.max_attempts):
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     break
@@ -139,9 +139,11 @@ async def run_model_request(
                     break
                 had_transient_failure = True
                 delay = retry_delay_seconds(
-                    settings, attempt_index, failure.retry_after_seconds
+                    settings,
+                    reservation.attempt_number - 1,
+                    failure.retry_after_seconds,
                 )
-                if attempt_index + 1 == settings.max_attempts or (
+                if reservation.attempt_number >= settings.max_attempts or (
                     time.monotonic() + delay >= deadline
                 ):
                     break

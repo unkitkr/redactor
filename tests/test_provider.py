@@ -254,6 +254,85 @@ def test_configured_backoff_honors_attempt_deadline_and_budget_limits(
         )
 
 
+def test_interrupted_request_keeps_attempt_limit_and_backoff_progress(
+    connection: sqlite3.Connection,
+    source_file: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    delays: list[float] = []
+
+    async def record_sleep(delay: float) -> None:
+        delays.append(delay)
+
+    def maximum_jitter(lower: float, upper: float) -> float:
+        return upper
+
+    monkeypatch.setattr(asyncio, "sleep", record_sleep)
+    monkeypatch.setattr(random, "uniform", maximum_jitter)
+    register_file(connection, source_file, "analyze", "provider-interruption-v1")
+    claimed = claim_task(connection)
+    assert claimed is not None
+    settings = PipelineSettings(
+        remote=RemoteSettings(
+            base_url="https://model.example/v1",
+            model="test-model",
+            input_usd_per_million=Decimal("1"),
+            output_usd_per_million=Decimal("1"),
+            max_attempts=4,
+            retry_initial_seconds=1,
+            retry_max_seconds=8,
+        )
+    )
+    request = ModelRequest(
+        purpose="detector",
+        prompt_version="test-v1",
+        system_prompt="Return JSON.",
+        input_text="Synthetic input",
+        context_id="unit-1",
+    )
+    calls = 0
+
+    async def endpoint(http_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            # Leave a reserved request and unfinished task, as a dead worker does.
+            raise asyncio.CancelledError
+        return httpx.Response(429, headers={"Retry-After": "0"})
+
+    transport = httpx.MockTransport(endpoint)
+    with pytest.raises(asyncio.CancelledError):
+        request_json(
+            connection,
+            claimed,
+            settings,
+            request,
+            ModelUnavailable,
+            bytes(range(32)),
+            environment={"LLM_API_KEY": "test-key"},
+            transport=transport,
+        )
+    assert delays == [1]
+    recover_interrupted(connection)
+    recover_model_attempts(connection)
+    resumed = claim_task(connection)
+    assert resumed is not None
+    decision = request_json(
+        connection,
+        resumed,
+        settings,
+        request,
+        ModelUnavailable,
+        bytes(range(32)),
+        environment={"LLM_API_KEY": "test-key"},
+        transport=transport,
+    )
+    assert decision.backend == "local"
+    assert calls == 4
+    assert delays == [1, 4]
+    assert connection.execute("SELECT count(*) FROM model_attempts").fetchone()[0] == 4
+
+
 def _completion_response() -> httpx.Response:
     return httpx.Response(
         200,

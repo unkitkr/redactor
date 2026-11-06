@@ -86,6 +86,7 @@ def reserve_attempt(
             )
         return ModelReservation(
             attempt_id=cursor.lastrowid,
+            attempt_number=attempts["total"] + 1,
             request_key=request_key,
             reserved_nanos=maximum_cost_nanos,
         )

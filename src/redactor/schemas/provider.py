@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, JsonValue, NonNegativeInt, PositiveInt
 
 class ModelReservation(BaseModel, frozen=True, extra="forbid"):
     attempt_id: PositiveInt
+    attempt_number: PositiveInt
     request_key: str
     reserved_nanos: NonNegativeInt
 
