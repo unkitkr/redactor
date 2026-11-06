@@ -109,13 +109,14 @@ def save_observation_batch(
             (claimed.task_id, *selected),
         ).fetchall()
         for row in rows:
-            context = _context(claimed.task_id, row["observation_key"])
-            original = IdentityObservation.model_validate_json(
-                decrypt_payload(key, row["encrypted_payload"], context=context)
+            original = decode_observation(
+                key, claimed.task_id, row["observation_key"], row["encrypted_payload"]
             )
-            observations[row["observation_key"]] = _merge(
-                original, observations[row["observation_key"]]
-            )
+            merged = _merge(original, observations[row["observation_key"]])
+            if merged == original:
+                del observations[row["observation_key"]]
+            else:
+                observations[row["observation_key"]] = merged
     prepared_rows = [
         (
             claimed.task_id,

@@ -1,8 +1,7 @@
 """Private identity evidence and the result of conservative cross-file matching."""
 
-from collections.abc import Callable
 from datetime import date
-from typing import Literal
+from typing import Literal, Protocol
 
 from pydantic import BaseModel, Field, NonNegativeInt, PositiveInt
 
@@ -80,4 +79,10 @@ class ResolvedIdentity(BaseModel, frozen=True, extra="forbid"):
     surrogate_name: str
 
 
-IdentityLookup = Callable[[str, str], ResolvedIdentity]
+class IdentityLookup(Protocol):
+    def __call__(
+        self,
+        source_task_id: str,
+        observation_key: str,
+        role: IdentityRole | None = None,
+    ) -> ResolvedIdentity: ...

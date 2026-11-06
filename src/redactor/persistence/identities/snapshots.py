@@ -10,7 +10,7 @@ from redactor.identity.cohorts import resolve_cohort
 from redactor.persistence.files.results import read_step_result
 from redactor.persistence.identities.resolution import (
     binding_digest,
-    read_cohort,
+    decode_cohort,
     resolution_progress,
 )
 from redactor.persistence.identities.sources import resolution_sources
@@ -19,12 +19,15 @@ from redactor.policy.keys import derive_digest
 from redactor.schemas.identity import (
     IdentityLookup,
     IdentityMatch,
+    IdentityRole,
     IdentitySnapshot,
     ResolvedIdentity,
 )
 from redactor.schemas.persistence import Task
 from redactor.utils.constants import (
     IDENTITY_LOOKUP_CACHE_ENTRIES,
+    IDENTITY_PATIENT,
+    IDENTITY_PROVIDER,
     IDENTITY_SNAPSHOT_NAMESPACE,
     JSON_SEPARATORS,
     STEP_RESOLVE,
@@ -83,15 +86,13 @@ def build_identity_snapshot(
     reference_date = None
     with closing(
         connection.execute(
-            "SELECT identity_key FROM identity_cohorts "
+            "SELECT identity_key, encrypted_payload FROM identity_cohorts "
             "WHERE resolution_task_id = ? ORDER BY identity_key",
             (claimed.task_id,),
         )
     ) as cursor:
         for row in cursor:
-            cohort = read_cohort(connection, claimed.task_id, row[0], key)
-            if cohort is None:
-                raise ValueError(ERROR_IDENTITY_SNAPSHOT)
+            cohort = decode_cohort(key, claimed.task_id, row[0], row[1])
             if cohort.reference_date is not None:
                 reference_date = max(
                     reference_date or cohort.reference_date, cohort.reference_date
@@ -120,12 +121,15 @@ def load_identity_lookup(
         connection, task_id, IdentitySnapshot, encryption_key=key
     )
 
-    @lru_cache(maxsize=IDENTITY_LOOKUP_CACHE_ENTRIES)
-    def lookup(source_task_id: str, observation_key: str) -> ResolvedIdentity:
+    def read_identity(source_task_id: str, observation_key: str) -> ResolvedIdentity:
         row = connection.execute(
-            "SELECT identity_key, status, binding_digest FROM identity_bindings "
-            "WHERE resolution_task_id = ? AND source_task_id = ? "
-            "AND observation_key = ?",
+            "SELECT bindings.identity_key, bindings.status, bindings.binding_digest, "
+            "cohorts.encrypted_payload FROM identity_bindings AS bindings "
+            "JOIN identity_cohorts AS cohorts "
+            "ON cohorts.resolution_task_id = bindings.resolution_task_id "
+            "AND cohorts.identity_key = bindings.identity_key "
+            "WHERE bindings.resolution_task_id = ? AND bindings.source_task_id = ? "
+            "AND bindings.observation_key = ?",
             (task_id, source_task_id, observation_key),
         ).fetchone()
         if row is None:
@@ -134,13 +138,28 @@ def load_identity_lookup(
         expected = binding_digest(key, task_id, source_task_id, observation_key, match)
         if not hmac.compare_digest(row["binding_digest"], expected):
             raise ValueError(ERROR_IDENTITY_SNAPSHOT)
-        cohort = read_cohort(connection, task_id, match.identity_key, key)
-        if cohort is None:
-            raise ValueError(ERROR_IDENTITY_SNAPSHOT)
+        cohort = decode_cohort(
+            key, task_id, match.identity_key, row["encrypted_payload"]
+        )
         if cohort.reference_date is None:
             cohort = cohort.model_copy(
                 update={"reference_date": snapshot.reference_date}
             )
         return resolve_cohort(cohort, match, key, snapshot.maximum_date_shift_days)
+
+    patient_lookup = lru_cache(maxsize=IDENTITY_LOOKUP_CACHE_ENTRIES)(read_identity)
+    provider_lookup = lru_cache(maxsize=IDENTITY_LOOKUP_CACHE_ENTRIES)(read_identity)
+    other_lookup = lru_cache(maxsize=IDENTITY_LOOKUP_CACHE_ENTRIES)(read_identity)
+
+    def lookup(
+        source_task_id: str,
+        observation_key: str,
+        role: IdentityRole | None = None,
+    ) -> ResolvedIdentity:
+        if role == IDENTITY_PATIENT:
+            return patient_lookup(source_task_id, observation_key)
+        if role == IDENTITY_PROVIDER:
+            return provider_lookup(source_task_id, observation_key)
+        return other_lookup(source_task_id, observation_key)
 
     return snapshot, lookup

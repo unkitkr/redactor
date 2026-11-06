@@ -60,6 +60,7 @@ def resolve_batch(
     byte_count = 0
     matches: list[tuple[str, IdentityMatch]] = []
     cohorts: dict[str, IdentityCohort] = {}
+    original_cohorts: dict[str, IdentityCohort | None] = {}
     for observation in observations:
         position = (source_task_id, observation.observation_key)
         byte_count += len(observation.model_dump_json().encode())
@@ -83,6 +84,7 @@ def resolve_batch(
         existing = cohorts.get(match.identity_key)
         if existing is None:
             existing = read_cohort(connection, claimed.task_id, match.identity_key, key)
+            original_cohorts[match.identity_key] = existing
         cohorts[match.identity_key] = (
             merge_cohorts(existing, cohort) if existing is not None else cohort
         )
@@ -97,6 +99,7 @@ def resolve_batch(
             ),
         )
         for cohort in cohorts.values()
+        if cohort != original_cohorts[cohort.identity_key]
     ]
     with transaction(connection):
         require_attempt(connection, claimed)
@@ -149,8 +152,16 @@ def read_cohort(
     ).fetchone()
     if row is None:
         return None
+    return decode_cohort(key, task_id, identity_key, row[0])
+
+
+def decode_cohort(
+    key: bytes, task_id: str, identity_key: str, encrypted_payload: bytes
+) -> IdentityCohort:
     cohort = IdentityCohort.model_validate_json(
-        decrypt_payload(key, row[0], context=cohort_context(task_id, identity_key))
+        decrypt_payload(
+            key, encrypted_payload, context=cohort_context(task_id, identity_key)
+        )
     )
     if cohort.identity_key != identity_key:
         raise ValueError(ERROR_IDENTITY_SNAPSHOT)

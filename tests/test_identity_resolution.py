@@ -20,7 +20,10 @@ from redactor.persistence.files.results import write_step_result
 from redactor.persistence.identities.observations import save_observation_batch
 from redactor.persistence.identities.resolution import resolution_progress
 from redactor.persistence.identities.snapshots import load_identity_lookup
-from redactor.persistence.identities.sources import resolution_sources
+from redactor.persistence.identities.sources import (
+    initialize_resolution,
+    resolution_sources,
+)
 from redactor.persistence.queue.tasks import (
     claim_task,
     complete_task,
@@ -31,9 +34,15 @@ from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.identity import IdentityEvidence, ResolvedIdentity
 from redactor.schemas.inventory import PreparedRun
-from redactor.utils.constants import STEP_ANALYZE, STEP_INSPECT, STEP_RESOLVE
+from redactor.utils.constants import (
+    IDENTITY_LOOKUP_CACHE_ENTRIES,
+    STEP_ANALYZE,
+    STEP_INSPECT,
+    STEP_RESOLVE,
+)
 from redactor.utils.errors import (
     ERROR_IDENTITY_SNAPSHOT,
+    ERROR_PRIVATE_RECORD,
     ERROR_STALE_ATTEMPT,
     ERROR_STEP_RESULT,
     ERROR_STRUCTURE,
@@ -261,6 +270,110 @@ def test_identity_aliases_resolve_identically_in_reversed_record_order(
                 if expected is None:
                     expected = resolved
                 assert resolved == expected
+
+
+def test_duplicate_sources_keep_cohort_bytes_and_role_caches_authenticate_lookups(
+    connection: sqlite3.Connection, tmp_path: Path
+) -> None:
+    key = bytes(range(32))
+    people = tuple(
+        IdentityEvidence(
+            role="patient",
+            name="Alice Stone",
+            identifier=str(10000 + index),
+            identifier_namespace="mrn",
+            birth_date=date(1986, 1, 2),
+            reference_date=date(2026, 1, 2),
+            context_key=f"patient-{index}",
+        )
+        for index in range(IDENTITY_LOOKUP_CACHE_ENTRIES + 1)
+    )
+    provider = people[0].model_copy(
+        update={
+            "role": "provider",
+            "identifier_namespace": "npi",
+            "birth_date": None,
+            "context_key": "provider",
+        }
+    )
+    records = {
+        filename: (provider, *people) for filename in ("first.csv", "second.csv")
+    }
+    source = tmp_path / "input"
+    source.mkdir()
+    for filename, evidence in records.items():
+        with (source / filename).open("w", newline="") as stream:
+            writer = csv.writer(stream)
+            writer.writerow(("patient", "mrn", "birth_date", "event_date"))
+            for person in evidence:
+                writer.writerow(
+                    (
+                        person.name,
+                        person.identifier,
+                        person.birth_date,
+                        person.reference_date,
+                    )
+                )
+    run, analysis_ids = _seed_analysis(connection, source, records)
+    task = claim_task(connection, step=STEP_RESOLVE)
+    assert task is not None
+    sources = initialize_resolution(connection, task, tuple(analysis_ids.values()), key)
+    resolve_sources(connection, task, sources[:1], key)
+    cohorts = connection.execute(
+        "SELECT * FROM identity_cohorts ORDER BY identity_key"
+    ).fetchall()
+    connection.execute(
+        "CREATE TEMP TRIGGER reject_unchanged_cohort BEFORE UPDATE ON identity_cohorts "
+        "BEGIN SELECT RAISE(ABORT, 'unchanged cohort rewritten'); END"
+    )
+    resolve_sources(connection, task, sources[1:], key)
+    assert (
+        connection.execute(
+            "SELECT * FROM identity_cohorts ORDER BY identity_key"
+        ).fetchall()
+        == cohorts
+    )
+    connection.execute("DROP TRIGGER reject_unchanged_cohort")
+    queries: list[str] = []
+    connection.set_trace_callback(queries.append)
+    result = resolve_task(connection, task, mapping_key=key)
+    connection.set_trace_callback(None)
+    assert not any(
+        query.startswith("SELECT encrypted_payload FROM identity_cohorts")
+        for query in queries
+    )
+    complete_task(connection, task, result=result.artifact)
+    snapshot, lookup = load_identity_lookup(connection, run.resolution_task_id, key)
+    assert snapshot.observation_count == 2 * len(records["first.csv"])
+    assert snapshot.identity_count == len(records["first.csv"])
+    provider_key = prepare_observation(provider, key).observation_key
+    resolved = lookup(sources[0], provider_key, "provider")
+    for person in people:
+        lookup(sources[0], prepare_observation(person, key).observation_key, "patient")
+    queries.clear()
+    connection.set_trace_callback(queries.append)
+    assert lookup(sources[0], provider_key, "provider") == resolved
+    connection.set_trace_callback(None)
+    assert not queries
+    assert lookup(sources[0], provider_key) == resolved
+    queries.clear()
+    _, fresh_lookup = load_identity_lookup(connection, run.resolution_task_id, key)
+    connection.set_trace_callback(queries.append)
+    assert fresh_lookup(sources[0], provider_key, "provider") == resolved
+    connection.set_trace_callback(None)
+    assert len(queries) == 1 and "JOIN identity_cohorts" in queries[0]
+
+    encrypted = connection.execute(
+        "SELECT encrypted_payload FROM identity_cohorts WHERE identity_key = ?",
+        (resolved.match.identity_key,),
+    ).fetchone()[0]
+    connection.execute(
+        "UPDATE identity_cohorts SET encrypted_payload = ? WHERE identity_key = ?",
+        (encrypted[:-1] + bytes([encrypted[-1] ^ 1]), resolved.match.identity_key),
+    )
+    _, fresh_lookup = load_identity_lookup(connection, run.resolution_task_id, key)
+    with pytest.raises(ValueError, match=ERROR_PRIVATE_RECORD):
+        fresh_lookup(sources[0], provider_key, "provider")
 
 
 def _seed_analysis(

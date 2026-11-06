@@ -27,12 +27,16 @@ def row_context(
         patient_name=patient.name if patient else "",
         provider_name=provider.name if provider else "",
         patient=lookup(
-            analysis_task_id, prepare_observation(patient, key).observation_key
+            analysis_task_id,
+            prepare_observation(patient, key).observation_key,
+            patient.role,
         )
         if patient
         else None,
         provider=lookup(
-            analysis_task_id, prepare_observation(provider, key).observation_key
+            analysis_task_id,
+            prepare_observation(provider, key).observation_key,
+            provider.role,
         )
         if provider
         else None,

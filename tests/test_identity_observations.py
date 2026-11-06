@@ -144,3 +144,132 @@ def test_evidence_and_csv_cursor_recover_together_after_sigkill(
     assert saved[0].evidence.reference_date == date(2026, 4, 5)
     assert saved[0].evidence.explicit_older_age
     assert "John Smith" not in "\n".join(connection.iterdump())
+
+
+def test_repeated_evidence_advances_cursor_without_reencrypting_unchanged_people(
+    connection: sqlite3.Connection, tmp_path: Path
+) -> None:
+    source = tmp_path / "repeated.csv"
+    source.write_text("record\nfirst\nsecond\nthird\n", encoding="utf-8")
+    register_file(connection, source, "analyze", "identity-noop-v1")
+    task = claim_task(connection)
+    assert task is not None
+    key = bytes(range(32))
+    patient = IdentityEvidence(
+        role="patient",
+        name="Alice Stone",
+        identifier="12345",
+        identifier_namespace="mrn",
+        birth_date=date(1936, 1, 2),
+        reference_date=date(2025, 1, 2),
+        context_key="first-patient",
+    )
+    provider = patient.model_copy(
+        update={"role": "provider", "birth_date": None, "context_key": "first-provider"}
+    )
+    save_observation_batch(
+        connection,
+        task,
+        (patient, provider),
+        key,
+        sequence=1,
+        input_offset=len("record\nfirst\n"),
+        record_count=1,
+        counts={"name": 2},
+    )
+    saved = connection.execute(
+        "SELECT * FROM identity_observations ORDER BY observation_key"
+    ).fetchall()
+    repeated = tuple(
+        person.model_copy(update={"context_key": f"second-{person.role}"})
+        for person in (patient, provider)
+    )
+    connection.execute(
+        "CREATE TEMP TRIGGER reject_unchanged_observation "
+        "BEFORE UPDATE ON identity_observations "
+        "BEGIN SELECT RAISE(ABORT, 'unchanged evidence rewritten'); END"
+    )
+    changes = connection.total_changes
+    progress = save_observation_batch(
+        connection,
+        task,
+        repeated,
+        key,
+        sequence=2,
+        input_offset=len("record\nfirst\nsecond\n"),
+        record_count=2,
+        counts={"name": 4},
+    )
+    assert connection.total_changes == changes + 1
+    assert progress.record_count == 2 and progress.counts == {"name": 4}
+    assert (
+        connection.execute(
+            "SELECT * FROM identity_observations ORDER BY observation_key"
+        ).fetchall()
+        == saved
+    )
+    changes = connection.total_changes
+    assert (
+        save_observation_batch(
+            connection,
+            task,
+            repeated,
+            key,
+            sequence=2,
+            input_offset=len("record\nfirst\nsecond\n"),
+            record_count=2,
+            counts={"name": 4},
+        )
+        == progress
+    )
+    assert connection.total_changes == changes
+    connection.execute("DROP TRIGGER reject_unchanged_observation")
+
+    older = patient.model_copy(
+        update={
+            "context_key": "third-patient",
+            "reference_date": date(2026, 1, 2),
+            "explicit_older_age": True,
+        }
+    )
+    conflicting = patient.model_copy(update={"birth_date": date(1986, 1, 2)})
+    incomplete = patient.model_copy(
+        update={"birth_date": None, "context_key": "third-a"}
+    )
+    save_observation_batch(
+        connection,
+        task,
+        (
+            older,
+            provider,
+            conflicting,
+            incomplete,
+            incomplete.model_copy(update={"context_key": "third-b"}),
+        ),
+        key,
+        sequence=3,
+        input_offset=task.input_size,
+        record_count=3,
+        counts={"name": 9},
+    )
+    complete_task(connection, task)
+    observations = tuple(iter_observations(connection, task.task_id, key))
+    assert len(observations) == 5
+    matched = next(
+        item for item in observations if item.evidence.birth_date == patient.birth_date
+    )
+    assert matched.evidence.reference_date == date(2026, 1, 2)
+    assert matched.evidence.explicit_older_age
+    assert (
+        len({item.observation_key for item in observations if not item.is_anchor}) == 2
+    )
+    assert connection.execute(
+        "SELECT encrypted_payload FROM identity_observations WHERE observation_key = ?",
+        (
+            next(
+                item.observation_key
+                for item in observations
+                if item.evidence.role == "provider"
+            ),
+        ),
+    ).fetchone()[0] in {row["encrypted_payload"] for row in saved}
