@@ -1,0 +1,66 @@
+"""Native field policies and location-bound edits exchanged by pipeline steps."""
+
+from typing import Literal
+
+from pydantic import BaseModel, Field, NonNegativeInt
+
+from redactor.schemas.identity import IdentityEvidence, ResolvedIdentity
+
+FieldKind = Literal[
+    "patient_name",
+    "provider_name",
+    "patient_id",
+    "provider_id",
+    "identifier",
+    "birth_date",
+    "date",
+    "age",
+    "phone",
+    "email",
+    "address",
+    "zip",
+    "lot",
+    "clinical",
+    "text",
+]
+
+
+class ColumnPolicy(BaseModel, frozen=True, extra="forbid"):
+    index: NonNegativeInt
+    kind: FieldKind
+    namespace: str = ""
+
+
+class RowEvidence(BaseModel, frozen=True, extra="forbid"):
+    patient: IdentityEvidence | None
+    provider: IdentityEvidence | None
+
+
+class RowIdentities(BaseModel, frozen=True, extra="forbid"):
+    patient: ResolvedIdentity | None
+    provider: ResolvedIdentity | None
+
+
+class TextFinding(BaseModel, frozen=True, extra="forbid"):
+    start: NonNegativeInt
+    end: NonNegativeInt
+    original: str
+    kind: str = Field(min_length=1)
+
+
+class TextEdit(TextFinding):
+    replacement: str
+
+
+class TextRange(BaseModel, frozen=True, extra="forbid"):
+    start: NonNegativeInt
+    end: NonNegativeInt
+
+
+class TextContext(BaseModel, frozen=True, extra="forbid"):
+    context_key: str
+    patient_name: str = ""
+    provider_name: str = ""
+    patient: ResolvedIdentity | None = None
+    provider: ResolvedIdentity | None = None
+    maximum_date_shift_days: int

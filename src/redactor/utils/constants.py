@@ -387,6 +387,201 @@ PHONE_LINE_NUMBER_SPACE: Final = 10_000
 SURROGATE_STREET_NUMBER_SPACE: Final = 9900
 SURROGATE_STREET_NUMBER_MINIMUM: Final = 100
 
+# Typed tabular fields. Unknown columns still require text analysis.
+FIELD_PATIENT_NAME: Final = "patient_name"
+FIELD_PROVIDER_NAME: Final = "provider_name"
+FIELD_PATIENT_ID: Final = "patient_id"
+FIELD_PROVIDER_ID: Final = "provider_id"
+FIELD_IDENTIFIER: Final = "identifier"
+FIELD_BIRTH_DATE: Final = "birth_date"
+FIELD_DATE: Final = "date"
+FIELD_AGE: Final = "age"
+FIELD_PHONE: Final = "phone"
+FIELD_EMAIL: Final = "email"
+FIELD_ADDRESS: Final = "address"
+FIELD_ZIP: Final = "zip"
+FIELD_LOT: Final = "lot"
+FIELD_CLINICAL: Final = "clinical"
+FIELD_TEXT: Final = "text"
+MRN_NAMESPACE: Final = "mrn"
+PATIENT_ID_NAMESPACE: Final = "patient-id"
+ENCOUNTER_ID_NAMESPACE: Final = "encounter-id"
+ACCOUNT_NAMESPACE: Final = "account-number"
+RELATIVE_NAME_NAMESPACE: Final = "relative-name"
+IDENTITY_PATIENT: Final = "patient"
+IDENTITY_RELATIVE: Final = "relative"
+ROW_CONTEXT_TEMPLATE: Final = "{input_sha256}:row:{number}:{role}"
+TABULAR_FIELD_ALIASES: Final = (
+    (FIELD_PATIENT_NAME, "", ("patient", "patient_name", "patient_full_name")),
+    (
+        FIELD_PROVIDER_NAME,
+        "",
+        ("attending", "attending_name", "provider_name", "physician"),
+    ),
+    (
+        FIELD_PATIENT_ID,
+        MRN_NAMESPACE,
+        ("mrn", "medical_record_number", "medical_record_no"),
+    ),
+    (FIELD_PATIENT_ID, PATIENT_ID_NAMESPACE, ("patient_id", "patient_identifier")),
+    (FIELD_PROVIDER_ID, NPI_NAMESPACE, ("npi", "attending_npi", "provider_npi")),
+    (FIELD_IDENTIFIER, ENCOUNTER_ID_NAMESPACE, ("encounter_id", "visit_id")),
+    (FIELD_IDENTIFIER, ACCOUNT_NAMESPACE, ("account", "account_number", "account_no")),
+    (FIELD_BIRTH_DATE, "", ("birth_date", "date_of_birth", "dob")),
+    (
+        FIELD_DATE,
+        "",
+        (
+            "admit_ts",
+            "discharge_ts",
+            "admit_date",
+            "discharge_date",
+            "admission_date",
+            "encounter_date",
+            "event_date",
+            "collection_date",
+            "date",
+        ),
+    ),
+    (FIELD_AGE, "", ("age", "age_years")),
+    (
+        FIELD_PHONE,
+        PHONE_NAMESPACE,
+        ("contact", "phone", "phone_number", "telephone", "mobile", "fax"),
+    ),
+    (FIELD_EMAIL, EMAIL_NAMESPACE, ("email", "email_address")),
+    (FIELD_ADDRESS, ADDRESS_NAMESPACE, ("address", "street_address", "street")),
+    (FIELD_ZIP, "", ("zip", "zip_code", "zipcode", "postal_code")),
+    (
+        FIELD_LOT,
+        PRODUCT_LOT_NAMESPACE,
+        ("lot_no", "lot_number", "device_serial_number", "device_serial", "udi"),
+    ),
+    (
+        FIELD_CLINICAL,
+        "icd",
+        ("dx_codes", "dx_code", "diagnosis_codes", "diagnosis_code", "icd10", "icd_10"),
+    ),
+    (FIELD_CLINICAL, "procedure", ("cpt_codes", "cpt_code", "cpt", "hcpcs")),
+    (FIELD_CLINICAL, "loinc", ("loinc", "loinc_code")),
+    (FIELD_CLINICAL, "ndc", ("ndc", "ndc_code")),
+    (FIELD_CLINICAL, "rxnorm", ("rxnorm", "rxnorm_code")),
+    (FIELD_CLINICAL, "quantity", ("lab_value", "lab_result", "result_value", "value")),
+    (FIELD_CLINICAL, "sex", ("sex", "gender")),
+    (FIELD_CLINICAL, "unit", ("unit", "units")),
+)
+CLINICAL_FIELD_PATTERNS: Final = (
+    ("icd", r"[A-Z][0-9][0-9A-Z](?:\.[0-9A-Z]{1,4})?"),
+    ("procedure", r"(?:[0-9]{5}|[A-Z][0-9]{4}|[0-9]{4}[A-Z])"),
+    ("loinc", r"[0-9]{1,7}-[0-9]"),
+    ("ndc", r"(?:[0-9]{10,11}|[0-9]{4,5}-[0-9]{3,4}-[0-9]{1,2})"),
+    ("rxnorm", r"[0-9]+"),
+    ("quantity", r"[<>≤≥]?[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?"),
+    ("sex", r"(?:M|F|O|U|male|female|other|unknown)"),
+    ("unit", r"(?:%|[a-zA-Zµμ]+(?:\^[0-9]+)?(?:/[a-zA-Zµμ]+(?:\^[0-9]+)?)?)"),
+)
+CLINICAL_CODE_SEPARATOR_PATTERN: Final = r"[;,|\s]+"
+AGE_EXPLICIT_PATTERN: Final = (
+    r"(?i)\bage\s*[:=]?\s*(?P<age>[0-9]{1,3})(?:\+)?\b"
+    r"(?!\s*(?:days?|weeks?|months?)\b)"
+)
+
+# Free-text evidence. These are field-independent clinical and PHI patterns.
+TEXT_EMAIL_PATTERN: Final = r"(?<![\w.+-])[\w.+-]+@[\w-]+(?:\.[\w-]+)+(?![\w-])"
+TEXT_PHONE_PATTERN: Final = (
+    r"(?<![\w])(?:\+?1[ .-]?)?(?:\([2-9][0-9]{2}\)|[2-9][0-9]{2})"
+    r"[ .-]?[0-9]{3}[ .-]?[0-9]{4}(?![\w])"
+)
+TEXT_DATE_PATTERN: Final = (
+    r"(?<![\w/])(?:[0-9]{4}[-/][0-9]{1,2}[-/][0-9]{1,2}"
+    r"|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4})(?![\w/])"
+)
+TEXT_STREET_PATTERN: Final = (
+    r"(?i)\b[0-9]{1,6}\s+(?:[\w.'’\-]+\s+){1,6}"
+    r"(?:avenue|ave|street|st|road|rd|lane|ln|drive|dr|boulevard|blvd|court|ct|way)"
+    r"\b\.?"
+)
+TEXT_RELATIVE_PATTERN: Final = (
+    r"(?i:\b(?:spouse|wife|husband|daughter|son|mother|father|sister|brother|partner|"
+    r"caregiver|guardian|next of kin))\s+"
+    r"(?P<name>[A-ZÀ-ÖØ-Þ][\w'’\-]*(?:\s+[A-ZÀ-ÖØ-Þ][\w'’\-]*){0,3})"
+)
+TEXT_PROVIDER_PATTERN: Final = (
+    r"(?i:\b(?:Dr\.?|Doctor|Prof\.?))\s+"
+    r"(?P<name>[A-ZÀ-ÖØ-Þ][\w'’\-]*(?:\s+[A-ZÀ-ÖØ-Þ][\w'’\-]*){0,3})"
+)
+AGE_YEARS_PATTERN: Final = (
+    r"(?i)\b(?P<age>[0-9]{1,3})(?:\+)?(?:[- ]years?[- ]old|\s*y/o)\b"
+)
+TEXT_MASK_TOKEN: Final = " [REDACTED] "
+TEXT_CLINICAL_PATTERNS: Final = (
+    r"\b[A-Z][0-9][0-9A-Z](?:\.[A-Z0-9]{1,4})?\b",
+    r"(?i)\b(?:LOINC|CPT|HCPCS|RxNorm|NDC|ICD[- ]?10)\s*[:#]?\s*[A-Z0-9.\-]+\b",
+    r"(?i)\b[a-z][\w-]*\s+[0-9]+(?:[./][0-9]+)?\s*(?:mg|mcg|µg|g|mL|units?|mmol|mEq|puffs?)\b",
+    r"(?i)\b[a-z][\w-]*\s+[0-9]+/[0-9]+\s*(?:BID|TID|QID)\b",
+    r"(?i)\b[0-9]+(?:\.[0-9]+)?\s*(?:mg/dL|mmol/L|mg|mcg|g|mL|units?|%|days?|weeks?|months?|years?)\b",
+    r"\b[\w'’\-]+(?:'s|’s)?\s+(?i:disease|syndrome|palsy|sign|contracture|lymphoma)\b",
+    r"(?i)\b(?:BID|TID|QID|PRN|qHS|PO|IV|IM|MDI|GCS|LDL|HDL|A1c|HbA1c|HR|BP|HTN|Neuro|Cardio|daily|weekly|monthly|yearly)\b",
+)
+PRESERVED_US_GEOGRAPHY: Final = (
+    "usa",
+    "us",
+    "united states",
+    "united states of america",
+    "alabama",
+    "alaska",
+    "arizona",
+    "arkansas",
+    "california",
+    "colorado",
+    "connecticut",
+    "delaware",
+    "florida",
+    "georgia",
+    "hawaii",
+    "idaho",
+    "illinois",
+    "indiana",
+    "iowa",
+    "kansas",
+    "kentucky",
+    "louisiana",
+    "maine",
+    "maryland",
+    "massachusetts",
+    "michigan",
+    "minnesota",
+    "mississippi",
+    "missouri",
+    "montana",
+    "nebraska",
+    "nevada",
+    "new hampshire",
+    "new jersey",
+    "new mexico",
+    "new york",
+    "north carolina",
+    "north dakota",
+    "ohio",
+    "oklahoma",
+    "oregon",
+    "pennsylvania",
+    "rhode island",
+    "south carolina",
+    "south dakota",
+    "tennessee",
+    "texas",
+    "utah",
+    "vermont",
+    "virginia",
+    "washington",
+    "west virginia",
+    "wisconsin",
+    "wyoming",
+    "district of columbia",
+    "puerto rico",
+)
+
 # Calendar-date spelling and older-age generalization
 DATE_OFFSET_NAMESPACE: Final = "patient-date-offset"
 DATE_STYLE_YMD: Final = "ymd"
