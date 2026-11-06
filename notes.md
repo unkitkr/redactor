@@ -32,6 +32,7 @@
 - Keyed replacements use environment secrets; retained identifying evidence and model responses require encryption and private storage.
 - Private evidence uses AES-GCM with fresh nonces and context-bound keys; only opaque references and safe counters belong in queue metadata.
 - Valid mislabeled files retain their actual native format and original output name; corrupt, unsupported, or unverifiable content is quarantined without silent repair.
+- Native parser inputs and individual archive members default to 32 MiB, expanded archives to 256 MiB, and images to 16 million pixels; streaming CSV, JSON, and text have separate record limits.
 - Nested input paths are preserved under the output root to avoid collisions between files with the same basename.
 - Initial coverage targets the supplied file families plus CSV/TSV; legacy binary XLS is explicitly unsupported, and pixel PHI may be masked.
 - Large structured files must cover every row and complete verification without hosted calls; local-model quality and the container resource targets remain unmeasured.

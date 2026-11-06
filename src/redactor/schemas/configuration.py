@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 
 from redactor.utils.constants import (
+    DEFAULT_ARCHIVE_BYTES,
     DEFAULT_CHECKPOINT_RECORDS,
     DEFAULT_CHUNK_BYTES,
     DEFAULT_CIRCUIT_COOLDOWN_SECONDS,
@@ -19,6 +20,7 @@ from redactor.utils.constants import (
     DEFAULT_MODEL_INPUT_BYTES,
     DEFAULT_MODEL_OUTPUT_TOKENS,
     DEFAULT_MODEL_TIMEOUT_SECONDS,
+    DEFAULT_NATIVE_FILE_BYTES,
     DEFAULT_NESTING_DEPTH,
     DEFAULT_OCR_LANGUAGE,
     DEFAULT_RECORD_BYTES,
@@ -73,6 +75,8 @@ class ResourceSettings(BaseModel, frozen=True, extra="forbid"):
     max_image_pixels: PositiveInt = DEFAULT_IMAGE_PIXELS
     max_nesting_depth: PositiveInt = DEFAULT_NESTING_DEPTH
     checkpoint_records: PositiveInt = DEFAULT_CHECKPOINT_RECORDS
+    max_native_file_bytes: PositiveInt = DEFAULT_NATIVE_FILE_BYTES
+    max_archive_bytes: PositiveInt = DEFAULT_ARCHIVE_BYTES
 
 
 class PolicySettings(BaseModel, frozen=True, extra="forbid"):

@@ -13,6 +13,7 @@ input/
 
 # Private runtime state and local checks
 .redactor/
+.models/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/

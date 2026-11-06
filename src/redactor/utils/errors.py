@@ -62,6 +62,21 @@ ERROR_MODEL_ACCOUNTING: Final = "invalid_model_accounting_transition"
 ERROR_CSV_STRUCTURE: Final = "invalid_csv_structure"
 ERROR_CSV_RECORD_LIMIT: Final = "csv_record_limit_exceeded"
 ERROR_TEXT_ENCODING: Final = "unsupported_text_encoding"
+ERROR_FORMAT_UNSUPPORTED: Final = "unsupported_native_format"
+ERROR_CONTAINER: Final = "invalid_container_structure"
+ERROR_RESOURCE_LIMIT: Final = "native_resource_limit_exceeded"
+ERROR_ENCRYPTED_INPUT: Final = "encrypted_input_unsupported"
+
+INSPECTION_REASON_CODES: Final = (
+    ERROR_FORMAT_UNSUPPORTED,
+    ERROR_CONTAINER,
+    ERROR_RESOURCE_LIMIT,
+    ERROR_ENCRYPTED_INPUT,
+    ERROR_STRUCTURE,
+    ERROR_CSV_STRUCTURE,
+    ERROR_CSV_RECORD_LIMIT,
+    ERROR_TEXT_ENCODING,
+)
 
 MODEL_REASON_CODES: Final = (
     ERROR_MODEL_DISABLED,
@@ -112,6 +127,7 @@ COORDINATOR_FAILURE_CODES: Final = (
 )
 
 FAILURE_CODES: Final = (
+    *INSPECTION_REASON_CODES,
     ERROR_CSV_STRUCTURE,
     ERROR_CSV_RECORD_LIMIT,
     ERROR_TEXT_ENCODING,

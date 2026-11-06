@@ -162,3 +162,88 @@ CSV_SNIFF_BYTES: Final = 64 * 1024
 UTF8_BOM: Final = b"\xef\xbb\xbf"
 LINE_ENDING_LF: Final = "\n"
 LINE_ENDING_CRLF: Final = "\r\n"
+
+# Native format recognition and parser limits
+FORMAT_UNKNOWN: Final = "unknown"
+FORMAT_ZIP: Final = "zip"
+FORMAT_DOCX: Final = "docx"
+FORMAT_XLSX: Final = "xlsx"
+FORMAT_OLE: Final = "ole"
+FORMAT_PDF: Final = "pdf"
+FORMAT_DICOM: Final = "dicom"
+FORMAT_JPEG: Final = "jpeg"
+FORMAT_PNG: Final = "png"
+FORMAT_TIFF: Final = "tiff"
+FORMAT_JSON: Final = "json"
+FORMAT_FHIR: Final = "fhir"
+FORMAT_HL7: Final = "hl7"
+FORMAT_CSV: Final = "csv"
+FORMAT_TSV: Final = "tsv"
+FORMAT_TEXT: Final = "text"
+FORMAT_PROBE_BYTES: Final = 4096
+ZIP_SIGNATURE: Final = b"PK\x03\x04"
+ZIP_END_SIGNATURE: Final = b"PK\x05\x06"
+ZIP_END_RECORD_BYTES: Final = 22
+ZIP_MAX_COMMENT_BYTES: Final = 65535
+ZIP_MAX_ENTRIES: Final = 20000
+ZIP_MAX_DIRECTORY_BYTES: Final = 8 * 1024 * 1024
+ZIP_ENCRYPTED_FLAG: Final = 1
+DEFAULT_NATIVE_FILE_BYTES: Final = 32 * 1024 * 1024
+DEFAULT_ARCHIVE_BYTES: Final = 256 * 1024 * 1024
+OOXML_CONTENT_TYPES: Final = "[Content_Types].xml"
+OOXML_PACKAGE_RELATIONSHIPS: Final = "_rels/.rels"
+OOXML_CONTENT_NAMESPACE: Final = (
+    "http://schemas.openxmlformats.org/package/2006/content-types"
+)
+OOXML_OVERRIDE_TAG: Final = f"{{{OOXML_CONTENT_NAMESPACE}}}Override"
+OOXML_TYPES_TAG: Final = f"{{{OOXML_CONTENT_NAMESPACE}}}Types"
+OOXML_RELATIONSHIP_NAMESPACE: Final = (
+    "http://schemas.openxmlformats.org/package/2006/relationships"
+)
+OOXML_RELATIONSHIPS_TAG: Final = f"{{{OOXML_RELATIONSHIP_NAMESPACE}}}Relationships"
+OOXML_RELATIONSHIP_TAG: Final = f"{{{OOXML_RELATIONSHIP_NAMESPACE}}}Relationship"
+OOXML_RELATIONSHIP_ID: Final = "Id"
+OOXML_RELATIONSHIP_TYPE: Final = "Type"
+OOXML_OFFICE_DOCUMENT_RELATIONSHIP: Final = (
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
+)
+OOXML_RELATIONSHIP_TARGET: Final = "Target"
+OOXML_RELATIONSHIP_MODE: Final = "TargetMode"
+OOXML_EXTERNAL_MODE: Final = "External"
+DOCX_ROOT_TAG: Final = (
+    "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}document"
+)
+XLSX_ROOT_TAG: Final = (
+    "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}workbook"
+)
+OOXML_PART_ATTRIBUTE: Final = "PartName"
+OOXML_TYPE_ATTRIBUTE: Final = "ContentType"
+DOCX_MAIN_PART: Final = "word/document.xml"
+XLSX_MAIN_PART: Final = "xl/workbook.xml"
+DOCX_MAIN_TYPE: Final = (
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"
+)
+XLSX_MAIN_TYPE: Final = (
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"
+)
+XML_SUFFIXES: Final = (".xml", ".rels")
+PDF_SIGNATURE: Final = b"%PDF-"
+OLE_SIGNATURE: Final = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
+DICOM_SIGNATURE: Final = b"DICM"
+DICOM_PREAMBLE_BYTES: Final = 128
+JPEG_SIGNATURE: Final = b"\xff\xd8\xff"
+PNG_SIGNATURE: Final = b"\x89PNG\r\n\x1a\n"
+TIFF_SIGNATURES: Final = (b"II*\x00", b"MM\x00*")
+HL7_SIGNATURE: Final = b"MSH"
+LEGACY_TEXT_ENCODING: Final = "cp1252"
+UTF8_BOM_ENCODING: Final = "utf-8-sig"
+TEXT_ALLOWED_CONTROLS: Final = (9, 10, 12, 13)
+JSON_RESOURCE_TYPE: Final = "resourceType"
+FHIR_BUNDLE_TYPE: Final = "Bundle"
+JSON_START_MAP: Final = "start_map"
+JSON_END_MAP: Final = "end_map"
+JSON_MAP_KEY: Final = "map_key"
+JSON_START_ARRAY: Final = "start_array"
+JSON_END_ARRAY: Final = "end_array"
+JSON_STRING: Final = "string"
+JSON_SCALAR_DELIMITERS: Final = b" \t\r\n,:{}[]"

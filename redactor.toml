@@ -42,6 +42,9 @@ chunk_bytes = 4194304
 max_image_pixels = 16000000
 max_nesting_depth = 16
 checkpoint_records = 5000
+# In-memory native parsers are bounded; CSV, text, and JSON use streaming readers.
+max_native_file_bytes = 33554432
+max_archive_bytes = 268435456
 
 [policy]
 maximum_date_shift_days = 365
