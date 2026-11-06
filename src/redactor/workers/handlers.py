@@ -2,6 +2,8 @@
 
 from functools import partial
 
+import httpx
+
 from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.entities import NerAdapter
 from redactor.schemas.pipeline import StepHandler
@@ -28,6 +30,8 @@ def pipeline_handlers(
     mapping_key: bytes,
     local_ner: NerAdapter,
     resolution_task_id: str,
+    *,
+    model_transport: httpx.AsyncBaseTransport | None = None,
 ) -> dict[str, StepHandler]:
     return {
         STEP_INSPECT: partial(
@@ -37,9 +41,10 @@ def pipeline_handlers(
         ),
         STEP_ANALYZE: partial(
             analyze_task,
-            resources=settings.resources,
+            settings=settings,
             mapping_key=mapping_key,
             local_ner=local_ner,
+            transport=model_transport,
         ),
         STEP_RESOLVE: partial(resolve_task, mapping_key=mapping_key),
         STEP_REWRITE: partial(

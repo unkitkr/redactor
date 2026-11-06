@@ -33,7 +33,7 @@ def rewrite_native_task(
     *,
     settings: PipelineSettings,
     mapping_key: bytes,
-    local_ner: NerAdapter,
+    detector: NerAdapter,
     resolution_task_id: str,
 ) -> StepResult:
     document = read_native(task.input_path, inspection, settings.resources)
@@ -59,7 +59,7 @@ def rewrite_native_task(
             findings = cell_findings(
                 value,
                 column,
-                local_ner,
+                detector,
                 patient_name=context.patient_name,
                 provider_name=context.provider_name,
             )

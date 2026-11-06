@@ -11,7 +11,11 @@ from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.entities import EntityDetection, NerAdapter, TextEntities
 from redactor.schemas.persistence import Task
 from redactor.utils.constants import MODEL_LOCAL, MODEL_REMOTE
-from redactor.utils.errors import ERROR_ENTITY_EVIDENCE, ERROR_LOCAL_INFERENCE
+from redactor.utils.errors import (
+    ERROR_ENTITY_EVIDENCE,
+    ERROR_LOCAL_INFERENCE,
+    ERROR_LOCAL_UNAVAILABLE,
+)
 from redactor.utils.provider import request_json
 
 
@@ -55,8 +59,10 @@ def detect_text(
 
     try:
         local_result = TextEntities(entities=local_ner(text))
-    except Exception:
+    except Exception as error:
         # Adapters may expose input text in exceptions. Keep that out of run logs.
+        if isinstance(error, ValueError) and error.args == (ERROR_LOCAL_UNAVAILABLE,):
+            raise ValueError(ERROR_LOCAL_UNAVAILABLE) from None
         raise ValueError(ERROR_LOCAL_INFERENCE) from None
     entities = validate_entity_evidence(text, local_result)
     return EntityDetection(

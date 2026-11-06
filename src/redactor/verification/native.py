@@ -3,6 +3,7 @@
 import sqlite3
 from collections import Counter
 
+from redactor.agents.detector.adapter import detection_adapter
 from redactor.formats.inspection import inspect_file
 from redactor.formats.native import read_native
 from redactor.identity.rows import row_context
@@ -90,6 +91,13 @@ def verify_native(
     )
     if analysis.reason is not None or analysis.file_type != inspection.file_type:
         raise ValueError(ERROR_COVERAGE)
+    detector = detection_adapter(
+        connection,
+        task,
+        settings=settings,
+        mapping_key=mapping_key,
+        local_ner=local_ner,
+    )
     counts: Counter[str] = Counter()
     cells = 0
     for number, (before, after) in enumerate(
@@ -118,7 +126,7 @@ def verify_native(
             findings = cell_findings(
                 value,
                 column,
-                local_ner,
+                detector,
                 patient_name=context.patient_name,
                 provider_name=context.provider_name,
             )

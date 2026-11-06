@@ -4,6 +4,7 @@ import hashlib
 import sqlite3
 from collections import Counter
 
+from redactor.agents.detector.adapter import detection_adapter
 from redactor.formats.csv import encode_csv_header, encode_csv_record, iter_csv_records
 from redactor.formats.tabular_fields import column_policies
 from redactor.identity.rows import row_context
@@ -96,6 +97,13 @@ def rewrite_task(
     )
     if analysis.reason is not None:
         raise ValueError(ERROR_FORMAT_UNSUPPORTED)
+    detector = detection_adapter(
+        connection,
+        task,
+        settings=settings,
+        mapping_key=mapping_key,
+        local_ner=local_ner,
+    )
     if inspection.csv_layout is None:
         return rewrite_native_task(
             connection,
@@ -104,7 +112,7 @@ def rewrite_task(
             analysis,
             settings=settings,
             mapping_key=mapping_key,
-            local_ner=local_ner,
+            detector=detector,
             resolution_task_id=resolution_task_id,
         )
     snapshot, lookup = load_identity_lookup(connection, resolution_task_id, mapping_key)
@@ -158,7 +166,7 @@ def rewrite_task(
                 findings = cell_findings(
                     value,
                     column,
-                    local_ner,
+                    detector,
                     patient_name=context.patient_name,
                     provider_name=context.provider_name,
                 )

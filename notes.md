@@ -5,6 +5,7 @@
 - Each run is tied to its input bytes, configuration and secret-key identity; durable checkpoints, rejection of stale attempts and atomic step transitions support replay.
 - Large artifacts stay on private disk, and CSV checkpoints end at complete records; one inference worker and one light worker limit model duplication.
 - Production and evaluation share local adapters: NER checks text spans and caches bounded inputs, while OCR checks image limits and coordinates against source pixels.
+- Analysis freezes encrypted detector observations; rewriting replays those observations, while verification independently scans the source and saved output.
 - A separate dashboard reads bounded, cached SQLite snapshots; it starts with the coordinator, cannot stop processing on failure, and can be disabled with `--no-dashboard`.
 
 ## Stack
@@ -13,7 +14,7 @@
 - **Pydantic, TOML and AES-GCM** provide validated contracts, configuration and encrypted identifying state, with secrets supplied through the environment.
 - **GLiNER PII Edge UINT8** is the local NER choice for its measured recall and memory balance: 69.2% exact recall at 195.6 MiB in isolation; production coverage remains limited.
 - **PP-OCRv5 mobile English** is the OCR choice: 44/52 identifiers localized versus Tesseract's 36/52, at 343.7 MiB isolated peak memory; it is benchmarked but not integrated into publication.
-- **GLM 5.3 Flash** is the optional hosted-text choice: the highest measured exact-span F1 (75%), with greater latency; hosted detection remains benchmark-only, and these scores do not validate a judge.
+- **GLM 5.3 Flash** is the optional hosted-text choice: the highest measured exact-span F1 (75%), with greater latency; hosted detection is connected to analysis, and these scores do not validate a judge.
 - **OpenAI SDK** provides the transport behind encrypted response replay, bounded backoff, circuit state and shared cost reservations.
 - **PyMuPDF** is selected under its AGPL license.
 - **uv** installs Python dependencies and the packaged spaCy model; other local weights are checksum-verified during setup and mounted before restricted execution, with no runtime downloads.
@@ -49,7 +50,7 @@
 - **File limits:** defaults are 32 MiB for native files, 256 MiB for expanded archives and 16 million pixels for images; only CSV rewriting streams beyond the native-file limit.
 - **OCR limits:** only single-frame images, aspect ratios up to 64 and at most 256 text regions are accepted, bounding preprocessing and rejecting uncertain partial coverage; image benchmarks do not validate safe image publication.
 - **Model headroom:** OpenMed reached 1 GiB in isolation, and NVIDIA full weights were excluded before inference; GLiNER matched upstream on 140 inputs, while OpenMed BIO grouping remains experimental.
-- **Validation gaps:** hosted publication integration, remote judging, pixel verification, cross-issuer linkage, collision auditing and full-run crash equivalence remain incomplete or unvalidated.
+- **Validation gaps:** remote judging, pixel verification, cross-issuer linkage, collision auditing and full-run crash equivalence remain incomplete or unvalidated.
 - **Recovery boundary:** atomic file installation requires one filesystem, and replay requires the saved state and original secret.
 - **Container storage:** SQLite reported corruption on macOS directories shared into Docker Desktop; the same pipeline completed and replayed on native Linux storage, which is required for container state and outputs.
 - **Run isolation:** output ownership blocks mixed runs; input, policy or configuration changes require a fresh output workspace.

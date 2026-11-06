@@ -63,7 +63,7 @@ def test_csv_analysis_resolution_and_checkpoint_replay(
         analysis,
         {
             "analyze": lambda db, task: analyze_task(
-                db, task, resources=settings.resources, mapping_key=key, local_ner=ner
+                db, task, settings=settings, mapping_key=key, local_ner=ner
             )
         },
     )

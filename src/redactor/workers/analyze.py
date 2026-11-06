@@ -3,6 +3,9 @@
 import sqlite3
 from collections import Counter
 
+import httpx
+
+from redactor.agents.detector.adapter import detection_adapter
 from redactor.formats.csv import iter_csv_records
 from redactor.formats.tabular_fields import column_policies
 from redactor.identity.tabular import row_evidence
@@ -17,7 +20,7 @@ from redactor.persistence.identities.observations import (
 )
 from redactor.policy.tabular import cell_findings
 from redactor.schemas.analysis import FileAnalysis
-from redactor.schemas.configuration import ResourceSettings
+from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.entities import NerAdapter
 from redactor.schemas.formats import FileInspection
 from redactor.schemas.identity import IdentityEvidence
@@ -44,10 +47,12 @@ def analyze_task(
     connection: sqlite3.Connection,
     task: Task,
     *,
-    resources: ResourceSettings,
+    settings: PipelineSettings,
     mapping_key: bytes,
     local_ner: NerAdapter,
+    transport: httpx.AsyncBaseTransport | None = None,
 ) -> StepResult:
+    resources = settings.resources
     inspection_id = prepare_successor(connection, task, STEP_INSPECT).task_id
     inspection = read_step_result(
         connection, inspection_id, FileInspection, encryption_key=mapping_key
@@ -58,6 +63,14 @@ def analyze_task(
     reason = inspection.reason
     try:
         if reason is None:
+            detector = detection_adapter(
+                connection,
+                task,
+                settings=settings,
+                mapping_key=mapping_key,
+                local_ner=local_ner,
+                transport=transport,
+            )
             if (
                 inspection.file_type not in (FORMAT_CSV, FORMAT_TSV)
                 or inspection.csv_layout is None
@@ -68,7 +81,7 @@ def analyze_task(
                     inspection,
                     resources=resources,
                     mapping_key=mapping_key,
-                    local_ner=local_ner,
+                    detector=detector,
                 )
             before = file_version(task.input_path.stat())
             original = inspect_artifact(task.input_path, persist=False)
@@ -78,7 +91,7 @@ def analyze_task(
             policies = column_policies(layout.columns)
             for column in policies:
                 if column.kind == FIELD_TEXT and find_text_phi(
-                    layout.columns[column.index], local_ner
+                    layout.columns[column.index], detector
                 ):
                     raise ValueError(ERROR_FORMAT_UNSUPPORTED)
             batch: list[IdentityEvidence] = []
@@ -119,7 +132,7 @@ def analyze_task(
                     found = cell_findings(
                         row.values[column.index],
                         column,
-                        local_ner,
+                        detector,
                         patient_name=evidence.patient.name if evidence.patient else "",
                         provider_name=evidence.provider.name
                         if evidence.provider

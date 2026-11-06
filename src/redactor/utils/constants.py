@@ -70,7 +70,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v4"
+PIPELINE_VERSION: Final = "pipeline-v5"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -115,6 +115,9 @@ SPACY_ENTITY_TYPES: Final = (
 )
 DEFAULT_OCR_LANGUAGE: Final = "eng"
 DEFAULT_MODEL_BUDGET_USD: Final = "3.00"
+MODEL_PROVIDER_OPENAI: Final = "openai"
+MODEL_PROVIDER_OPENROUTER: Final = "openrouter"
+DEFAULT_MODEL_TEMPERATURE: Final = 0.0
 DEFAULT_MODEL_ATTEMPTS: Final = 3
 DEFAULT_MODEL_TIMEOUT_SECONDS: Final = 15.0
 DEFAULT_MODEL_DEADLINE_SECONDS: Final = 45.0
@@ -250,6 +253,7 @@ HTTP_IDENTITY_ENCODING: Final = "identity"
 
 # Grounded text detection
 DETECTOR_PROMPT_VERSION: Final = "text-entities-v1"
+DETECTOR_OBSERVATION_CONTEXT: Final = b"redactor-detection-observation-v1:"
 DETECTOR_TEXT_FIELD: Final = "text"
 
 # Native delimited text

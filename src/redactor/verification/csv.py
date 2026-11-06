@@ -5,6 +5,7 @@ from collections import Counter
 from contextlib import closing
 from itertools import zip_longest
 
+from redactor.agents.detector.adapter import detection_adapter
 from redactor.formats.tabular_fields import column_policies
 from redactor.identity.rows import row_context
 from redactor.identity.tabular import row_evidence
@@ -69,6 +70,13 @@ def verify_csv(
         raise ValueError(ERROR_STRUCTURE)
     snapshot, lookup = load_identity_lookup(connection, resolution_task_id, mapping_key)
     policies = column_policies(layout.columns)
+    detector = detection_adapter(
+        connection,
+        task,
+        settings=settings,
+        mapping_key=mapping_key,
+        local_ner=local_ner,
+    )
     maximum = settings.resources.max_record_bytes
     counts: Counter[str] = Counter()
     cells = records = 0
@@ -105,7 +113,7 @@ def verify_csv(
                 findings = cell_findings(
                     value,
                     column,
-                    local_ner,
+                    detector,
                     patient_name=context.patient_name,
                     provider_name=context.provider_name,
                 )

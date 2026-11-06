@@ -30,7 +30,7 @@ def analyze_native_task(
     *,
     resources: ResourceSettings,
     mapping_key: bytes,
-    local_ner: NerAdapter,
+    detector: NerAdapter,
 ) -> StepResult:
     counts: Counter[str] = Counter()
     completed = 0
@@ -54,7 +54,7 @@ def analyze_native_task(
                 found = cell_findings(
                     record.values[column.index],
                     column,
-                    local_ner,
+                    detector,
                     patient_name=evidence.patient.name if evidence.patient else "",
                     provider_name=evidence.provider.name if evidence.provider else "",
                 )
