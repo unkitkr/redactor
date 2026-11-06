@@ -13,14 +13,21 @@ from lxml import etree
 
 from redactor.formats.docx import parse_word_xml, read_docx, write_docx
 from redactor.policy.identifiers import canonical_uuid, replace_identifier
+from redactor.policy.tabular import cell_findings
 from redactor.schemas.configuration import ResourceSettings
+from redactor.schemas.entities import TextEntity
 from redactor.utils.constants import (
+    DOCX_BIBLIOGRAPHY_SOURCES_TAG,
     DOCX_CUSTOM_XML_ITEM_ID_NAMESPACE,
     DOCX_DATASTORE_ITEM_ID_ATTRIBUTE,
+    DOCX_IMAGE_DESCRIPTION_TAGS,
     DOCX_STORE_ITEM_ID_ATTRIBUTE,
     DOCX_WORD_NAMESPACE,
+    IMAGE_DESCRIPTION_FIELD_LABEL,
+    OOXML_DRAWING_NAMESPACE,
 )
 from redactor.verification.docx import check_docx_structure
+from redactor.verification.text import verify_text_changes
 
 
 def _package(path: Path, document: str, extra: dict[str, bytes] | None = None) -> None:
@@ -400,3 +407,266 @@ def test_word_uuid_rewrites_preserve_binding_targets_and_reject_tampering(
         for record in exposed.records
         for value, policy in zip(record.values, record.policies, strict=True)
     )
+
+
+def _unexpected_model_call(_text: str) -> tuple[TextEntity, ...]:
+    raise AssertionError("Typed laboratory fields must use their schema validators")
+
+
+@pytest.mark.parametrize("order", ((0, 1, 2, 3), (2, 0, 3, 1)))
+def test_word_lab_tables_use_complete_headers_and_preserve_saved_values(
+    tmp_path: Path, order: tuple[int, ...]
+) -> None:
+    source, saved = tmp_path / "laboratory.docx", tmp_path / "saved.docx"
+    rows = (
+        ("Date", "Test", "LOINC", "Value"),
+        ("2024-03-12", "Glucose", "2345-7", "106 mg/dL"),
+        ("2024-04-09", "Potassium", "2823-3", "4.2mmol/L"),
+    )
+    table = (
+        "<w:tbl>"
+        + "".join(
+            "<w:tr>"
+            + "".join(
+                f"<w:tc><w:p><w:r><w:t>{row[index]}</w:t></w:r></w:p></w:tc>"
+                for index in order
+            )
+            + "</w:tr>"
+            for row in rows
+        )
+        + "</w:tbl>"
+    )
+    document = (
+        f'<w:document xmlns:w="{DOCX_WORD_NAMESPACE}"><w:body>{table}'
+        "</w:body></w:document>"
+    )
+    _package(source, document)
+    native = read_docx(source, ResourceSettings())
+    assert len(native.records) == 8
+    changes = {}
+    for record in native.records:
+        value, policy = record.values[0], record.policies[0]
+        found = cell_findings(value, policy, _unexpected_model_call)
+        if policy.kind == "date":
+            assert len(found) == 1
+            changes[record.locations[0]] = value.replace("2024", "2023")
+        else:
+            assert policy.kind == "clinical" and not found
+    write_docx(source, saved, changes, {})
+    check_docx_structure(source, saved)
+    output = read_docx(saved, ResourceSettings(), extract_evidence=False)
+    assert [record.policies for record in output.records] == [
+        record.policies for record in native.records
+    ]
+    assert all(
+        before.values == after.values
+        for before, after in zip(native.records, output.records, strict=True)
+        if before.policies[0].kind == "clinical"
+    )
+    # Unknown clinical contents cannot be legitimized by their column heading.
+    for valid, invalid in (
+        ("Glucose", "Glucose Amina Keller"),
+        ("2345-7", "2345-7 Jane"),
+        ("106 mg/dL", "106 Jane Smith"),
+    ):
+        malformed = tmp_path / "malformed.docx"
+        _package(malformed, document.replace(valid, invalid))
+        records = read_docx(malformed, ResourceSettings()).records
+        with pytest.raises(ValueError, match="clinical_content_changed"):
+            for record in records:
+                cell_findings(
+                    record.values[0], record.policies[0], _unexpected_model_call
+                )
+
+    # Unsupported headers and merged cells retain free-text coverage.
+    for changed in (
+        document.replace("LOINC", "Other code"),
+        document.replace("<w:tc>", '<w:tc><w:tcPr><w:gridSpan w:val="2"/></w:tcPr>', 1),
+    ):
+        unsupported = tmp_path / "unsupported.docx"
+        _package(unsupported, changed)
+        records = read_docx(unsupported, ResourceSettings()).records
+        assert any(
+            record.values == ("Glucose",) and record.policies[0].kind == "text"
+            for record in records
+        )
+
+
+def test_word_schema_enums_are_scoped_and_saved_structure_is_checked(
+    tmp_path: Path,
+) -> None:
+    source, saved = tmp_path / "schema.docx", tmp_path / "saved.docx"
+    document = f'<w:document xmlns:w="{DOCX_WORD_NAMESPACE}"><w:body/></w:document>'
+    theme = (
+        f'<d:theme xmlns:d="{OOXML_DRAWING_NAMESPACE}">'
+        '<d:schemeClr val="accent3"/><d:schemeClr val="phClr"/></d:theme>'
+    ).encode()
+    styles = (
+        f'<z:styles xmlns:z="{DOCX_WORD_NAMESPACE}"><z:latentStyles>'
+        '<z:lsdException z:name="Placeholder Text"/>'
+        "</z:latentStyles></z:styles>"
+    ).encode()
+    _package(
+        source, document, {"word/theme/theme1.xml": theme, "word/styles.xml": styles}
+    )
+    assert not any(
+        value in ("accent3", "phClr", "Placeholder Text")
+        for record in read_docx(source, ResourceSettings()).records
+        for value in record.values
+    )
+    write_docx(source, saved, {}, {})
+    check_docx_structure(source, saved)
+    with ZipFile(saved) as archive:
+        assert (
+            parse_word_xml(archive.read("word/theme/theme1.xml"))[0].get("val")
+            == "accent3"
+        )
+        assert (
+            parse_word_xml(archive.read("word/styles.xml"))[0][0].get(
+                f"{{{DOCX_WORD_NAMESPACE}}}name"
+            )
+            == "Placeholder Text"
+        )
+    for part, before, after in (
+        ("word/theme/theme1.xml", b"accent3", b"accent4"),
+        ("word/styles.xml", b"Placeholder Text", b"Heading 2"),
+    ):
+        changed = tmp_path / "changed.docx"
+        normalized = tmp_path / "normalized.docx"
+        with ZipFile(saved) as archive, ZipFile(changed, "w") as altered:
+            for name in archive.namelist():
+                content = archive.read(name)
+                altered.writestr(
+                    name, content.replace(before, after) if name == part else content
+                )
+        write_docx(changed, normalized, {}, {})
+        with pytest.raises(ValueError, match="clinical_content_changed"):
+            check_docx_structure(source, normalized)
+
+    # Matching strings in unrelated XML namespaces or attribute namespaces
+    # remain assessed values, including exact familiar style and color names.
+    unrelated = tmp_path / "unrelated.docx"
+    unknown = (
+        f'<u:root xmlns:u="urn:example:unknown" xmlns:d="{OOXML_DRAWING_NAMESPACE}">'
+        '<u:schemeClr val="accent3"/><u:lsdException u:name="Placeholder Text"/>'
+        '<d:schemeClr u:val="accent3"/></u:root>'
+    ).encode()
+    _package(unrelated, document, {"customXml/item1.xml": unknown})
+    exposed = read_docx(unrelated, ResourceSettings())
+    assert sorted(
+        value
+        for record in exposed.records
+        for value in record.values
+        if value in ("Placeholder Text", "accent3")
+    ) == ["Placeholder Text", "accent3", "accent3"]
+
+
+def test_word_custom_schema_labels_remain_separate_assessed_values(
+    tmp_path: Path,
+) -> None:
+    source, saved = tmp_path / "labels.docx", tmp_path / "saved.docx"
+    document = f'<w:document xmlns:w="{DOCX_WORD_NAMESPACE}"><w:body/></w:document>'
+    schema = b"<record><MRN>31415</MRN><name>Amina Keller</name></record>"
+    _package(source, document, {"customXml/item1.xml": schema})
+    native = read_docx(source, ResourceSettings())
+    record = next(
+        record for record in native.records if record.locations[0][1] == "schema"
+    )
+    assert "MRN" in record.values and "name" in record.values
+    assert all("\n" not in value for value in record.values)
+
+    def no_model_entities(_text: str) -> tuple[TextEntity, ...]:
+        return ()
+
+    for value in record.values:
+        verify_text_changes(value, value, (), no_model_entities, free_text=True)
+    with pytest.raises(ValueError, match="residual_phi_detected"):
+        verify_text_changes(
+            "MRN\nname", "MRN\nname", (), no_model_entities, free_text=True
+        )
+    write_docx(source, saved, {}, {})
+    check_docx_structure(source, saved)
+    output = read_docx(saved, ResourceSettings(), extract_evidence=False)
+    assert (
+        next(item for item in output.records if item.locations[0][1] == "schema").values
+        == record.values
+    )
+
+    altered, normalized = tmp_path / "altered.docx", tmp_path / "normalized.docx"
+    _package(
+        altered, document, {"customXml/item1.xml": schema.replace(b"name", b"alias")}
+    )
+    write_docx(altered, normalized, {}, {})
+    with pytest.raises(ValueError, match="clinical_content_changed"):
+        check_docx_structure(source, normalized)
+
+
+@pytest.mark.parametrize("style", ("APA", "MLA", "IEEE"))
+def test_word_bibliography_style_is_scoped_formatting(
+    tmp_path: Path,
+    style: str,
+) -> None:
+    source, saved = tmp_path / "bibliography.docx", tmp_path / "saved.docx"
+    namespace = DOCX_BIBLIOGRAPHY_SOURCES_TAG[1:].split("}")[0]
+    document = f'<w:document xmlns:w="{DOCX_WORD_NAMESPACE}"><w:body/></w:document>'
+    schema = f'<b:Sources xmlns:b="{namespace}" StyleName="{style}"/>'.encode()
+    _package(source, document, {"customXml/item1.xml": schema})
+    assert not any(
+        value == style
+        for record in read_docx(source, ResourceSettings()).records
+        for value in record.values
+    )
+    write_docx(source, saved, {}, {})
+    check_docx_structure(source, saved)
+    for value, schema_namespace in (
+        ("Dr Amina Keller", namespace),
+        (style, "urn:custom"),
+    ):
+        altered = tmp_path / "unrecognized.docx"
+        _package(
+            altered,
+            document,
+            {
+                "customXml/item1.xml": (
+                    f'<b:Sources xmlns:b="{schema_namespace}" StyleName="{value}"/>'
+                ).encode()
+            },
+        )
+        assert any(
+            record.values == (value,)
+            for record in read_docx(altered, ResourceSettings()).records
+        )
+    altered, normalized = tmp_path / "altered.docx", tmp_path / "normalized.docx"
+    _package(
+        altered,
+        document,
+        {"customXml/item1.xml": schema.replace(style.encode(), b"Chicago")},
+    )
+    write_docx(altered, normalized, {}, {})
+    with pytest.raises(ValueError, match="clinical_content_changed"):
+        check_docx_structure(source, normalized)
+
+
+def test_word_image_description_label_requires_its_exact_xml_slot(
+    tmp_path: Path,
+) -> None:
+    for tag in DOCX_IMAGE_DESCRIPTION_TAGS:
+        namespace, local = tag[1:].split("}")
+        for current_namespace in (namespace, "urn:unrelated"):
+            source = tmp_path / "description.docx"
+            _package(
+                source,
+                f'<w:document xmlns:w="{DOCX_WORD_NAMESPACE}" '
+                f'xmlns:d="{current_namespace}"><w:body><d:{local} '
+                'descr="Portrait of Alina Calder"/></w:body></w:document>',
+            )
+            record = next(
+                record
+                for record in read_docx(source, ResourceSettings()).records
+                if record.locations[0][-1] == "descr"
+            )
+            assert record.field_labels == (
+                (IMAGE_DESCRIPTION_FIELD_LABEL,)
+                if current_namespace == namespace
+                else ()
+            )

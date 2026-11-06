@@ -55,6 +55,7 @@ from redactor.utils.constants import (
     FIELD_ZIP,
     FORMAT_FHIR,
     LAB_DESCRIPTION_NAMESPACE,
+    MEDICATION_DISPLAY_NAMESPACE,
     MRN_NAMESPACE,
     NPI_NAMESPACE,
     PIXEL_JPEG_FORMAT,
@@ -872,6 +873,20 @@ def read_fhir(
             else:
                 policy = ColumnPolicy(
                     index=0, kind=FIELD_CLINICAL, namespace=LAB_DESCRIPTION_NAMESPACE
+                )
+        elif (
+            semantic_key == "display"
+            and parent is not None
+            and member_text(parent, "system")
+            == "http://www.nlm.nih.gov/research/umls/rxnorm"
+        ):
+            try:
+                validate_clinical_field(node.value, MEDICATION_DISPLAY_NAMESPACE)
+            except ValueError:
+                pass
+            else:
+                policy = ColumnPolicy(
+                    index=0, kind=FIELD_CLINICAL, namespace=MEDICATION_DISPLAY_NAMESPACE
                 )
         elif name_part:
             policy = ColumnPolicy(

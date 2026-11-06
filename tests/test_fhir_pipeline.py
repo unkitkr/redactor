@@ -220,3 +220,68 @@ def test_fhir_pipeline_references_narrative_attachment_and_tampering(
         unsafe.write_text(json.dumps(data))
         with pytest.raises(ValueError):
             read_fhir(unsafe, resources)
+
+
+def test_typed_medication_dose_forms_preserve_only_complete_clinical_values(
+    tmp_path: Path,
+) -> None:
+    from redactor.formats.fhir import write_fhir
+    from redactor.formats.tabular_fields import validate_clinical_field
+
+    source, output = tmp_path / "medications.json", tmp_path / "saved.json"
+    valid = (
+        "metformin 500 mg Oral Tablet",
+        "amoxicillin 250 mg Oral Capsule",
+        "hydrocortisone 10 mg Topical Cream",
+        "albuterol 2.5 mg Inhalation Solution",
+    )
+    invalid = (
+        "Amina Keller metformin 500 mg Oral Tablet",
+        "metformin 500 mg Oral Tablet for Amina Keller",
+        "metformin 500 mg Amina Keller Oral Tablet",
+        "metformin 500 mg mystery formulation",
+    )
+    source.write_text(
+        json.dumps(
+            {
+                "resourceType": "Bundle",
+                "type": "collection",
+                "entry": [
+                    {
+                        "resource": {
+                            "resourceType": "MedicationRequest",
+                            "id": f"medication-{index}",
+                            "status": "active",
+                            "intent": "order",
+                            "medicationCodeableConcept": {
+                                "coding": [
+                                    {
+                                        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                                        "code": "12345",
+                                        "display": value,
+                                    }
+                                ]
+                            },
+                        }
+                    }
+                    for index, value in enumerate((*valid, *invalid))
+                ],
+            }
+        )
+    )
+    resources = ResourceSettings()
+    document = read_fhir(source, resources)
+    displays = [
+        record for record in document.records if record.locations[0][-1] == "display"
+    ]
+    assert len(displays) == len(valid) + len(invalid)
+    for index, record in enumerate(displays):
+        assert record.policies[0].kind == ("clinical" if index < len(valid) else "text")
+    write_fhir(source, output, {}, {}, resources)
+    check_fhir_structure(source, output, document, resources)
+    assert [record.values for record in read_fhir(output, resources).records] == [
+        record.values for record in document.records
+    ]
+    for value in invalid:
+        with pytest.raises(ValueError):
+            validate_clinical_field(value, "medication_display")

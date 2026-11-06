@@ -2,6 +2,7 @@
 
 import re
 
+from redactor.policy.text_patterns import clinical_ranges
 from redactor.policy.units import is_clinical_unit
 from redactor.schemas.redaction import ColumnPolicy
 from redactor.utils.constants import (
@@ -12,6 +13,8 @@ from redactor.utils.constants import (
     KINSHIP_DISPLAY_NAMESPACE,
     LAB_DESCRIPTION_NAMESPACE,
     LAB_DESCRIPTION_TERMS,
+    MEDICATION_DISPLAY_NAMESPACE,
+    MEDICATION_DOSE_FORM_PATTERN,
     TABULAR_FIELD_ALIASES,
 )
 from redactor.utils.errors import ERROR_CLINICAL_CHANGED
@@ -34,6 +37,18 @@ def column_policies(columns: tuple[str, ...]) -> tuple[ColumnPolicy, ...]:
 def validate_clinical_field(value: str, namespace: str) -> None:
     if not value.strip():
         return
+    if namespace == MEDICATION_DISPLAY_NAMESPACE:
+        match = re.fullmatch(MEDICATION_DOSE_FORM_PATTERN, value)
+        if match:
+            prefix = match["medication"]
+            covered = clinical_ranges(prefix)
+            if (
+                len(covered) == 1
+                and covered[0].start == 0
+                and covered[0].end == len(prefix)
+            ):
+                return
+        raise ValueError(ERROR_CLINICAL_CHANGED)
     if namespace == "unit":
         if not is_clinical_unit(value):
             raise ValueError(ERROR_CLINICAL_CHANGED)
@@ -56,6 +71,10 @@ def validate_clinical_field(value: str, namespace: str) -> None:
     pattern = patterns.get(namespace)
     if pattern is None:
         raise ValueError(ERROR_CLINICAL_CHANGED)
+    if namespace == "quantity":
+        number = re.match(pattern, value.strip(), flags=re.IGNORECASE)
+        if number and is_clinical_unit(value.strip()[number.end() :]):
+            return
     if namespace == "application":
         if re.fullmatch(pattern, value) is None:
             raise ValueError(ERROR_CLINICAL_CHANGED)

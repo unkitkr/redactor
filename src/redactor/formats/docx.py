@@ -22,6 +22,8 @@ from redactor.schemas.configuration import ResourceSettings
 from redactor.schemas.native import NativeDocument, NativeImage, NativeRecord
 from redactor.schemas.redaction import ColumnPolicy, FieldKind, RowEvidence
 from redactor.utils.constants import (
+    DOCX_BIBLIOGRAPHY_SOURCES_TAG,
+    DOCX_BIBLIOGRAPHY_STYLES,
     DOCX_BUILTIN_STYLE_PATTERN,
     DOCX_CUSTOM_XML_ITEM_ID_NAMESPACE,
     DOCX_DATA_BINDING_TAG,
@@ -29,6 +31,7 @@ from redactor.utils.constants import (
     DOCX_DATASTORE_ITEM_TAG,
     DOCX_FORMAT_ENUMS,
     DOCX_HEX_ELEMENTS,
+    DOCX_IMAGE_DESCRIPTION_TAGS,
     DOCX_IMAGE_SUFFIXES,
     DOCX_INSTRUCTION_TAG,
     DOCX_NUMERIC_ATTRIBUTES,
@@ -39,9 +42,15 @@ from redactor.utils.constants import (
     DOCX_SCHEMA_LABELS,
     DOCX_SCHEMA_NAMESPACES,
     DOCX_SCHEMA_PREFIXES,
+    DOCX_SCHEME_COLOR_VALUES,
     DOCX_STORE_ITEM_ID_ATTRIBUTE,
     DOCX_STYLE_ELEMENTS,
+    DOCX_TABLE_CELL_TAG,
+    DOCX_TABLE_MERGE_TAGS,
+    DOCX_TABLE_ROW_TAG,
+    DOCX_TABLE_TAG,
     DOCX_TEXT_TAGS,
+    DOCX_WORD_NAMESPACE,
     FIELD_DATE,
     FIELD_IDENTIFIER,
     FIELD_PATIENT_NAME,
@@ -49,10 +58,12 @@ from redactor.utils.constants import (
     FIELD_TEXT,
     FIELD_WEB,
     FORMAT_DOCX,
+    IMAGE_DESCRIPTION_FIELD_LABEL,
     NATIVE_IMAGE_LOCATION,
     OFFICE_PUBLIC_FONTS,
     OFFICE_STRUCTURAL_VALUES,
     OOXML_CONTENT_TYPES,
+    OOXML_DRAWING_NAMESPACE,
     OOXML_NAMESPACE_PREFIX_PATTERN,
     OOXML_OVERRIDE_TAG,
     OOXML_PACKAGE_RELATIONSHIPS,
@@ -60,6 +71,7 @@ from redactor.utils.constants import (
     OOXML_RELATIONSHIP_TAG,
     OOXML_SUPPORTED_RELATIONSHIP_TYPES,
     TEXT_ENCODING,
+    TEXT_PART,
     XML_SUFFIXES,
     ZIP_FIXED_TIMESTAMP,
 )
@@ -174,6 +186,8 @@ def remove_thumbnail_references(
 
 
 def _technical_attribute(element: Element, attribute: str, value: str) -> bool:
+    if element.tag == DOCX_BIBLIOGRAPHY_SOURCES_TAG and attribute == "StyleName":
+        return value in DOCX_BIBLIOGRAPHY_STYLES
     """Validate typed Office formatting; arbitrary strings remain assessable."""
     tag = str(element.tag)
     namespace, _, local = tag.removeprefix("{").partition("}")
@@ -237,6 +251,12 @@ def _technical_attribute(element: Element, attribute: str, value: str) -> bool:
         name == "val" and local in ("color", "srgbClr")
     ):
         return bool(re.fullmatch(r"[0-9A-Fa-f]{6}|auto", value))
+    if (
+        namespace == OOXML_DRAWING_NAMESPACE
+        and local == "schemeClr"
+        and attribute == "val"
+    ):
+        return value in DOCX_SCHEME_COLOR_VALUES
     if name in ("themeFillTint", "themeFillShade", "themeTint", "themeShade"):
         return bool(re.fullmatch(r"[0-9A-Fa-f]{2}", value))
     if (name == "val" and local in DOCX_HEX_ELEMENTS) or name.startswith(
@@ -249,12 +269,16 @@ def _technical_attribute(element: Element, attribute: str, value: str) -> bool:
         if value in OFFICE_PUBLIC_FONTS:
             return True
     if (
-        name == "val"
-        and local in DOCX_STYLE_ELEMENTS
-        or name == "styleId"
-        and local == "style"
-        or name == "name"
-        and local == "lsdException"
+        namespace == DOCX_WORD_NAMESPACE
+        and attribute == f"{{{DOCX_WORD_NAMESPACE}}}{name}"
+        and (
+            name == "val"
+            and local in DOCX_STYLE_ELEMENTS
+            or name == "styleId"
+            and local == "style"
+            or name == "name"
+            and local == "lsdException"
+        )
     ):
         return bool(re.fullmatch(DOCX_BUILTIN_STYLE_PATTERN, value))
     if local in ("lang", "themeFontLang") and name in ("val", "eastAsia", "bidi"):
@@ -311,11 +335,66 @@ def _paragraph_nodes(element: Element) -> Iterator[Element]:
         yield from _paragraph_nodes(child)
 
 
+def _table_paragraph_policies(root: Element) -> dict[Element, ColumnPolicy | None]:
+    """Use known column semantics only for complete, simple rectangular tables."""
+    result: dict[Element, ColumnPolicy | None] = {}
+    for table in root.iter(DOCX_TABLE_TAG):
+        rows = [row for row in table if row.tag == DOCX_TABLE_ROW_TAG]
+        if len(rows) < 2 or any(
+            element.tag in DOCX_TABLE_MERGE_TAGS
+            or element.tag == DOCX_TABLE_TAG
+            and element is not table
+            for element in table.iter()
+        ):
+            continue
+        cells = [
+            [cell for cell in row if cell.tag == DOCX_TABLE_CELL_TAG] for row in rows
+        ]
+        if not cells[0] or any(len(row) != len(cells[0]) for row in cells):
+            continue
+        paragraphs: list[list[Element]] = []
+        for row in cells:
+            current: list[Element] = []
+            for cell in row:
+                found = tuple(cell.iter(DOCX_PARAGRAPH_TAG))
+                if len(found) != 1 or found[0] not in tuple(cell):
+                    break
+                nodes = tuple(_paragraph_nodes(found[0]))
+                if any(node.tag != DOCX_TEXT_TAGS[0] for node in nodes):
+                    break
+                record = text_record("".join(node.text or "" for node in nodes))
+                if len(record.values) > 1:
+                    break
+                current.append(found[0])
+            if len(current) != len(row):
+                break
+            paragraphs.append(current)
+        if len(paragraphs) != len(rows):
+            continue
+        headers = tuple(
+            "".join(node.text or "" for node in _paragraph_nodes(paragraph))
+            for paragraph in paragraphs[0]
+        )
+        policies = column_policies(headers)
+        if any(policy.kind == FIELD_TEXT for policy in policies):
+            continue
+        # Header text remains part of the structure comparison, not an exempt
+        # free-text value. Unknown headers and complex tables take the old path.
+        result.update((paragraph, None) for paragraph in paragraphs[0])
+        for row in paragraphs[1:]:
+            result.update(
+                (paragraph, policy.model_copy(update={"index": 0}))
+                for paragraph, policy in zip(row, policies, strict=True)
+            )
+    return result
+
+
 def word_surfaces(
     root: Element, part: str
 ) -> Iterator[tuple[NativeRecord, tuple[Element, ...], str]]:
     """Stable element positions also cover revisions, comments and custom XML."""
     grouped: set[Element] = set()
+    table_policies = _table_paragraph_policies(root)
     for index, element in enumerate(root.iter()):
         location = (part, str(index))
         if element.tag == DOCX_INSTRUCTION_TAG and (element.text or "").strip():
@@ -328,7 +407,18 @@ def word_surfaces(
                 if not nodes:
                     continue
                 grouped.update(nodes)
-                record = text_record("".join(node.text or "" for node in nodes))
+                value = "".join(node.text or "" for node in nodes)
+                if element in table_policies:
+                    policy = table_policies[element]
+                    if policy is None:
+                        continue
+                    record = NativeRecord(
+                        values=(value,),
+                        policies=(policy,),
+                        locations=((TEXT_PART, "0"),),
+                    )
+                else:
+                    record = text_record(value)
                 yield (
                     record.model_copy(
                         update={
@@ -411,6 +501,10 @@ def word_surfaces(
                     values=(value,),
                     policies=(ColumnPolicy(index=0, kind=kind, namespace=namespace),),
                     locations=((*location, "attribute", attribute),),
+                    field_labels=(IMAGE_DESCRIPTION_FIELD_LABEL,)
+                    if element.tag in DOCX_IMAGE_DESCRIPTION_TAGS
+                    and attribute == "descr"
+                    else (),
                 ),
                 (element,),
                 attribute,
@@ -469,10 +563,13 @@ def _schema_record(root: Element, part: str) -> NativeRecord | None:
                 labels.add(namespace)
     if not labels:
         return None
+    ordered = tuple(sorted(labels))
     return NativeRecord(
-        values=("\n".join(sorted(labels)),),
-        policies=(ColumnPolicy(index=0, kind=FIELD_TEXT),),
-        locations=((part, "schema"),),
+        values=ordered,
+        policies=tuple(
+            ColumnPolicy(index=index, kind=FIELD_TEXT) for index in range(len(ordered))
+        ),
+        locations=tuple((part, "schema", str(index)) for index in range(len(ordered))),
     )
 
 
