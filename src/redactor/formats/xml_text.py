@@ -7,7 +7,10 @@ from redactor.utils.errors import ERROR_STRUCTURE
 
 
 def replace_run_text(root: Element, tag: str, replacement: str) -> None:
-    nodes = tuple(root.iter(tag))
+    replace_text_nodes(tuple(root.iter(tag)), replacement)
+
+
+def replace_text_nodes(nodes: tuple[Element, ...], replacement: str) -> None:
     if not nodes:
         if replacement:
             raise ValueError(ERROR_STRUCTURE)
