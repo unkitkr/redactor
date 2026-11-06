@@ -121,8 +121,12 @@ def test_provider_fails_closed_for_revocation_garbage_size_timeout_and_disable(
                 model="test-model",
                 input_usd_per_million=Decimal("1"),
                 output_usd_per_million=Decimal("1"),
-                timeout_seconds=0.05,
-                deadline_seconds=0.1,
+                # Cold SDK setup must not exhaust a response-validation test's
+                # deadline. Only the deliberately slow endpoint tests timeout;
+                # retry and total-deadline behavior have separate coverage.
+                timeout_seconds=0.05 if case == "slow" else 2,
+                deadline_seconds=5,
+                max_attempts=1,
             )
         )
         calls = 0
