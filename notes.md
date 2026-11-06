@@ -3,6 +3,7 @@
 - SQLite owns the durable queue; the coordinator handles startup and recovery, and workers claim one file step at a time.
 - A shared run lock prevents recovery while workers from an earlier run remain alive.
 - Inspection and analysis feed a shared identity-resolution barrier before rewriting, verification, publication or quarantine, and reconciliation.
+- A bounded, immutable inventory binds each run to its files, processing policy and secret key; changed inputs or policy create separate work identities.
 - Step completion and successor registration are atomic; large files use bounded chunks and parser-aware checkpoints rather than row queues.
 - Large artifacts live on private disk with references in SQLite; recovery requires retaining both, and atomic publication requires one filesystem.
 - Verification reopens original and output bytes, independently checks native surfaces and clinical preservation, and binds its verdict to the exact artifact.
@@ -28,6 +29,7 @@
 - Ages of 90 or more become 90+; ZIP codes use permitted three-digit prefixes or 000; clinical codes, values, units, medications, and diseases are preserved.
 - Keyed replacements use environment secrets; retained identifying evidence and model responses require encryption and private storage.
 - Valid mislabeled files retain their actual native format and original output name; corrupt, unsupported, or unverifiable content is quarantined without silent repair.
+- Nested input paths are preserved under the output root to avoid collisions between files with the same basename.
 - Initial coverage targets the supplied file families plus CSV/TSV; legacy binary XLS is explicitly unsupported, and pixel PHI may be masked.
 - Large structured files must cover every row and complete verification without hosted calls; local-model quality and the container resource targets remain unmeasured.
 - Persisted remote decisions are replayed, but a crash before saving a response can change a retry or repeat billing; strict A5 equivalence needs endpoint replay support.

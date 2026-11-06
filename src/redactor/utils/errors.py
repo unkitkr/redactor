@@ -42,6 +42,8 @@ ERROR_REPLACEMENT: Final = "expected_replacement_missing"
 ERROR_PIXELS: Final = "pixel_verification_incomplete"
 ERROR_UNKNOWN_STEP: Final = "unknown_pipeline_step"
 ERROR_PIPELINE_BLOCKED: Final = "pipeline_dependencies_blocked"
+ERROR_INVENTORY_LIMIT: Final = "inventory_manifest_limit_exceeded"
+ERROR_RUN_CONTEXT: Final = "run_context_mismatch"
 
 VERIFICATION_REASON_CODES: Final = (
     ERROR_CHECK_MISSING,

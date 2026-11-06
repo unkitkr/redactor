@@ -3,6 +3,7 @@
 import base64
 import binascii
 import hashlib
+import hmac
 import json
 import os
 import tomllib
@@ -23,6 +24,7 @@ from redactor.utils.constants import (
     MODEL_URL_ENVIRONMENT,
     PIPELINE_VERSION,
     SECRET_KEY_BYTES,
+    STATE_KEY_CONTEXT,
     TEXT_ENCODING,
 )
 from redactor.utils.errors import ERROR_CONFIGURATION, ERROR_MAPPING_KEY
@@ -54,6 +56,13 @@ def load_settings(
 
         values = settings.model_dump()
         values["remote"] = remote
+        local = settings.local.model_dump()
+        configuration_directory = configuration_path.resolve().parent
+        for name in ("model_directory", "ner_directory", "ocr_directory"):
+            directory = local[name]
+            if directory is not None:
+                local[name] = (configuration_directory / directory).resolve()
+        values["local"] = local
         return PipelineSettings.model_validate(values)
     except (OSError, ValueError, ValidationError):
         # TOML and validation errors can echo supplied values, including secrets.
@@ -80,3 +89,10 @@ def read_mapping_key(environment: Mapping[str, str] | None = None) -> bytes:
     if len(key) != SECRET_KEY_BYTES:
         raise ValueError(ERROR_MAPPING_KEY)
     return key
+
+
+def key_fingerprint(key: bytes) -> str:
+    """Bind private state to its key without storing the secret itself."""
+    if len(key) != SECRET_KEY_BYTES:
+        raise ValueError(ERROR_MAPPING_KEY)
+    return hmac.digest(key, STATE_KEY_CONTEXT, "sha256").hex()

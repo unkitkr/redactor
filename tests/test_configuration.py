@@ -29,6 +29,7 @@ def test_configuration_resolves_environment_without_persisting_secrets(
     assert offline.verification.judge_model == "independent-judge"
     assert "secret" not in offline.model_dump_json()
     assert processing_fingerprint(settings) == processing_fingerprint(offline)
+    assert settings.local.model_directory == tmp_path / ".models"
 
     changed = load_settings(configuration, environment={"LLM_MODEL": "different"})
     assert processing_fingerprint(changed) != processing_fingerprint(settings)

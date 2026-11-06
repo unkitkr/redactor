@@ -123,3 +123,9 @@ REQUIRED_VERIFICATION_CHECKS: Final = (
 )
 SHA256_PATTERN: Final = r"^[0-9a-f]{64}$"
 MAX_MANIFEST_BYTES: Final = 4 * 1024 * 1024
+
+# Frozen run inventory
+RUNS_DIRECTORY: Final = "runs"
+RUN_MANIFEST_FILENAME: Final = "manifest.json"
+RUN_MANIFEST_PENDING_FILENAME: Final = "manifest.part"
+STATE_KEY_CONTEXT: Final = b"redactor-state-key-v1"
