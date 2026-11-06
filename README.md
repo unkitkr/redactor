@@ -57,7 +57,7 @@ uv run mypy src tests
 uv run pytest -q
 ```
 
-## Durable queue
+## Model requests
 
 Remote request settings live in `redactor.toml`. `max_attempts` includes the first
 call. Transient failures use full-jitter exponential backoff, starting with
@@ -65,6 +65,12 @@ call. Transient failures use full-jitter exponential backoff, starting with
 is a minimum wait, even when it exceeds that cap. The total deadline and remaining
 cost budget can stop retries sooner. Authentication failures and malformed model
 responses fall back immediately. The OpenAI SDK's additional retries are disabled.
+Attempt counts, cost reservations, pending retry waits, and the logical request's
+deadline persist across worker restarts. Restarting does not grant a fresh retry
+or time budget. Only inference workers explicitly load the installed local model;
+the CLI still runs diagnostic workers while clinical stages are being connected.
+
+## Durable queue
 
 ```python
 from pathlib import Path

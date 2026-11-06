@@ -78,6 +78,11 @@ def reserve_attempt(
             ),
         )
         assert cursor.lastrowid is not None
+        connection.execute(
+            "UPDATE model_request_windows SET retry_after_at = 0 "
+            "WHERE request_key = ? AND task_id = ?",
+            (request_key, claimed.task_id),
+        )
         if circuit["failures"] >= settings.circuit_failures:
             connection.execute(
                 "UPDATE model_circuits SET probe_attempt_id = ? "

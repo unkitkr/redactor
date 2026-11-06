@@ -3,6 +3,7 @@
 import asyncio
 import random
 import sqlite3
+import time
 from decimal import Decimal
 from pathlib import Path
 
@@ -331,6 +332,87 @@ def test_interrupted_request_keeps_attempt_limit_and_backoff_progress(
     assert calls == 4
     assert delays == [1, 4]
     assert connection.execute("SELECT count(*) FROM model_attempts").fetchone()[0] == 4
+
+
+def test_retry_wait_and_request_deadline_survive_interruption(
+    connection: sqlite3.Connection,
+    source_file: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clock = [1_000.0]
+    monkeypatch.setattr(time, "time", lambda: clock[0])
+    for scenario in ("resume_wait", "expired_deadline"):
+        version = f"provider-window-{scenario}"
+        register_file(connection, source_file, "analyze", version)
+        claimed = claim_task(connection, processing_version=version)
+        assert claimed is not None
+        settings = PipelineSettings(
+            remote=RemoteSettings(
+                base_url="https://model.example/v1",
+                model="test-model",
+                input_usd_per_million=Decimal("1"),
+                output_usd_per_million=Decimal("1"),
+                deadline_seconds=10,
+            )
+        )
+        request = ModelRequest(
+            purpose="detector",
+            prompt_version="test-v1",
+            system_prompt="Return JSON.",
+            input_text="Synthetic input",
+            context_id="unit-1",
+        )
+        delays: list[float] = []
+
+        async def sleep_or_interrupt(delay: float, waits: list[float] = delays) -> None:
+            waits.append(delay)
+            if len(waits) == 1:
+                raise asyncio.CancelledError
+            clock[0] += delay
+
+        monkeypatch.setattr(asyncio, "sleep", sleep_or_interrupt)
+        calls = 0
+
+        async def endpoint(http_request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                return httpx.Response(429, headers={"Retry-After": "4"})
+            return _completion_response()
+
+        transport = httpx.MockTransport(endpoint)
+        with pytest.raises(asyncio.CancelledError):
+            request_json(
+                connection,
+                claimed,
+                settings,
+                request,
+                ModelUnavailable,
+                bytes(range(32)),
+                environment={"LLM_API_KEY": "test-key"},
+                transport=transport,
+            )
+        clock[0] += 1 if scenario == "resume_wait" else 20
+        recover_interrupted(connection)
+        recover_model_attempts(connection)
+        resumed = claim_task(connection, processing_version=version)
+        assert resumed is not None
+        decision = request_json(
+            connection,
+            resumed,
+            settings,
+            request,
+            ModelUnavailable,
+            bytes(range(32)),
+            environment={"LLM_API_KEY": "test-key"},
+            transport=transport,
+        )
+        if scenario == "resume_wait":
+            assert calls == 2 and decision.backend == "remote"
+            assert delays == [4, 3]
+        else:
+            assert calls == 1 and decision.backend == "local"
+            assert delays == [4]
 
 
 def _completion_response() -> httpx.Response:

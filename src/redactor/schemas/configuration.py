@@ -52,10 +52,16 @@ class RemoteSettings(BaseModel, frozen=True, extra="forbid"):
     retry_max_seconds: float = Field(
         default=DEFAULT_RETRY_MAX_SECONDS, gt=0, allow_inf_nan=False
     )
-    timeout_seconds: PositiveFloat = DEFAULT_MODEL_TIMEOUT_SECONDS
-    deadline_seconds: PositiveFloat = DEFAULT_MODEL_DEADLINE_SECONDS
+    timeout_seconds: PositiveFloat = Field(
+        default=DEFAULT_MODEL_TIMEOUT_SECONDS, allow_inf_nan=False
+    )
+    deadline_seconds: PositiveFloat = Field(
+        default=DEFAULT_MODEL_DEADLINE_SECONDS, allow_inf_nan=False
+    )
     circuit_failures: PositiveInt = DEFAULT_CIRCUIT_FAILURES
-    circuit_cooldown_seconds: PositiveFloat = DEFAULT_CIRCUIT_COOLDOWN_SECONDS
+    circuit_cooldown_seconds: PositiveFloat = Field(
+        default=DEFAULT_CIRCUIT_COOLDOWN_SECONDS, allow_inf_nan=False
+    )
     max_output_tokens: PositiveInt = DEFAULT_MODEL_OUTPUT_TOKENS
     max_input_bytes: PositiveInt = DEFAULT_MODEL_INPUT_BYTES
 

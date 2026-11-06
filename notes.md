@@ -15,7 +15,7 @@
 - SQLite WAL, short transactions, and numbered SQL migrations avoid extra services and an ORM; writes remain serialized.
 - Pydantic validates schemas; TOML configures processing, models, budgets, and resource limits, while secrets remain environment-only.
 - The OpenAI SDK targets the supplied endpoint through bounded retries, shared circuit state, and durable cost reservations.
-- Transient failures use configurable capped exponential backoff with jitter and Retry-After; attempt, deadline, and cost limits stop retries independently.
+- Transient failures use capped exponential backoff with jitter and Retry-After; attempt counts, pending waits, request deadlines, and cost reservations survive restarts.
 - Hosted text calls require configured token prices; byte-based token bounds reserve possible charges, and uncertain requests keep their full reservation.
 - spaCy small and Tesseract are the selected local baselines; model packages are pinned at installation and runtime never downloads weights.
 - PyMuPDF handles PDF rendering and rewriting under its documented AGPL license, with separate saved-output verification.

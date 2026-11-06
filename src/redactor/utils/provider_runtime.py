@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from redactor.persistence.models.budget import reserve_attempt, settle_attempt
 from redactor.persistence.models.decisions import save_model_decision
+from redactor.persistence.models.retries import defer_request, request_window
 from redactor.schemas.configuration import RemoteSettings
 from redactor.schemas.persistence import Task
 from redactor.schemas.provider import (
@@ -26,6 +27,7 @@ from redactor.utils.constants import (
     MODEL_REMOTE,
 )
 from redactor.utils.errors import (
+    ERROR_MODEL_ATTEMPTS,
     ERROR_MODEL_AUTH,
     ERROR_MODEL_BUDGET,
     ERROR_MODEL_CONFIGURATION,
@@ -57,9 +59,21 @@ async def run_model_request(
 ) -> ModelDecision:
     maximum_cost = maximum_request_cost(pricing, request, settings.max_output_tokens)
     budget = currency_nanos(settings.budget_usd)
-    deadline = time.monotonic() + settings.deadline_seconds
+    window = request_window(connection, claimed, request_key, settings.deadline_seconds)
+    remaining_seconds = max(
+        0, min(settings.deadline_seconds, window.deadline_at - time.time())
+    )
+    deadline = time.monotonic() + remaining_seconds
     failure = ModelFailure(reason_code=ERROR_MODEL_TRANSIENT)
-    had_transient_failure = False
+    had_transient_failure = bool(window.retry_after_at)
+    pending_delay = max(0, window.retry_after_at - time.time())
+    if window.attempts_used >= settings.max_attempts:
+        failure = ModelFailure(reason_code=ERROR_MODEL_ATTEMPTS)
+        deadline = time.monotonic()
+    elif pending_delay >= remaining_seconds:
+        deadline = time.monotonic()
+    elif pending_delay:
+        await asyncio.sleep(pending_delay)
     try:
         async with open_model_client(settings, api_key, transport) as client:
             for _ in range(settings.max_attempts):
@@ -71,6 +85,16 @@ async def run_model_request(
                 )
                 if isinstance(reservation, ModelUnavailable):
                     failure = ModelFailure(reason_code=reservation.reason_code)
+                    break
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    # The database wait used the remaining time; no HTTP call began.
+                    settle_attempt(
+                        connection,
+                        claimed,
+                        reservation,
+                        ModelUsage(input_tokens=0, output_tokens=0, cost_nanos=0),
+                    )
                     break
                 try:
                     async with asyncio.timeout(
@@ -143,6 +167,7 @@ async def run_model_request(
                     reservation.attempt_number - 1,
                     failure.retry_after_seconds,
                 )
+                defer_request(connection, claimed, request_key, delay)
                 if reservation.attempt_number >= settings.max_attempts or (
                     time.monotonic() + delay >= deadline
                 ):

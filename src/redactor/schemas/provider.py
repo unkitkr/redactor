@@ -46,3 +46,9 @@ class ModelPricing(BaseModel, frozen=True, extra="forbid"):
 class ModelFailure(BaseModel, frozen=True, extra="forbid"):
     reason_code: str
     retry_after_seconds: float = Field(default=0, ge=0)
+
+
+class ModelRequestWindow(BaseModel, frozen=True, extra="forbid"):
+    deadline_at: float = Field(ge=0, allow_inf_nan=False)
+    retry_after_at: float = Field(default=0, ge=0)
+    attempts_used: NonNegativeInt = 0
