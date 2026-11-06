@@ -1,6 +1,7 @@
 """Round-trip native DICOM sequences, UIDs, and protected clinical pixels."""
 
 import io
+import sqlite3
 from pathlib import Path
 
 import numpy as np
@@ -96,3 +97,111 @@ def test_dicom_native_round_trip_and_saved_clinical_damage(tmp_path: Path) -> No
         pydicom.dcmwrite(output, changed, enforce_file_format=True)
         with pytest.raises(ValueError):
             read_dicom(output, ResourceSettings())
+
+
+def test_dicom_age_band_roundtrip_and_saved_bound_tampering(
+    connection: sqlite3.Connection, tmp_path: Path
+) -> None:
+    from redactor.coordinator.bootstrap import prepare_run
+    from redactor.formats.inspection import inspect_file
+    from redactor.inference.model_loader import load_local_ner
+    from redactor.persistence.files.artifacts import inspect_artifact
+    from redactor.persistence.queue.tasks import claim_task
+    from redactor.schemas.configuration import PipelineSettings
+    from redactor.verification.native import verify_native
+    from redactor.workers.handlers import pipeline_handlers
+    from redactor.workers.pipeline import execute_task
+    from redactor.workers.rewrite import rewrite_task
+
+    inputs = tmp_path / "input"
+    inputs.mkdir()
+    source = inputs / "older.dcm"
+    metadata = FileMetaDataset()
+    metadata.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
+    metadata.MediaStorageSOPClassUID = pydicom.uid.SecondaryCaptureImageStorage
+    metadata.MediaStorageSOPInstanceUID = pydicom.uid.UID("2.25.654321")
+    dataset = FileDataset(str(source), {}, file_meta=metadata, preamble=bytes(128))
+    dataset.SOPClassUID = metadata.MediaStorageSOPClassUID
+    dataset.SOPInstanceUID = metadata.MediaStorageSOPInstanceUID
+    dataset.PatientName = "Vale^Alina"
+    dataset.PatientID = "78421"
+    dataset.PatientBirthDate = "19360314"
+    dataset.PatientAge = "090Y"
+    dataset.StudyDate = "20260314"
+    dataset.Modality = "OT"
+    dataset.DeidentificationMethod = "basic"
+    dataset.IssuerOfPatientID = "Harbor Clinic"
+    related = Dataset()
+    related.PatientID = dataset.PatientID
+    related.IssuerOfPatientID = dataset.IssuerOfPatientID
+    dataset.OtherPatientIDsSequence = [related]
+    pydicom.dcmwrite(source, dataset, enforce_file_format=True)
+    settings = PipelineSettings()
+    key = bytes(range(32))
+    ner = load_local_ner(settings.local)
+    run = prepare_run(connection, inputs, settings, key)
+    handlers = pipeline_handlers(settings, key, ner, run.resolution_task_id)
+    while task := claim_task(connection):
+        if task.step == "rewrite":
+            break
+        execute_task(connection, task, handlers)
+    assert task is not None and task.step == "rewrite"
+    result = rewrite_task(
+        connection,
+        task,
+        settings=settings,
+        mapping_key=key,
+        local_ner=ner,
+        resolution_task_id=run.resolution_task_id,
+    )
+    assert result.artifact is not None
+    artifact = result.artifact
+    inspection = inspect_file(source, settings.resources)
+    checks = verify_native(
+        connection,
+        task,
+        artifact,
+        inspection,
+        settings=settings,
+        mapping_key=key,
+        local_ner=ner,
+        resolution_task_id=run.resolution_task_id,
+    )
+    assert all(check.status == "pass" for check in checks)
+    saved = pydicom.dcmread(artifact.path)
+    assert saved.PatientBirthDate == "" and saved.PatientAge == ""
+    assert str(saved.StudyDate) != str(dataset.StudyDate)
+    assert list(saved.DeidentificationMethod)[0] == "basic"
+    assert saved.IssuerOfPatientID != dataset.IssuerOfPatientID
+    assert saved.IssuerOfPatientID == saved.OtherPatientIDsSequence[0].IssuerOfPatientID
+    assert all("19360314" not in method for method in saved.DeidentificationMethod)
+    logical = read_dicom(artifact.path, settings.resources, extract_evidence=False)
+    values = {record.locations[0]: record.values[0] for record in logical.records}
+    assert values[("00101010",)] == "90+"
+    assert values[("00100030",)].startswith("on or before ")
+    with pytest.raises(ValueError):
+        read_dicom(artifact.path, settings.resources)
+    # A syntactically valid annotation is insufficient: its exact policy-derived
+    # bound is independently recomputed from the original patient evidence.
+    saved.DeidentificationMethod = [
+        str(method).rsplit(" ", 1)[0] + " 2001"
+        if "birth date on or before" in str(method)
+        else method
+        for method in saved.DeidentificationMethod
+    ]
+    pydicom.dcmwrite(artifact.path, saved, enforce_file_format=True)
+    with pytest.raises(ValueError):
+        verify_native(
+            connection,
+            task,
+            inspect_artifact(artifact.path, persist=False),
+            inspection,
+            settings=settings,
+            mapping_key=key,
+            local_ner=ner,
+            resolution_task_id=run.resolution_task_id,
+        )
+    saved.PatientBirthDate = "19360314"
+    pydicom.dcmwrite(artifact.path, saved, enforce_file_format=True)
+    with pytest.raises(ValueError):
+        read_dicom(artifact.path, settings.resources, extract_evidence=False)

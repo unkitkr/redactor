@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pydicom
 
-from redactor.formats.dicom import dicom_elements
+from redactor.formats.dicom import dicom_elements, normalize_dicom_age_bounds
 from redactor.schemas.native import NativeDocument
 from redactor.utils.constants import DICOM_FILE_META_LOCATION, DICOM_PIXEL_TAG
 from redactor.utils.errors import ERROR_CLINICAL_CHANGED, ERROR_COVERAGE
@@ -14,6 +14,8 @@ def check_dicom_structure(
     original: Path, output: Path, document: NativeDocument
 ) -> None:
     before, after = pydicom.dcmread(original), pydicom.dcmread(output)
+    normalize_dicom_age_bounds(before, allow_generated=False)
+    normalize_dicom_age_bounds(after, allow_generated=True)
     if after.preamble != bytes(128):
         raise ValueError(ERROR_COVERAGE)
     locations = {

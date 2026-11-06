@@ -7,6 +7,7 @@ from redactor.formats.embedded_images import rewrite_embedded_images
 from redactor.formats.native import read_native, write_native
 from redactor.identity.native import native_evidence
 from redactor.identity.rows import row_context
+from redactor.inference.context import record_ner
 from redactor.persistence.files.artifacts import (
     create_temporary_file,
     seal_temporary_file,
@@ -61,10 +62,13 @@ def rewrite_native_task(
         )
         for column in record.policies:
             value = record.values[column.index]
+            scoped_detector = record_ner(
+                detector, record, column.index, settings.local.ner_max_characters
+            )
             findings = cell_findings(
                 value,
                 column,
-                detector,
+                scoped_detector,
                 patient_name=context.patient_name,
                 provider_name=context.provider_name,
             )

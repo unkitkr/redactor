@@ -8,6 +8,7 @@ from redactor.formats.inspection import inspect_file
 from redactor.formats.native import read_native
 from redactor.identity.native import native_evidence
 from redactor.identity.rows import row_context
+from redactor.inference.context import record_ner
 from redactor.persistence.files.artifacts import inspect_artifact
 from redactor.persistence.files.registration import prepare_successor
 from redactor.persistence.files.results import read_step_result
@@ -141,6 +142,7 @@ def verify_native(
         if (
             before.locations != after.locations
             or before.policies != after.policies
+            or before.field_labels != after.field_labels
             or len(before.values) != len(after.values)
         ):
             raise ValueError(ERROR_COVERAGE)
@@ -157,10 +159,19 @@ def verify_native(
         )
         for column in before.policies:
             value = before.values[column.index]
+            scoped_detector = record_ner(
+                detector, before, column.index, settings.local.ner_max_characters
+            )
+            scoped_verifier = record_ner(
+                local_ner, before, column.index, settings.local.ner_max_characters
+            )
+            saved_verifier = record_ner(
+                local_ner, after, column.index, settings.local.ner_max_characters
+            )
             findings = cell_findings(
                 value,
                 column,
-                detector,
+                scoped_detector,
                 patient_name=context.patient_name,
                 provider_name=context.provider_name,
             )
@@ -169,7 +180,11 @@ def verify_native(
                 value,
                 after.values[column.index],
                 edits,
-                local_ner,
+                scoped_verifier,
+                output_ner=saved_verifier,
+                field_label=before.field_labels[column.index]
+                if before.field_labels
+                else "",
                 free_text=column.kind == FIELD_TEXT,
                 patient_name=context.patient_name,
                 provider_name=context.provider_name,
@@ -203,6 +218,12 @@ def verify_native(
 def _validate_locations(document: NativeDocument) -> None:
     seen: set[tuple[str, ...]] = set()
     for record in document.records:
+        if record.field_labels and len(record.field_labels) != len(record.values):
+            raise ValueError(ERROR_COVERAGE)
+        if record.text_context is not None and len(record.text_context.ranges) != len(
+            record.values
+        ):
+            raise ValueError(ERROR_COVERAGE)
         if not len(record.values) == len(record.locations) == len(record.policies):
             raise ValueError(ERROR_COVERAGE)
         if tuple(policy.index for policy in record.policies) != tuple(

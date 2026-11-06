@@ -1,6 +1,7 @@
 """Traverse DICOM sequences and preserve native attributes and unmasked pixels."""
 
 import io
+import re
 from collections.abc import Iterator
 from pathlib import Path
 from typing import cast
@@ -16,7 +17,14 @@ from redactor.schemas.configuration import ResourceSettings
 from redactor.schemas.native import NativeDocument, NativeImage, NativeRecord
 from redactor.schemas.redaction import ColumnPolicy, FieldKind
 from redactor.utils.constants import (
+    AGE_GROUP_LABEL,
+    BIRTH_BOUND_TEMPLATE,
+    DICOM_AGE_BAND_METHOD,
+    DICOM_AGE_METHOD_PREFIX,
     DICOM_BINARY_VRS,
+    DICOM_BIRTH_BOUND_METHOD,
+    DICOM_BIRTH_BOUND_PATTERN,
+    DICOM_BIRTH_METHOD_PATTERN,
     DICOM_CONTEXT,
     DICOM_FILE_META_LOCATION,
     DICOM_IDENTITY_FIELDS,
@@ -53,13 +61,13 @@ def dicom_elements(
 
 
 def dicom_record(
-    location: tuple[str, ...], element: DataElement
+    location: tuple[str, ...], element: DataElement, *, logical_value: str | None = None
 ) -> NativeRecord | None:
     if element.VR not in DICOM_TEXT_VRS or element.keyword in DICOM_SCHEMA_UID_FIELDS:
         return None
     if element.VM > 1:
         raise ValueError(ERROR_COVERAGE)
-    value = str(element.value)
+    value = str(element.value) if logical_value is None else logical_value
     fields = {
         name: (kind, namespace) for name, kind, namespace in DICOM_IDENTITY_FIELDS
     }
@@ -75,6 +83,8 @@ def dicom_record(
         kind = FIELD_DATE
     elif element.VR == "PN" and element.keyword != "PatientName":
         kind = FIELD_PERSON_NAME
+    elif element.VR == "AS" and logical_value is not None:
+        kind = FIELD_AGE
     elif element.VR == "AS":
         if len(value) != 4 or not value[:3].isdigit() or value[-1] != "Y":
             raise ValueError(ERROR_COVERAGE)
@@ -94,10 +104,14 @@ def dicom_record(
                 kind=cast(FieldKind, kind),
                 namespace=namespace,
                 identifier_prefix=prefix,
-                supports_date_bounds=False,
+                supports_date_bounds=element.keyword == "PatientBirthDate"
+                and len(location) == 1,
             ),
         ),
         locations=(location,),
+        field_labels=(element.name,)
+        if kind == FIELD_TEXT and element.keyword and not element.tag.is_private
+        else (),
     )
 
 
@@ -105,6 +119,7 @@ def read_dicom(
     path: Path, resources: ResourceSettings, *, extract_evidence: bool = True
 ) -> NativeDocument:
     dataset = pydicom.dcmread(path)
+    bounds = normalize_dicom_age_bounds(dataset, allow_generated=not extract_evidence)
     records = []
     for element in dataset.file_meta:
         if element.keyword in DICOM_SCHEMA_UID_FIELDS or element.keyword in (
@@ -133,7 +148,7 @@ def read_dicom(
             or element.keyword == "IconImageSequence"
         ):
             raise ValueError(ERROR_COVERAGE)
-        record = dicom_record(location, element)
+        record = dicom_record(location, element, logical_value=bounds.get(location))
         if record is not None:
             records.append(record)
     # Demographic fields form the explicit patient context for every nested item.
@@ -188,6 +203,8 @@ def write_dicom(
     images: dict[tuple[str, ...], bytes],
 ) -> None:
     dataset = pydicom.dcmread(original)
+    normalize_dicom_age_bounds(dataset, allow_generated=False)
+    methods: list[str] = []
     used: set[tuple[str, ...]] = set()
     elements = (
         *dicom_elements(dataset),
@@ -197,7 +214,18 @@ def write_dicom(
         if location not in replacements:
             continue
         value = replacements[location]
-        if element.VR == "PN":
+        bound = re.fullmatch(DICOM_BIRTH_BOUND_PATTERN, value)
+        if element.keyword == "PatientBirthDate" and bound:
+            if len(location) != 1 or not 1 <= int(bound[1]) <= 9999:
+                raise ValueError(ERROR_COVERAGE)
+            methods.append(DICOM_BIRTH_BOUND_METHOD.format(year=int(bound[1])))
+            value = ""
+        elif element.VR == "AS" and value == AGE_GROUP_LABEL:
+            if element.keyword != "PatientAge" or len(location) != 1:
+                raise ValueError(ERROR_COVERAGE)
+            methods.append(DICOM_AGE_BAND_METHOD)
+            value = ""
+        elif element.VR == "PN":
             parts = value.split()
             value = "^".join((parts[-1], " ".join(parts[:-1]))) if parts else ""
         elif element.VR == "AS":
@@ -211,6 +239,13 @@ def write_dicom(
         used.add(location)
     if used != set(replacements):
         raise ValueError(ERROR_COVERAGE)
+    if methods:
+        previous = (
+            [str(dataset.DeidentificationMethod)]
+            if "DeidentificationMethod" in dataset
+            else []
+        )
+        dataset.DeidentificationMethod = previous + methods
     if images:
         frames = []
         for index in range(int(getattr(dataset, "NumberOfFrames", 1))):
@@ -228,3 +263,52 @@ def write_dicom(
     dataset.file_meta.MediaStorageSOPInstanceUID = dataset.SOPInstanceUID
     dataset.preamble = bytes(128)
     pydicom.dcmwrite(output, dataset, enforce_file_format=True)
+
+
+def normalize_dicom_age_bounds(
+    dataset: Dataset, *, allow_generated: bool
+) -> dict[tuple[str, ...], str]:
+    """Recover logical values only from valid, explicitly generated annotations.
+
+    Remove those annotations from the comparison view while retaining any original
+    method text for normal assessment. Source documents cannot grant themselves
+    this exemption; only independently reopened output may carry the markers.
+    """
+    if "DeidentificationMethod" not in dataset:
+        return {}
+    element = dataset.data_element("DeidentificationMethod")
+    if element is None:
+        raise ValueError(ERROR_COVERAGE)
+    methods = [str(element.value)] if element.VM <= 1 else list(element.value)
+    retained: list[str] = []
+    logical: dict[tuple[str, ...], str] = {}
+    for method in methods:
+        if not method.startswith(DICOM_AGE_METHOD_PREFIX):
+            retained.append(method)
+            continue
+        if not allow_generated:
+            raise ValueError(ERROR_COVERAGE)
+        birth = re.fullmatch(DICOM_BIRTH_METHOD_PATTERN, method)
+        if birth and 1 <= int(birth[1]) <= 9999:
+            keyword, value = (
+                "PatientBirthDate",
+                BIRTH_BOUND_TEMPLATE.format(year=int(birth[1])),
+            )
+            expected_vr = "DA"
+        elif method == DICOM_AGE_BAND_METHOD:
+            keyword, value, expected_vr = "PatientAge", AGE_GROUP_LABEL, "AS"
+        else:
+            raise ValueError(ERROR_COVERAGE)
+        target = dataset.data_element(keyword)
+        if target is None or target.VR != expected_vr or str(target.value):
+            raise ValueError(ERROR_COVERAGE)
+        location = (f"{int(target.tag):08x}",)
+        if location in logical:
+            raise ValueError(ERROR_COVERAGE)
+        logical[location] = value
+    if logical:
+        if retained:
+            dataset.DeidentificationMethod = retained
+        else:
+            del dataset.DeidentificationMethod
+    return logical

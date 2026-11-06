@@ -20,13 +20,21 @@ from redactor.formats.tabular_fields import column_policies
 from redactor.formats.text import replace_text_fields, text_record
 from redactor.identity.tabular import row_evidence
 from redactor.schemas.configuration import ResourceSettings
-from redactor.schemas.native import NativeDocument, NativeImage, NativeRecord
-from redactor.schemas.redaction import ColumnPolicy, RowEvidence
+from redactor.schemas.native import (
+    NativeDocument,
+    NativeImage,
+    NativeRecord,
+    NativeTextContext,
+)
+from redactor.schemas.redaction import ColumnPolicy, RowEvidence, TextRange
 from redactor.utils.constants import (
     FIELD_IDENTIFIER,
+    FIELD_PATIENT_ID,
+    FIELD_PATIENT_NAME,
     FIELD_PROVIDER_ID,
     FIELD_PROVIDER_NAME,
     FIELD_TEXT,
+    MAX_NATIVE_TEXT_CONTEXT_CHARACTERS,
     PDF_ANNOTATION_PART,
     PDF_ATTACHMENT_PART,
     PDF_FONT_NAMES,
@@ -692,6 +700,7 @@ def _page_records(
         text_record(line["text"], f"{scope}:{index}")
         for index, line in enumerate(pdf_lines(page))
     ]
+    records = _page_contexts(records)
     if not extract_evidence:
         return records
     values = tuple(value for record in records for value in record.values)
@@ -724,6 +733,44 @@ def _page_records(
             )
         )
     return result
+
+
+def _page_contexts(records: list[NativeRecord]) -> list[NativeRecord]:
+    """Share only a bounded page with one explicit patient name and identifier."""
+    anchors = {
+        kind: {
+            record.values[policy.index].strip()
+            for record in records
+            for policy in record.policies
+            if policy.kind == kind and record.values[policy.index].strip()
+        }
+        for kind in (FIELD_PATIENT_NAME, FIELD_PATIENT_ID)
+    }
+    if any(len(values) != 1 for values in anchors.values()):
+        return records
+    text = "\n".join("".join(record.values) for record in records)
+    if len(text) > MAX_NATIVE_TEXT_CONTEXT_CHARACTERS:
+        return records
+    offset = 0
+    contextual: list[NativeRecord] = []
+    for record in records:
+        ranges: list[TextRange] = []
+        for value in record.values:
+            ranges.append(TextRange(start=offset, end=offset + len(value)))
+            offset += len(value)
+        # Typed fields already carry their own explicit semantics. A page-level
+        # model span crossing their labels would conflate distinct target cells.
+        contextual.append(
+            record.model_copy(
+                update={
+                    "text_context": NativeTextContext(text=text, ranges=tuple(ranges))
+                }
+            )
+            if len(record.values) == 1 and record.policies[0].kind == FIELD_TEXT
+            else record
+        )
+        offset += 1
+    return contextual
 
 
 def pdf_csv_attachment(body: str) -> tuple[list[list[str]], str]:

@@ -9,6 +9,7 @@ from redactor.formats.embedded_images import (
 )
 from redactor.formats.native import read_native
 from redactor.identity.native import native_evidence
+from redactor.inference.context import record_ner
 from redactor.persistence.files.artifacts import inspect_artifact
 from redactor.persistence.files.results import write_step_result
 from redactor.persistence.identities.observations import (
@@ -104,10 +105,13 @@ def analyze_native_task(
                 if fact is not None:
                     facts[fact.model_dump_json()] = fact
             for column in record.policies:
+                scoped_detector = record_ner(
+                    detector, record, column.index, settings.local.ner_max_characters
+                )
                 found = cell_findings(
                     record.values[column.index],
                     column,
-                    detector,
+                    scoped_detector,
                     patient_name=evidence.patient.name if evidence.patient else "",
                     provider_name=evidence.provider.name if evidence.provider else "",
                 )
