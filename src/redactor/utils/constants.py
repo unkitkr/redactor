@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v15"
+PIPELINE_VERSION: Final = "pipeline-v16"
 RUNTIME_SOURCE_SUFFIXES: Final = (".py", ".sql")
 RUNTIME_IGNORED_SUFFIXES: Final = (".pyc", ".pyo")
 RUNTIME_MISSING_ARTIFACT: Final = "missing"
@@ -130,6 +130,7 @@ ENTITY_ORGANIZATION: Final = "organization"
 ENTITY_LOCATION: Final = "location"
 ENTITY_DATE: Final = "date"
 ENTITY_TIME: Final = "time"
+ENTITY_AGE: Final = "age"
 SPACY_ENTITY_TYPES: Final = (
     ("PERSON", ENTITY_PERSON),
     ("ORG", ENTITY_ORGANIZATION),
@@ -168,7 +169,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v12"
+VERIFIER_VERSION: Final = "verifier-v13"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -220,7 +221,10 @@ VERIFIER_MENTION_ROLE: Final = (
     r"(?:patient|Pt\.?|daughter|son|husband|wife|spouse|mother|father|sister|brother|"
     r"partner|caregiver|guardian|doctor|Dr\.?|Prof\.?)"
 )
-VERIFIER_MENTION_PREFIX_PATTERN: Final = rf"(?i){VERIFIER_MENTION_ROLE}[ \t]+"
+VERIFIER_ROLE_CONNECTOR: Final = r"(?:with|w/|to|from|by)[ \t]+(?:the[ \t]+)?"
+VERIFIER_MENTION_PREFIX_PATTERN: Final = (
+    rf"(?i)(?:{VERIFIER_ROLE_CONNECTOR})?{VERIFIER_MENTION_ROLE}[ \t]+"
+)
 VERIFIER_EDIT_JOIN_PATTERN: Final = r"(?i)[ \t]*(?:(?:[,;&]|and)[ \t]*)*"
 VERIFIER_MENTION_SUFFIX_PATTERN: Final = (
     rf"(?i)[ \t]+(?:&|and)[ \t]+{VERIFIER_MENTION_ROLE}(?:-in-law)?(?=[ \t,.;:]|$)"
@@ -1877,6 +1881,10 @@ NON_IDENTIFYING_LOCATION_PATTERN: Final = (
     r"(?i)\b(?:(?:drive|driven|return|returned|discharge|discharged|go|going|went|"
     r"walk|walked|at|back|to|from)\s+)?(?:home|here|there|nearby)\b"
 )
+NON_IDENTIFYING_ROLE_PATTERN: Final = (
+    rf"(?i){VERIFIER_ROLE_CONNECTOR}{VERIFIER_MENTION_ROLE}"
+)
+NER_OLDER_AGE_WORD_PATTERN: Final = r"(?i)\b(?:nonagenarian|(?:super)?centenarian)s?\b"
 CLINICAL_NEGATION_PREFIX_PATTERN: Final = (
     r"(?i)\b(?:no|without|denies|negative for|history of|with|has)\s+$"
 )
@@ -1901,7 +1909,10 @@ NER_DATE_WORD_PATTERN: Final = (
     r"day|week|month|year|spring|summer|autumn|fall|winter|birthday)\b"
 )
 NER_EMAIL_CUE_PATTERN: Final = r"(?i)@|\b(?:at|dot)\b"
-NER_URL_CUE_PATTERN: Final = r"(?i)[.:/]|\b(?:dot|slash)\b"
+NER_URL_CUE_PATTERN: Final = (
+    r"(?i)\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b|\bwww\.|"
+    r"\b[a-z][a-z0-9+.-]*:[^\s]|//|[a-z0-9]/[a-z0-9]|\b(?:dot|slash)\b"
+)
 # Optional model evaluation candidates
 EVALUATION_OPENMED_TYPES: Final = (
     ("person", ("first_name", "last_name")),

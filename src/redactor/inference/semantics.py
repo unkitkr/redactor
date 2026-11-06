@@ -5,6 +5,7 @@ from unicodedata import normalize
 
 from redactor.schemas.entities import TextEntity
 from redactor.utils.constants import (
+    ENTITY_AGE,
     ENTITY_DATE,
     ENTITY_LOCATION,
     ENTITY_PERSON,
@@ -16,12 +17,14 @@ from redactor.utils.constants import (
     NER_IP_LABEL,
     NER_NUMBER_WORD_PATTERN,
     NER_NUMERIC_IDENTIFIER_LABELS,
+    NER_OLDER_AGE_WORD_PATTERN,
     NER_PHONE_LABEL,
     NER_TIME_WORD_PATTERN,
     NER_URL_CUE_PATTERN,
     NER_URL_LABEL,
     NER_ZIP_LABEL,
     NON_IDENTIFYING_LOCATION_PATTERN,
+    NON_IDENTIFYING_ROLE_PATTERN,
     UNICODE_NORMAL_FORM,
     ZIP_CODE_PATTERN,
 )
@@ -38,6 +41,12 @@ def possible_entity(entity: TextEntity, text: str | None = None) -> bool:
     numeric = any(character.isdecimal() for character in value) or bool(
         re.search(NER_NUMBER_WORD_PATTERN, value)
     )
+    if entity.entity_type == ENTITY_AGE:
+        return numeric or bool(re.search(NER_OLDER_AGE_WORD_PATTERN, value))
+    if entity.entity_type == ENTITY_PERSON and re.fullmatch(
+        NON_IDENTIFYING_ROLE_PATTERN, value
+    ):
+        return False
     if entity.entity_type == ENTITY_LOCATION and text is not None:
         if any(
             match.start() <= entity.start and entity.end <= match.end()
