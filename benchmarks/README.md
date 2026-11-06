@@ -115,39 +115,103 @@ Exact requested and returned model IDs, routed providers, token counts, and resp
 
 Successful API receipts report **$0.045215**. The shared durable ledger accounts for **$2.4229058**, below the $3 cap, because it retains conservative reservations for rejected or uncertain requests. One additional diagnostic HTTP 400 response had no usage receipt. Initial GLM requests with reasoning disabled were rejected; [that failure run](results/glm-flash-rejected.json) is retained separately and is not a GLM accuracy measurement.
 
-## Supplied held-in pipeline run
+## Supplied held-in pipeline runs
 
-The [full pipeline record](held-in-pipeline.json) uses all 12 supplied files
-(533,410 bytes), the checked-in GLiNER configuration, two workers and the default
-dashboard. Under 2 vCPUs, 1 GiB memory, no extra swap and no network, the run finished
-in 2.624 seconds at 572.86 MiB whole-container peak memory. It published no files:
-five quarantined for incomplete coverage, six for unsupported formats and one for
-an invalid container structure. Rewriting and saved-output verification were not
-reached, so this is not a redaction-throughput or accuracy result.
+Both [local](held-in-local.json) and [hosted](held-in-hosted.json) modes processed
+the 12 supplied files (533,410 bytes) using production revision `7025ae5`, two
+workers, GLiNER PII Edge v1.0 UINT8 and the default dashboard. Both reconciled the
+inventory and published **zero files**. These are actual production-path runs,
+but not successful de-identification or accuracy measurements.
 
-An exact-command replay took 1.085 seconds, preserved every output byte and added
-no task attempts. All 37 tasks remained completed; inputs were unchanged, and no
-model requests or charges occurred. This is a completed-run replay, not injected
-crash recovery. The record includes model hashes, source and configuration hashes,
-runtime versions and the existing evaluation image ID.
+| Measurement | Local default | Hosted opt-in |
+| --- | ---: | ---: |
+| Initial seconds | 11.884 | 80.460 |
+| Replay seconds | 4.922 | 3.682 |
+| Whole-container peak MiB | 645.72 | 654.48 |
+| Completed tasks | 37 | 39 |
+| Published / quarantined | 0 / 12 | 0 / 12 |
+| Endpoint requests | 0 | 15 |
+| Input / output tokens | 0 / 0 | 6,905 / 6,781 |
+| Accounted cost bound | $0 | $0.00442625 |
+| Persisted receipt cost | $0 | $0.003684328 |
 
-The reusable probe runs inside a prepared Linux container with the source,
-configuration, inputs and weights mounted read-only, the retained secret supplied
-through the environment, and state/output on native Linux storage:
+The requested and returned hosted model was `z-ai/glm-5.3-flash`; nine routed
+providers are identified in the record. Eleven unique detector inputs used remote
+observations. Four used local fallback: three invalid responses and one invalid
+span grounding. This mixed result is not a pure hosted-model accuracy score.
+Saved responses and grounded observations replayed without new calls or charges.
+
+Local mode did not reach rewriting. Hosted mode rewrote `billing_export.csv`
+(detected as XLSX), then its independent saved-output verifier rejected it with
+`residual_phi_detected`. The other files quarantined for incomplete coverage,
+unsupported formats or an invalid container. Full per-file outcomes are in the
+[project README](../README.md#supplied-held-in-dataset-results). A later
+[metadata diagnostic](verifier-metadata-diagnostic.json) reconstructed the exact
+staged artifact and isolated an unchanged sheet title misclassified as contact
+information. An unrelated synthetic title reproduced the issue. This identifies
+one false rejection, not proof that the complete workbook is clean.
+
+Both containers had 2 vCPUs, 1 GiB RAM and zero extra swap. Local networking was
+disabled. Hosted networking used an isolated Docker network with a separate opaque
+TLS relay to a fixed OpenRouter endpoint IP, retaining endpoint certificate
+validation. A public endpoint probe succeeded while an unrelated HTTPS probe was
+blocked. The [relay helper](../tools/benchmarks/endpoint_proxy.py) needs an outbound
+network plus the isolated network alias `openrouter.ai`; pipeline containers join
+only the isolated network. The relay constrains destination IP and port, not every
+possible hostname served by shared CDN infrastructure.
+
+Source, configuration, input and weights were read-only mounts in the existing
+evaluation image. State and outputs used native Linux storage. The model, source,
+configuration and image fingerprints are retained in each JSON. A separate large
+CSV benchmark ran concurrently on the Docker host; these timings are observations,
+not an isolated comparison of model latency. The peak includes the coordinator,
+workers, probe, dashboard and file cache, but excludes the separate TLS relay.
+
+Both exact-command replays kept every output/report byte and queue count unchanged.
+Inputs were unchanged. Neither run injected random crashes or exercised the large
+CSV deadline. The [earlier local run](held-in-pipeline.json) is retained unchanged
+as historical evidence from revision `6be0224`.
+
+The reusable probe accepts either mode inside a resource-limited Linux container:
 
 ```sh
 LLM_ENABLED=0 python tools/benchmarks/pipeline.py \
-  --input /work/input --config /work/redactor.toml \
-  --state /work/run/.redactor --workers 2 \
-  --output /work/run/measurement.json
+  --mode local --input /work/input --config /work/redactor.toml \
+  --state /work/run/.redactor --workers 2 --output /work/run/measurement.json
 ```
 
-Use a fresh state directory for this probe; it performs the initial run and replay
-itself. Apply the resource limits when creating the container, as in the
-[project instructions](../README.md#run-in-a-constrained-container).
-The [separate storage observation](docker-bind-mount-observation.json) records
-SQLite errors with macOS bind-mounted state. The unchanged pipeline passed on
-native Linux storage; the precise filesystem mechanism was not diagnosed.
+For hosted measurement, use `--mode hosted`, `LLM_ENABLED=1` and `LLM_API_KEY`.
+Retain the private mapping key and use a fresh state/output workspace for each
+comparison. The probe performs the initial run and replay itself; it requires at
+least one real request in hosted mode. The [storage observation](docker-bind-mount-observation.json)
+records SQLite errors with macOS bind-mounted state, so use native Linux storage.
+
+## Generated 1 GiB baseline diagnostic
+
+The supplied generator produced 5,600,000 data rows / 1,073,957,724 bytes using
+`--size-gb 1 --seed 1`; an independent complete CSV parse validated all row widths
+and counted 1,398,979 multiline records ([generation record](large-csv-1g-generation.json)).
+The bulk CSV is ignored by Git.
+
+The [pipeline diagnostic](large-csv-1g.json) used two workers and GLiNER, with the
+dashboard enabled, external calls disabled, 2 vCPUs, 1 GiB, zero extra swap, no
+network and native Linux state storage. It failed after 929.256 seconds, before
+its 1,800-second deadline. Stopped-container state confirmed 1,290,000 analyzed
+checkpoint rows (23.04%), zero rewritten or published rows, and no final report.
+SQLite occupied 2,178,838,528 bytes. There were no model requests or charges.
+
+Peak cgroup memory was 1,073,745,920 bytes. The two retained `worker_failed` codes
+do not identify the exception or establish an OOM kill; final memory-event
+counters were not captured. All 208 frozen production/configuration files still
+matched revision `450fdf8`, but a shared benchmark helper changed on disk during
+execution. The combined source fingerprint therefore failed its stability check.
+This is an unsuccessful baseline diagnostic, not a final throughput measurement
+or an A7 pass. The supplied fixtures were benchmarked in separate containers
+during part of this run on the same Docker host.
+
+The [large-file probe](../tools/benchmarks/large_csv.py) now records memory events
+and refuses a final snapshot while a surviving worker holds the run lock. A
+successful small-file smoke check exercises the probe, not the large-file target.
 
 ## Dashboard overhead
 
@@ -187,7 +251,7 @@ uv run --no-sync --env-file .env python tools/evaluate_remote_ocr.py \
 
 The actual container runs used the existing production dependency image because a fresh build timed out downloading the spaCy wheel. Current source was mounted into the evaluation container. Each container receipt records the exact image ID, source hash, command, limits and OOM status. The measurements therefore do not validate a fresh production image build.
 
-Configuration selects GLiNER PII Edge UINT8, PP-OCRv5 mobile English and `z-ai/glm-5.3-flash`. These selections are based on this comparison, not complete end-to-end validation. Production NER supports spaCy and the pinned token-level GLiNER exports with the same adapter as evaluation; PP-OCR and hosted detection are not integrated into the publication path. No remote judge is selected because judging was not benchmarked.
+Configuration selects GLiNER PII Edge UINT8, PP-OCRv5 mobile English and `z-ai/glm-5.3-flash`. These selections are based on this comparison, not complete end-to-end validation. Production NER supports spaCy and the pinned token-level GLiNER exports with the same adapter as evaluation; hosted detection is integrated into analysis with local fallback. PP-OCR and saved-image verification are not integrated into publication. No remote judge is selected because judging was not benchmarked.
 
 The corpus is small, synthetic and partly assignment-derived. Published model-card scores were not mixed with these measurements. Detection, identity resolution, document rewriting, image masking, the optional remote judge, SIGKILL recovery and the large-CSV acceptance test remain distinct validation tasks.
 

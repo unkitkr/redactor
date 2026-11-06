@@ -55,8 +55,10 @@ uv run --locked --offline --env-file .env.local redactor \
 This starts the complete pipeline; files that fail an earlier check go directly to
 quarantine. One worker handles inference and another handles lighter work.
 The command waits for all files to reach publication or quarantine
-and then writes the final report. `.env.local` selects local-only processing through
-`LLM_ENABLED=0`; uv's `--offline` flag separately prevents dependency downloads.
+and then writes the final report. Local processing is the default in both
+`redactor.toml` and the settings schema; `.env.local` also explicitly sets
+`LLM_ENABLED=0`. uv's `--offline` flag prevents dependency downloads, independently
+of whether the pipeline may contact a model endpoint.
 
 Inside the project environment, `python -m redactor` is an equivalent entry point.
 The optional `--state` defaults
@@ -67,9 +69,52 @@ Environment files are loaded explicitly by uv, not automatically by Redactor.
 A zero exit code means the inventory was reconciled, **not that every file was
 redacted successfully**. Check the published/quarantined counts and reasons.
 
+### Optional hosted detection
+
+To enable hosted detection, create a separate private environment file such as
+`.env.hosted`, retaining the same `REDACTOR_SECRET_KEY` for replay. Set
+`LLM_ENABLED=1` and supply the endpoint credential as `LLM_API_KEY`. Keep this file
+out of Git and readable only by its owner, as with `.env.local`.
+
+```bash
+uv run --locked --offline --env-file .env.hosted redactor \
+  --input input \
+  --state tmp/hosted/.redactor \
+  --workers 2
+```
+
+| Variable | Purpose |
+| --- | --- |
+| `LLM_ENABLED` | `1` permits hosted detection; `0` prevents new endpoint calls. |
+| `LLM_API_KEY` | Credential for the configured endpoint. |
+| `LLM_BASE_URL` | Optional override for the configured OpenAI-compatible endpoint. |
+| `LLM_MODEL` | Optional override for the configured model name. |
+
+The checked-in endpoint and model are OpenRouter and `z-ai/glm-5.3-flash`.
+An existing variable named `OPENROUTER_KEY` is not read automatically; supply its
+value through `LLM_API_KEY`. Redactor does not load `.env` files itself.
+Changing the endpoint or model also requires reviewing the provider and pricing
+settings in TOML and using a fresh workspace.
+
+Hosted detection runs during analysis of eligible free text. Its validated
+observations, including actual local fallback results, are encrypted and saved
+before use; rewriting reuses them without another endpoint call. Verification
+reconstructs the expected edits from this evidence, then independently checks the
+original and saved text with local NER and deterministic rules. Remote judging is
+not integrated, and enabling hosted mode does not enable image publication.
+
+The current configuration allows three attempts per request, including the first,
+with exponential backoff, a 30-second attempt timeout and a 65-second request
+deadline. Slow responses, rate limits, malformed answers, authentication failures
+and exhausted budgets lead to bounded local fallback; failed local inference still
+prevents publication. The run budget is $3, with OpenRouter provider price caps of
+$0.15 per million input tokens and $0.50 per million output tokens. These are
+configured limits, not a promise that every request or file will succeed.
+
 ## Inspect and use the results
 
-For the command above, results appear in `tmp/held-in/output/`:
+For the local command above, results appear in `tmp/held-in/output/`; the hosted
+example uses `tmp/hosted/output/`:
 
 | Path | Contents |
 | --- | --- |
@@ -114,6 +159,13 @@ secret and input/state locations. Completed steps are reused; interrupted steps 
 from their durable state. Do not delete SQLite journal files or the run lock.
 After SIGKILL, let surviving workers exit before restarting the coordinator.
 
+`LLM_ENABLED` may change during recovery. Saved observations and accepted remote
+answers still replay with hosted access disabled or its API key absent; the switch
+prevents new calls, rather than discarding work already accepted. A crash after an
+endpoint responds but before its answer is saved can still require another request
+and charge. Keep the original endpoint, model and other processing settings for
+the same run.
+
 Outputs belong to one inventory, configuration, secret identity and pipeline
 version. Changed inputs or processing choices require a fresh workspace, for
 example `--state tmp/another-run/.redactor`. Conflicting outputs produce
@@ -123,49 +175,104 @@ must share a local filesystem for atomic publication.
 ## Supplied held-in dataset results
 
 The supplied `input/` files are development fixtures, not an independent held-out
-accuracy dataset. The measured end-to-end results are recorded in
-[the held-in run report](benchmarks/held-in-pipeline.json).
+accuracy dataset. Both modes were run on the same 12 files (533,410 bytes), with
+GLiNER PII Edge v1.0 UINT8 available locally, two workers and the dashboard enabled.
 
-The local-only run reconciled all 12 files, but **published none**. Five files
-failed coverage checks, six used unsupported native formats, and one was corrupt.
-This demonstrates completion and replay of quarantine outcomes, not successful
-redaction of this dataset or full assignment coverage.
+**Both modes published zero files.** These runs demonstrate actual model routing,
+quarantine accounting and replay, but do not establish successful redaction of the
+supplied dataset or full assignment coverage.
 
-| Local-only run | Measured result |
-| --- | --- |
-| Model | GLiNER PII Edge v1.0 UINT8; external calls disabled |
-| Input | 12 files, 533,410 bytes |
-| Published / quarantined | 0 / 12 |
-| Initial elapsed time | 2.624 seconds |
-| Exact-command replay | 1.085 seconds |
-| Peak container memory | 572.86 MiB, including probe, coordinator, workers and dashboard |
-| Limits | 2 vCPUs, 1 GiB RAM, no extra swap, no network |
-| Durable work | 37 completed tasks; replay added no attempts |
-| Replay checks | All output bytes and the report unchanged; inputs unchanged |
-| Model requests / charges | 0 / $0 |
+| Measurement | [Local default](benchmarks/held-in-local.json) | [Hosted opt-in](benchmarks/held-in-hosted.json) |
+| --- | ---: | ---: |
+| Hosted model | Disabled | `z-ai/glm-5.3-flash` through OpenRouter |
+| Published / quarantined | 0 / 12 | 0 / 12 |
+| Initial elapsed time | 11.884 seconds | 80.460 seconds |
+| Exact-command replay | 4.922 seconds | 3.682 seconds |
+| Peak container memory | 645.72 MiB | 654.48 MiB |
+| Completed tasks | 37 | 39 |
+| Endpoint requests | 0 | 15 |
+| Input / output tokens | 0 / 0 | 6,905 / 6,781 |
+| Accounted cost bound | $0 | $0.00442625 |
+| Endpoint-reported receipt cost | $0 | $0.003684328 |
+| Additional task/model attempts on replay | 0 / 0 | 0 / 0 |
 
-The dashboard was enabled and reachable. Current source and staged weights were
-mounted into the existing evaluation image; this was not a fresh production-image
-build. All files branched to quarantine before rewriting and saved-output
-verification, so elapsed time measures quarantine processing, not redaction
-throughput. The replay was a normal completed-run replay, not a random-SIGKILL test.
+Both containers had 2 vCPUs, 1 GiB RAM and no extra swap. Local mode had no network;
+hosted mode used an isolated Docker network with an opaque TLS relay to a fixed
+OpenRouter endpoint IP. The client still validated the `openrouter.ai` certificate;
+a network probe confirmed the endpoint was reachable and an unrelated site was
+blocked. State and outputs used native Linux storage. Memory includes the probe,
+coordinator, workers and dashboard. A separate large CSV benchmark ran on the same
+Docker host, so these are observed durations, not an isolated latency comparison.
 
-All files below were quarantined:
+The hosted endpoint returned `z-ai/glm-5.3-flash` for all 15 requests across nine
+providers, recorded in the JSON. Eleven unique detector inputs used accepted remote
+observations; four fell back locally because three responses were invalid and one
+had ungrounded spans. Requests were made during analysis only. Both replays kept
+all output/report bytes unchanged, preserved inputs, and made no new model calls.
 
-| Supplied file | Detected type | Reason |
-| --- | --- | --- |
-| `encounters.csv` | CSV | Incomplete coverage |
-| `billing_export.csv` | XLSX | Incomplete coverage |
-| `patient_roster.xlsx` | XLSX | Incomplete coverage |
-| `progress_note.txt` | Text | Incomplete coverage |
-| `adt_a01.hl7` | HL7 | Incomplete coverage |
-| `claims.json` | JSON | Unsupported native format |
-| `fhir_bundle.json` | FHIR | Unsupported native format |
-| `discharge_summary.docx` | DOCX | Unsupported native format |
-| `referral_packet.pdf` | PDF | Unsupported native format |
-| `wristband_photo.jpg` | JPEG | Unsupported native format |
-| `imaging_0042.dat` | DICOM | Unsupported native format |
-| `corrupt_upload.docx` | ZIP | Invalid container structure |
+Local mode quarantined every file before rewriting. Hosted mode rewrote the
+mislabeled workbook, but the independent saved-output verifier rejected it with
+`residual_phi_detected`. Without full reference labels, that rejection is not
+evidence that the file leaked. A [follow-up diagnostic](benchmarks/verifier-metadata-diagnostic.json)
+reconstructed the exact staged bytes and traced the rejection to GLiNER
+misclassifying an unchanged sheet title as contact information; a new synthetic
+title reproduced the same kind of false rejection. This isolates that failure,
+not whole-file cleanliness. The remaining files did not reach rewriting. Neither
+duration is successful redaction throughput, and these completed-run replays are
+not random-SIGKILL tests.
+
+| Supplied file | Detected type | Local quarantine reason | Hosted quarantine reason |
+| --- | --- | --- | --- |
+| `encounters.csv` | CSV | Incomplete coverage | Incomplete coverage |
+| `billing_export.csv` | XLSX | Incomplete coverage | Residual PHI check failed |
+| `patient_roster.xlsx` | XLSX | Incomplete coverage | Incomplete coverage |
+| `progress_note.txt` | Text | Incomplete coverage | Incomplete coverage |
+| `adt_a01.hl7` | HL7 | Incomplete coverage | Incomplete coverage |
+| `claims.json` | JSON | Unsupported native format | Unsupported native format |
+| `fhir_bundle.json` | FHIR | Unsupported native format | Unsupported native format |
+| `discharge_summary.docx` | DOCX | Unsupported native format | Unsupported native format |
+| `referral_packet.pdf` | PDF | Unsupported native format | Unsupported native format |
+| `wristband_photo.jpg` | JPEG | Unsupported native format | Unsupported native format |
+| `imaging_0042.dat` | DICOM | Unsupported native format | Unsupported native format |
+| `corrupt_upload.docx` | ZIP | Invalid container structure | Invalid container structure |
+
+These measurements used production revision `7025ae5` mounted into the existing
+evaluation image, rather than a fresh production-image build. The records include
+exact source, configuration and model hashes. The earlier local-only measurement
+is retained as a [historical record](benchmarks/held-in-pipeline.json).
+
+## Generate a large CSV
+
+The assignment generator streams to disk and includes quoted multiline records:
+
+```bash
+mkdir -p tmp/large-csv/input
+uv run --locked --offline python tools/make_large_csv.py \
+  --size-gb 1 --seed 1 --out tmp/large-csv/input/big_encounters.csv
+```
+
+The generated file contains **5,600,000 rows and 1,073,957,724 bytes**. The generator
+uses GiB units and stops at a 5,000-row boundary, so it slightly exceeds 1 GiB.
+An independent CSV parse verified all row widths and found 1,398,979 multiline
+records ([generation record](benchmarks/large-csv-1g-generation.json)). Bulk data and
+private state stay outside Git. Generating and parsing the fixture alone does not
+satisfy the pipeline's large-file acceptance test.
+
+The [1 GiB baseline diagnostic](benchmarks/large-csv-1g.json) **failed** after
+929.256 seconds with `worker_failed`. It saved analysis checkpoints for
+1,290,000 rows (23.04%), rewrote and published zero rows, and produced no final run
+report. Its SQLite state reached 2,178,838,528 bytes. The cgroup reported peak memory
+of 1,073,745,920 bytes against a 1 GiB configured limit; the failure cause and an OOM
+kill are unconfirmed because the original probe did not retain the final memory
+event counters or worker exception category.
+
+That run used frozen production revision `450fdf8`, before the hosted integration.
+Production/configuration files matched that revision afterward, but a shared
+measurement helper changed on disk during execution, invalidating the combined
+unchanged-source fingerprint. It is retained as a failed diagnostic, not a current
+acceptance result. No complete-file redaction throughput or 2 GiB acceptance claim
+is established. The probe now records memory events and checks that workers have
+released run ownership before collecting its final snapshot.
 
 ## Models and current coverage
 
@@ -191,11 +298,11 @@ Pass it through `--config` and use a fresh output workspace. Tesseract and PP-OC
 share bounded OCR adapters but do not yet enable image publication. Tesseract also
 requires its system executable and local English trained data.
 
-The remote detector helper supports encrypted replay, bounded exponential backoff,
-cost limits and local fallback, tested separately from file publication. A failed
-local fallback still prevents publication. Production workers currently call local NER
-directly; hosted detection and remote judging are not integrated into publication.
-Setting `LLM_ENABLED=1` alone therefore does not make this a hosted-model run.
+Hosted detection is integrated into analysis for the supported publication paths,
+with encrypted observation replay, bounded backoff, cost limits and local fallback.
+It remains opt-in and requires endpoint credentials; it does not expand native
+format support or bypass the independent saved-output verifier. Remote judging
+remains unimplemented in the publication pipeline.
 
 The [decision log](notes.md) separates selected policies, measured evidence and
 known limitations. Neither the small fixture run nor the model benchmarks establish

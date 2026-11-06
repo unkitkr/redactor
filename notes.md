@@ -37,9 +37,11 @@
 
 - **Model comparison:** four local NER candidates, four OCR variants and three OpenRouter models were compared on 40 text cases and 12 images; exact models, accuracy, verifier failures, memory and timings are in the [benchmark report](benchmarks/README.md).
 - **Verifier regression:** v3 found zero false accepts and 0–4 false rejects on the unchanged 40-case development corpus across four local adapters and three cached hosted configurations; these macOS runs include local fallbacks and no new charges, not independent clinical validation.
-- **Hosted cost:** receipts total $0.045215, while conservative reservations account for $2.422906; hosted clients ran on macOS, whereas local model comparisons ran in constrained containers.
+- **Historical model-comparison cost:** receipts total $0.045215, while conservative reservations account for $2.422906; hosted clients ran on macOS, whereas local model comparisons ran in constrained containers.
 - **Offline CSV baseline:** all 30,000 rows / 5,753,686 bytes published in 38.41 seconds at 781 rows/s, with 344.4 MiB peak memory under 2 vCPUs / 1 GiB and no OOM or model charge; this does not exercise the 2 GiB / 30-minute target ([record](benchmarks/baseline-30000.json)).
-- **Held-in pipeline:** local GLiNER reconciled all 12 supplied files / 533,410 bytes in 2.624 seconds at 572.86 MiB under 2 vCPUs / 1 GiB, but published none; replay added no attempts and preserved all output bytes ([record](benchmarks/held-in-pipeline.json)).
+- **Held-in pipeline:** both modes published 0/12 supplied files under 2 vCPUs / 1 GiB; local took 11.884 seconds / 645.72 MiB, hosted took 80.460 seconds / 654.48 MiB, and both replayed unchanged ([local](benchmarks/held-in-local.json), [hosted](benchmarks/held-in-hosted.json)).
+- **Hosted pipeline cost:** 15 GLM 5.3 Flash requests cost $0.003684328 in receipts against $0.00442625 accounted; four observations fell back locally, and replay made no new requests.
+- **Large CSV diagnostic:** 1 GiB / 5.6 million rows failed after 929.256 seconds with 1.29 million analyzed and none published; the older frozen revision and changed helper make this a failed baseline, not an A7 result ([record](benchmarks/large-csv-1g.json)).
 - **Dashboard overhead:** 1,000 tasks under 2 vCPUs / 1 GiB used 0.75% of one core while polling, 43.07 MiB server peak RSS and 40.33 ms mean queue latency; browser overhead and concurrent pipeline throughput were not measured ([record](benchmarks/results/dashboard-overhead.json)).
 
 ## Known limitations
@@ -47,6 +49,8 @@
 - **Publication coverage:** CSV/TSV, bounded labelled text, supported XLSX and HL7 ADT have publication paths; other formats, including legacy XLS, and unsupported populated surfaces quarantine.
 - **GLiNER coverage:** a structured CSV with free-text names publishes and replays, but all four valid files in the mixed-format regression still quarantine for unresolved coverage; explicit spaCy publishes those files.
 - **Detection limits:** observed name/contact escapes are blocked, but unfamiliar entities can evade shared statistical NER and overextended model spans can reject clean text.
+- **Verifier precision:** GLiNER misclassified a benign workbook title as contact information; an unrelated synthetic title reproduced the issue, so the current verifier can reject clean metadata ([diagnostic](benchmarks/verifier-metadata-diagnostic.json)).
+- **Bulk execution:** the 1 GiB diagnostic ended with only `worker_failed`; missing exception categories leave its cause unknown, and identity state grew beyond 2 GiB before analysis finished.
 - **Unsupported details:** unsupported Office extensions, custom namespace prefixes, unsupported part paths, and unsupported international phones or extensions quarantine rather than accept partial handling.
 - **File limits:** defaults are 32 MiB for native files, 256 MiB for expanded archives and 16 million pixels for images; only CSV rewriting streams beyond the native-file limit.
 - **OCR limits:** only single-frame images, aspect ratios up to 64 and at most 256 text regions are accepted, bounding preprocessing and rejecting uncertain partial coverage; image benchmarks do not validate safe image publication.
