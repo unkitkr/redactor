@@ -30,6 +30,7 @@
 
 - Initial offline CSV baseline: 30,000 rows / 5,753,686 bytes in 38.41 seconds, 781 rows/s and 344.4 MiB peak under 2 vCPUs / 1 GiB; all rows published, with no OOM or model charge ([record](benchmarks/baseline-30000.json)).
 - Four local NER candidates, four OCR variants and three OpenRouter models were compared on 40 text cases and 12 images; exact models, accuracy, verifier failures, memory and timings are in the [benchmark report](benchmarks/README.md).
+- Verifier v3 found zero false accepts on the unchanged 40-case development corpus across four local adapters and three cached hosted configurations, with 0–4 false rejects; macOS regression results include local fallbacks and no new charges.
 - Hosted receipts report $0.045215; conservative reservations account for $2.422906. Local runs were container-constrained; hosted client runs used macOS. Neither comparison establishes clinical safety or the 2 GiB / 30 minute target.
 
 ## Known limitations
@@ -37,8 +38,8 @@
 - Current publication covers CSV/TSV, bounded labelled text, supported XLSX and HL7 ADT; other formats and unsupported populated surfaces quarantine.
 - Native files default to 32 MiB, expanded archives to 256 MiB and images to 16 million pixels; only CSV rewriting streams beyond the native-file limit.
 - Unsupported Office extensions, custom namespace prefixes and part paths quarantine; unsupported international phones and extensions also quarantine instead of accepting a partial replacement.
-- The labelled cases exposed verifier false accepts involving initialled names, international phones and model-specific misses; shared writer/verifier detection still permits correlated errors.
+- The observed name/contact escapes are blocked; unfamiliar entities can still evade shared statistical NER, and overextended model spans can reject clean text.
 - The selected GLiNER adapter remains unsupported by the production loader: the default CLI test publishes 0 instead of 4 files; explicit spaCy passes publish and replay. PP-OCR and hosted detection remain benchmark-only.
 - OpenMed reached 1 GiB in isolation; NVIDIA full weights were excluded before inference. GLiNER matched upstream on 140 inputs; OpenMed BIO grouping remains experimental.
 - Hosted publication integration, remote judging, pixel verification, cross-issuer linkage, collision auditing, the shared-medication-batch exception and full-run crash equivalence remain incomplete or unvalidated; legacy XLS is unsupported.
-- Atomic installation requires one filesystem; replay requires both state and the original secret, and conflicting existing outputs are never overwritten.
+- Atomic installation requires one filesystem; replay needs state and the original secret. Output ownership blocks mixed runs; input, policy or configuration changes require a fresh output workspace.

@@ -23,13 +23,13 @@ Measured on 6 November 2026. This comparison covers the research candidates and 
 | [deepseek/deepseek-v4-pro](results/deepseek-pro.json) | 86.4% | 48.7% | 62.3% | 0 | 67.77 | not measured |
 | [z-ai/glm-5.3-flash](results/glm-flash.json) | 81.8% | 69.2% | 75.0% | 0 | 182.63 | not measured |
 
-Raw NER can over-detect values that the policy later preserves. The clinical column measures overlap with explicitly labelled clinical spans; it is not a count of published changes. The current policy produced zero such clinical-span edits on this corpus, but still missed identifiers in some accepted cases.
+Raw NER can over-detect values that the policy later preserves. The clinical column measures overlap with explicitly labelled clinical spans; it is not a count of published changes. The original comparison produced zero such clinical-span edits on this corpus, but still missed identifiers in some accepted cases.
 
 The local exports use pinned tokenizers and checksummed weights from [model-artifacts.json](model-artifacts.json). GLiNER uses a fixed 0.3 threshold and explicit identifier labels, with token-level start/end/inside decoding and no truncation. OpenMed uses its BIO labels, joins adjacent first/last-name components, and trims tokenizer whitespace. The GLiNER decoder matched the upstream `gliner` 0.2.30 wrapper on all 71 Edge and 69 Small inputs, including masked and rewritten text ([parity results](results/gliner-parity.json)). A tied-score ordering discrepancy was corrected before the final measurements. OpenMed uses custom BIO grouping without a separate upstream parity comparison.
 
 NVIDIA `nvidia/gliner-PII` is [excluded by resource preflight](results/nvidia-preflight.json): its published weight file is 1,782,000,995 bytes. No inference or OOM experiment was run, so no accuracy is claimed. OpenMed completed but reached 1 GiB cgroup memory and about 1003 MiB process RSS during loading; that leaves insufficient demonstrated headroom for the full pipeline.
 
-## Combined policy and verifier
+## Original combined policy and verifier
 
 | Detector | Policy abstentions / 40 | Verifier checked | False accepts | False rejects |
 | --- | ---: | ---: | ---: | ---: |
@@ -41,7 +41,50 @@ NVIDIA `nvidia/gliner-PII` is [excluded by resource preflight](results/nvidia-pr
 | deepseek/deepseek-v4-pro | 11 | 29 | 1 | 2 |
 | z-ai/glm-5.3-flash | 8 | 32 | 1 | 3 |
 
-A false accept means the text-unit verifier accepted a result with an incompletely covered reference identifier or a changed clinical reference span. These are not full-file publication measurements. Zero false accepts with many abstentions does not establish high recall. Observed escapes include partially handled initialled names, international telephone numbers, and candidate-specific missed names or facilities. The current verifier must be strengthened before these results can support publication safety.
+A false accept means the text-unit verifier accepted a result with an incompletely covered reference identifier or a changed clinical reference span. These are not full-file publication measurements. Zero false accepts with many abstentions does not establish high recall. Observed escapes include partially handled initialled names, international telephone numbers, and candidate-specific missed names or facilities. These results motivated the verifier changes measured below; the original reports are retained unchanged.
+
+## Verifier v3 regression rerun
+
+The same 40 cases, labels and model weights were rerun after the verifier changes in `74e33e0`. These are regression measurements on a development corpus already inspected during debugging, not independent held-out evidence. Additional adversarial tests use different values and cover omitted names, clinical decoys, Unicode forms, partial phone extensions, CSV headers, XML carriers, ambiguous worksheet cells and unaccounted ZIP bytes; they do not change the benchmark corpus.
+
+| Local detector and residual NER | Policy abstentions / 40 | Verifier checked | False accepts | False rejects | Combined seconds | Peak process MiB |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| [spaCy en_core_web_sm 3.8.0](results/verifier-v3-spacy.json) | 11 | 29 | 0 | 1 | 0.11 | 152.5 |
+| [GLiNER PII Edge v1.0 UINT8](results/verifier-v3-gliner-edge.json) | 21 | 19 | 0 | 4 | 1.59 | 252.2 |
+| [GLiNER PII Small v1.0 UINT8](results/verifier-v3-gliner-small.json) | 19 | 21 | 0 | 0 | 3.18 | 290.6 |
+| [OpenMed SuperClinical Small INT8](results/verifier-v3-openmed.json) | 13 | 27 | 0 | 1 | 0.91 | 890.0 |
+
+These reruns used macOS and Python 3.14.2, with remote models disabled and no container CPU or memory limits. Peak process RSS includes model loading and both evaluation passes; combined time excludes loading. These values do not replace the constrained measurements above or validate A7. Each JSON records the corpus SHA-256, verifier version, revision and environment. The dirty-tree marker reflects generated report files after the code commit.
+
+Raw model precision, recall and F1 were unchanged. The combined policy again made zero edits overlapping the labelled clinical spans. No false accept was observed with any of these four adapters; that does not prove absence of unlabelled or unfamiliar identifiers. The stricter intact-context scan still rejects some safe outputs when a model extends an entity outside an assessed span, particularly GLiNER Edge. Those failures remain quarantines, not silently accepted results.
+
+Verification now checks intact source and saved text, corroborated name variants, independently identified contact values and Unicode-normalized views. Clinical exemptions are tied to source locations, and labelled SNOMED concept identifiers require structural and checksum validation. Native checks account for supported XML names and attributes, every worksheet cell and ZIP member boundary, and unchanged workbook layout and styles. Unsupported Office extensions and international phone formats remain explicit quarantine cases.
+
+Validation: Ruff formatting/lint and mypy passed. The default suite finished with 144 passed and one known CLI failure from the unsupported GLiNER production selection. The publish-and-replay CLI test separately passed with explicit spaCy settings, publishing four supported files and quarantining one corrupt input. Output ownership now rejects a changed run in an existing output directory, so older publications cannot accompany a newer verification report. No remote judge or saved-image verification is validated here.
+
+### Hosted response replay
+
+The three hosted configurations were also rescored with the new verifier using the existing encrypted `pipeline-v2` response cache and the unchanged corpus. The replay adapter opens SQLite read-only, does not read an API key or construct an HTTP transport, and applies current grounding and policy checks. The raw detection sections are copied from the original reports, identified by SHA-256; they are not fresh model measurements.
+
+| Recorded detector with local spaCy verification | Policy abstentions / 40 | Verifier checked | False accepts | False rejects | Cache misses | Other local fallbacks |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| [deepseek/deepseek-v4.1-flash-1017](results/verifier-v3-deepseek-flash.json) | 10 | 30 | 0 | 2 | 3 | 9 |
+| [deepseek/deepseek-v4-pro](results/verifier-v3-deepseek-pro.json) | 10 | 30 | 0 | 2 | 3 | 8 |
+| [z-ai/glm-5.3-flash](results/verifier-v3-glm-flash.json) | 9 | 31 | 0 | 2 | 3 | 9 |
+
+Each configuration had 37 cached decisions and three cache misses because current policy produced some detector inputs absent from the historical cache. Other fallbacks came from rejected span evidence or previously recorded model failures. These are mixed replay/local-fallback measurements, not pure hosted-model comparisons. Each reports zero new requests and zero new charges; the shared conservative ledger remains $2.4229058. Replay took 0.25–0.38 seconds per configuration on macOS, which is local evaluation time rather than endpoint latency. No labelled clinical span was edited, and no false accept was observed; each configuration still had two false rejects.
+
+Reproduce a replay without loading `.env`:
+
+```sh
+uv run --no-sync python tools/evaluate_remote.py \
+  --model z-ai/glm-5.3-flash \
+  --previous-result benchmarks/results/glm-flash.json \
+  --replay-processing-version pipeline-v2 \
+  --output benchmarks/results/verifier-v3-glm-flash.json
+```
+
+The private historical ledger and its encryption key are required. Production cache identities and invalidation were not relaxed to enable this evaluation.
 
 ## OCR
 
