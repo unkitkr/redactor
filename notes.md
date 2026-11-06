@@ -14,6 +14,7 @@
 - **Pydantic, TOML and AES-GCM** provide validated contracts, configuration and encrypted identifying state, with secrets supplied through the environment.
 - **GLiNER PII Edge UINT8** is the local NER choice for its measured recall and memory balance: 69.2% exact recall at 195.6 MiB in isolation; production coverage remains limited.
 - **PP-OCRv5 mobile English** is the OCR choice: 44/52 identifiers localized versus Tesseract's 36/52, at 343.7 MiB isolated peak memory; it is benchmarked but not integrated into publication.
+- **Pixel localization:** PP-OCR word boxes retain line context and distinguish names from nearby clinical values; incomplete word coverage fails closed.
 - **GLM 5.3 Flash** is the optional hosted-text choice: the highest measured exact-span F1 (75%), with greater latency; hosted detection is connected to analysis, and these scores do not validate a judge.
 - **OpenAI SDK** provides the transport behind encrypted response replay, bounded backoff, circuit state and shared cost reservations.
 - **PyMuPDF** is selected under its AGPL license.

@@ -169,6 +169,20 @@ def test_installed_ppocr_uses_local_weights_and_rejects_partial_stage_outputs(
     assert "Patient" in recognized
     assert downloads == 0
 
+    localized = load_local_ocr(settings, ResourceSettings(), word_boxes=True)(image)
+    words = [word for line in localized for word in line.words]
+    assert any(word.text == "Alice" for word in words)
+    assert any(word.text == "72" for word in words)
+    name = next(word for word in words if word.text == "Alice")
+    pulse = next(word for word in words if word.text == "72")
+    # OCR boxes may overlap at their margins; the pixel verifier must check
+    # clinical intersections before applying a mask, rather than assume none.
+    assert name.box[1] + name.box[3] < pulse.box[1] + pulse.box[3]
+    assert "".join("".join(line.text.split()) for line in localized) == "".join(
+        "".join(word.text.split()) for word in words
+    )
+    assert downloads == 0
+
     damaged = tmp_path / "missing-dictionary"
     damaged.mkdir()
     for source in directory.glob("*.onnx"):

@@ -68,4 +68,20 @@ def validate_ocr_regions(
         left, top, right, bottom = region.box
         if not (0 <= left < right <= width and 0 <= top < bottom <= height):
             raise ValueError(ERROR_LOCAL_INFERENCE)
+        if region.words:
+            if "".join(region.text.split()) != "".join(
+                "".join(word.text.split()) for word in region.words
+            ):
+                raise ValueError(ERROR_LOCAL_INFERENCE)
+            for word in region.words:
+                word_left, word_top, word_right, word_bottom = word.box
+                if not (
+                    0 <= word_left < word_right <= width
+                    and 0 <= word_top < word_bottom <= height
+                    and word_left < right
+                    and left < word_right
+                    and word_top < bottom
+                    and top < word_bottom
+                ):
+                    raise ValueError(ERROR_LOCAL_INFERENCE)
     return regions

@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from redactor.inference.onnx import load_session
-from redactor.schemas.ocr import OcrAdapter, OcrRegion
+from redactor.schemas.ocr import OcrAdapter, OcrRegion, OcrWord
 from redactor.utils.constants import (
     OCR_ENGLISH_LANGUAGES,
     OCR_MAXIMUM_REGIONS,
@@ -19,7 +19,9 @@ from redactor.utils.constants import (
 from redactor.utils.errors import ERROR_LOCAL_INFERENCE, ERROR_LOCAL_UNAVAILABLE
 
 
-def load_ppocr(directory: Path, language: str) -> OcrAdapter:
+def load_ppocr(
+    directory: Path, language: str, *, word_boxes: bool = False
+) -> OcrAdapter:
     try:
         from rapidocr import EngineType, LangRec, ModelType, OCRVersion, RapidOCR
         from rapidocr.utils.output import RapidOCROutput
@@ -74,7 +76,11 @@ def load_ppocr(directory: Path, language: str) -> OcrAdapter:
 
     def recognize(path: Path) -> tuple[OcrRegion, ...]:
         try:
-            result = engine(str(path))
+            result = (
+                engine(str(path), return_word_box=True)
+                if word_boxes
+                else engine(str(path))
+            )
             # RapidOCR can swallow a failed stage and return an empty or partial
             # object. That is an inference failure, never a clean blank image.
             if (
@@ -96,6 +102,11 @@ def load_ppocr(directory: Path, language: str) -> OcrAdapter:
                 or np.any(confidences > 1)
             ):
                 raise ValueError(ERROR_LOCAL_INFERENCE)
+            words = (
+                _word_regions(result.word_results, len(result.txts))
+                if word_boxes
+                else ()
+            )
             return tuple(
                 OcrRegion(
                     text=text,
@@ -105,10 +116,50 @@ def load_ppocr(directory: Path, language: str) -> OcrAdapter:
                         float(box[:, 0].max()),
                         float(box[:, 1].max()),
                     ),
+                    words=words[index] if word_boxes else (),
                 )
-                for text, box in zip(result.txts, boxes, strict=True)
+                for index, (text, box) in enumerate(
+                    zip(result.txts, boxes, strict=True)
+                )
             )
         except Exception:
             raise ValueError(ERROR_LOCAL_INFERENCE) from None
 
     return recognize
+
+
+def _word_regions(raw: object, line_count: int) -> tuple[tuple[OcrWord, ...], ...]:
+    if not isinstance(raw, (tuple, list)) or len(raw) != line_count:
+        raise ValueError(ERROR_LOCAL_INFERENCE)
+    lines: list[tuple[OcrWord, ...]] = []
+    for line in raw:
+        if not isinstance(line, (tuple, list)) or not line:
+            raise ValueError(ERROR_LOCAL_INFERENCE)
+        words: list[OcrWord] = []
+        for item in line:
+            if not isinstance(item, (tuple, list)) or len(item) != 3:
+                raise ValueError(ERROR_LOCAL_INFERENCE)
+            text, confidence, coordinates = item
+            box = np.asarray(coordinates, dtype=float)
+            if (
+                not isinstance(text, str)
+                or not isinstance(confidence, (int, float))
+                or not np.isfinite(confidence)
+                or not 0 <= confidence <= 1
+                or box.shape != (4, 2)
+                or not np.isfinite(box).all()
+            ):
+                raise ValueError(ERROR_LOCAL_INFERENCE)
+            words.append(
+                OcrWord(
+                    text=text,
+                    box=(
+                        float(box[:, 0].min()),
+                        float(box[:, 1].min()),
+                        float(box[:, 0].max()),
+                        float(box[:, 1].max()),
+                    ),
+                )
+            )
+        lines.append(tuple(words))
+    return tuple(lines)

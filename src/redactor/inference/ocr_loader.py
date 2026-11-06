@@ -19,7 +19,9 @@ from redactor.utils.errors import (
 )
 
 
-def load_local_ocr(settings: LocalSettings, resources: ResourceSettings) -> OcrAdapter:
+def load_local_ocr(
+    settings: LocalSettings, resources: ResourceSettings, *, word_boxes: bool = False
+) -> OcrAdapter:
     try:
         if settings.ocr == OCR_TESSERACT:
             from redactor.inference.adapters.tesseract import load_tesseract
@@ -34,7 +36,9 @@ def load_local_ocr(settings: LocalSettings, resources: ResourceSettings) -> OcrA
             directory = settings.ocr_directory or (
                 settings.model_directory / OCR_PPOCR_DIRECTORY
             )
-            adapter = load_ppocr(directory, settings.ocr_language)
+            adapter = load_ppocr(
+                directory, settings.ocr_language, word_boxes=word_boxes
+            )
         else:
             raise ValueError(ERROR_LOCAL_UNAVAILABLE)
     except Exception:

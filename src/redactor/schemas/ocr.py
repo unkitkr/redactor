@@ -11,9 +11,15 @@ from redactor.utils.constants import (
 )
 
 
-class OcrRegion(BaseModel, frozen=True, extra="forbid"):
+class OcrWord(BaseModel, frozen=True, extra="forbid"):
     text: str = Field(min_length=1, max_length=OCR_MAXIMUM_REGION_CHARACTERS)
     box: tuple[FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat]
+
+
+class OcrRegion(OcrWord, frozen=True, extra="forbid"):
+    words: tuple[OcrWord, ...] = Field(
+        default=(), max_length=OCR_MAXIMUM_REGION_CHARACTERS
+    )
 
 
 class OcrResponse(BaseModel, frozen=True, extra="forbid"):
