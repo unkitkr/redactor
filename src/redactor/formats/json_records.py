@@ -5,7 +5,7 @@ import binascii
 from collections.abc import Iterator
 
 from redactor.formats.json_context import normalized_key, record_evidence
-from redactor.formats.json_fields import json_field_policy
+from redactor.formats.json_fields import json_field_policy, known_json_key
 from redactor.formats.json_syntax import (
     member,
     member_text,
@@ -65,16 +65,17 @@ def json_records(
         encoded = attachment_text(node)
         for index, field, value in object_members(node):
             base = (*location, str(index))
-            # Standard field names are scanned too; numeric dictionary keys are
-            # identifiers even though a text NER model would not recognize them.
+            # Known schema labels stay exact. Unknown keys are text surfaces;
+            # numeric dictionary keys are identifiers, even without NER evidence.
             key_policy = ColumnPolicy(index=0, kind=FIELD_TEXT)
             if field.value.isascii() and field.value.isdigit():
                 key_policy = ColumnPolicy(
                     index=0, kind=FIELD_IDENTIFIER, namespace=MRN_NAMESPACE
                 )
-            yield _record(
-                field.value, (*base, JSON_KEY_LOCATION), key_policy, context, scope
-            )
+            if not known_json_key(field.value):
+                yield _record(
+                    field.value, (*base, JSON_KEY_LOCATION), key_policy, context, scope
+                )
             child_location = (*base, JSON_VALUE_LOCATION)
             if encoded and value is encoded[0]:
                 child = parse_json_text(encoded[1], resources)

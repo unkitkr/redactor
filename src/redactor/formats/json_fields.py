@@ -17,8 +17,26 @@ from redactor.utils.constants import (
     JSON_DATE_KEYS,
     JSON_FIELD_ALIASES,
     JSON_IDENTIFIER_KEYS,
+    JSON_NAME_COMPONENTS,
+    JSON_PATIENT_CONTAINERS,
+    JSON_PROVIDER_CONTAINERS,
     JSON_QUANTITY_KEYS,
 )
+
+
+def known_json_key(key: str) -> bool:
+    normalized = normalized_key(key)
+    return (
+        column_policies((normalized,))[0].kind != FIELD_TEXT
+        or normalized in dict(JSON_FIELD_ALIASES)
+        or normalized in JSON_IDENTIFIER_KEYS
+        or normalized in JSON_QUANTITY_KEYS
+        or normalized in JSON_DATE_KEYS
+        or normalized in JSON_NAME_COMPONENTS
+        or normalized in JSON_PATIENT_CONTAINERS
+        or normalized in JSON_PROVIDER_CONTAINERS
+        or normalized == "name"
+    )
 
 
 def json_field_policy(

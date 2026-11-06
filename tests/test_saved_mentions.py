@@ -69,6 +69,35 @@ def test_saved_mentions_require_every_name_fragment_to_be_replaced(
                 free_text=True,
             )
 
+    for role in ("Daughter", "Brother", "Dr."):
+        original = f"{role} Alina Stone assisted. Creatinine 1.20 mg/dL."
+        start = original.index("Alina")
+        findings = (
+            TextFinding(
+                start=start,
+                end=start + len("Alina Stone"),
+                original="Alina Stone",
+                kind="person_name",
+            ),
+        )
+        edits = text_edits(findings, context, bytes(range(32)))
+        source = tmp_path / "role-source.txt"
+        saved = tmp_path / "role-saved.txt"
+        source.write_text(original)
+        saved.write_text(apply_text_edits(original, edits))
+        verify_text_changes(
+            source.read_text(),
+            saved.read_text(),
+            edits,
+            _role_prediction,
+            free_text=True,
+        )
+
+
+def _role_prediction(text: str) -> tuple[TextEntity, ...]:
+    end = text.index(" ")
+    return (TextEntity(start=0, end=end, text=text[:end], entity_type="person"),)
+
 
 def _broad_prediction(text: str) -> tuple[TextEntity, ...]:
     end = text.index(". Creatinine")

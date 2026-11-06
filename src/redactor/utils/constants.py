@@ -76,7 +76,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v12"
+PIPELINE_VERSION: Final = "pipeline-v13"
 MAPPING_KEY_ENVIRONMENT: Final = "REDACTOR_SECRET_KEY"
 MODEL_KEY_ENVIRONMENT: Final = "LLM_API_KEY"
 MODEL_URL_ENVIRONMENT: Final = "LLM_BASE_URL"
@@ -148,7 +148,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v10"
+VERIFIER_VERSION: Final = "verifier-v11"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -549,6 +549,8 @@ FIELD_LOT: Final = "lot"
 FIELD_CLINICAL: Final = "clinical"
 FIELD_TEXT: Final = "text"
 FIELD_LOCATION: Final = "location"
+FIELD_NETWORK: Final = "network"
+FIELD_WEB: Final = "web"
 XLSX_NAMESPACE: Final = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 XLSX_WORKSHEET_PREFIX: Final = "xl/worksheets/sheet"
 XLSX_SHARED_STRINGS: Final = "xl/sharedStrings.xml"
@@ -1239,6 +1241,8 @@ TABULAR_FIELD_ALIASES: Final = (
         ("contact", "phone", "phone_number", "telephone", "mobile", "fax"),
     ),
     (FIELD_EMAIL, EMAIL_NAMESPACE, ("email", "email_address")),
+    (FIELD_NETWORK, "", ("ip", "ip_address", "ipv4", "ipv6")),
+    (FIELD_WEB, "", ("url", "web_address", "website", "portal_url")),
     (FIELD_ADDRESS, ADDRESS_NAMESPACE, ("address", "street_address", "street")),
     (FIELD_ZIP, "", ("zip", "zip_code", "zipcode", "postal_code")),
     (
@@ -1576,8 +1580,6 @@ SSN_AREA_LIMIT: Final = 899
 SSN_DISALLOWED_AREA: Final = 666
 SURROGATE_WEB_TEMPLATE: Final = "https://example.invalid/{identifier}"
 
-FIELD_NETWORK: Final = "network"
-FIELD_WEB: Final = "web"
 FIELD_SSN: Final = "ssn"
 
 TEXT_DOCUMENT_HEADER_PATTERN: Final = (

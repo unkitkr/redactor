@@ -13,6 +13,7 @@ from redactor.utils.constants import (
     PRESERVED_US_GEOGRAPHY,
     VERIFIER_EDIT_JOIN_PATTERN,
     VERIFIER_MENTION_PREFIX_PATTERN,
+    VERIFIER_MENTION_ROLE,
     VERIFIER_MENTION_SUFFIX_PATTERN,
     VERIFIER_RELATIVE_TIME_PATTERN,
     VERIFIER_ROLE_LABEL_PATTERN,
@@ -100,6 +101,16 @@ def _covered_name_with_role(
     text: str, mention: TextRange, exemptions: tuple[TextRange, ...]
 ) -> bool:
     """A prediction can cross verified edits and punctuation, never unseen words."""
+    if re.fullmatch(
+        rf"(?i){VERIFIER_MENTION_ROLE}", text[mention.start : mention.end]
+    ) and any(
+        span.start >= mention.end
+        and re.fullmatch(
+            VERIFIER_MENTION_PREFIX_PATTERN, text[mention.start : span.start]
+        )
+        for span in exemptions
+    ):
+        return True
     cursor = mention.start
     prefix = re.match(VERIFIER_MENTION_PREFIX_PATTERN, text[cursor : mention.end])
     if prefix:

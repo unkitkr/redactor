@@ -34,7 +34,8 @@ def test_json_native_round_trip_replay_and_saved_surface_checks(tmp_path: Path) 
         '"attachments":[{"content_type":"application/json",'
         f'"encoding":"base64","data":"{attachment}"}}],'
         '"notes":"Patient Amina Keller attended. Glucose 120 mg/dL."}],'
-        '"record_count":1,"confirmed":true,"optional":null}'
+        '"record_count":1,"confirmed":true,"optional":null,'
+        '"last_login_ipv6":"2001:db8:1234::7"}'
     )
     (source / "same-person.csv").write_text(
         "patient,mrn,birth_date,encounter_date,attending,npi\n"
@@ -104,6 +105,7 @@ def test_json_native_round_trip_replay_and_saved_surface_checks(tmp_path: Path) 
     assert nested["dob"] == patient["birthDate"]
     assert nested["ssn"] != "326-42-7814" and nested["verified"] is True
     assert data["optional"] is None and data["confirmed"] is True
+    assert data["last_login_ipv6"] != "2001:db8:1234::7"
     assert "Glucose 120 mg/dL." in patient["notes"]
     assert not any(
         value in raw for value in ("Amina", "Keller", "Hawthorn", "Westview")
