@@ -45,6 +45,36 @@ ERROR_PIPELINE_BLOCKED: Final = "pipeline_dependencies_blocked"
 ERROR_INVENTORY_LIMIT: Final = "inventory_manifest_limit_exceeded"
 ERROR_RUN_CONTEXT: Final = "run_context_mismatch"
 ERROR_PRIVATE_RECORD: Final = "invalid_private_evidence"
+ERROR_MODEL_DISABLED: Final = "remote_model_disabled"
+ERROR_MODEL_CONFIGURATION: Final = "remote_model_not_configured"
+ERROR_MODEL_PRICING: Final = "remote_model_pricing_unavailable"
+ERROR_MODEL_BUDGET: Final = "remote_model_budget_exhausted"
+ERROR_MODEL_ATTEMPTS: Final = "remote_model_attempts_exhausted"
+ERROR_MODEL_CIRCUIT: Final = "remote_model_circuit_open"
+ERROR_MODEL_BUSY: Final = "remote_model_request_in_flight"
+ERROR_MODEL_AUTH: Final = "remote_model_authentication_failed"
+ERROR_MODEL_TRANSIENT: Final = "remote_model_temporarily_unavailable"
+ERROR_MODEL_RESPONSE: Final = "invalid_remote_model_response"
+ERROR_MODEL_INPUT: Final = "remote_model_input_limit_exceeded"
+ERROR_MODEL_REQUEST: Final = "remote_model_request_rejected"
+ERROR_MODEL_PRICE_BOUND: Final = "remote_model_price_bound_exceeded"
+ERROR_MODEL_ACCOUNTING: Final = "invalid_model_accounting_transition"
+
+MODEL_REASON_CODES: Final = (
+    ERROR_MODEL_DISABLED,
+    ERROR_MODEL_CONFIGURATION,
+    ERROR_MODEL_PRICING,
+    ERROR_MODEL_BUDGET,
+    ERROR_MODEL_ATTEMPTS,
+    ERROR_MODEL_CIRCUIT,
+    ERROR_MODEL_BUSY,
+    ERROR_MODEL_AUTH,
+    ERROR_MODEL_TRANSIENT,
+    ERROR_MODEL_RESPONSE,
+    ERROR_MODEL_INPUT,
+    ERROR_MODEL_REQUEST,
+    ERROR_MODEL_PRICE_BOUND,
+)
 
 VERIFICATION_REASON_CODES: Final = (
     ERROR_CHECK_MISSING,

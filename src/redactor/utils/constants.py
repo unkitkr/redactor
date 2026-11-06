@@ -136,3 +136,16 @@ ENCRYPTION_HEADER: Final = b"RDE1"
 ENCRYPTION_NONCE_BYTES: Final = 12
 ENCRYPTION_TAG_BYTES: Final = 16
 MAX_PRIVATE_RECORD_BYTES: Final = 4 * 1024 * 1024
+
+# Model accounting and bounded transport
+MODEL_RESERVED: Final = "reserved"
+MODEL_SETTLED: Final = "settled"
+MODEL_UNCERTAIN: Final = "uncertain"
+MODEL_REMOTE: Final = "remote"
+MODEL_LOCAL: Final = "local"
+NANOS_PER_DOLLAR: Final = 1_000_000_000
+TOKENS_PER_MILLION: Final = 1_000_000
+MODEL_RESPONSE_BYTES: Final = 64 * 1024
+MODEL_ENVELOPE_TOKENS: Final = 1024
+MODEL_REQUEST_CONTEXT: Final = b"redactor-model-request-v1:"
+MODEL_RETRY_BASE_SECONDS: Final = 0.5
