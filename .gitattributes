@@ -1,0 +1,2 @@
+# Submission artifacts must retain the exact verified bytes on every platform.
+output/** -text
