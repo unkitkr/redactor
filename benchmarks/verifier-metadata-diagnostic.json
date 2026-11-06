@@ -1,0 +1,62 @@
+{
+  "diagnostic": "verifier_metadata_false_positive",
+  "measured_source_revision": "7025ae5ea5f43b85e91005bb53987a930552435a",
+  "diagnostic_revision": "662de30be2b27e4c08d414e1f51df3c39a899fa9",
+  "local_model": "GLiNER PII Edge v1.0 UINT8",
+  "scope": "One workbook metadata failure reconstructed from frozen evidence; not a full-file cleanliness or accuracy claim.",
+  "new_remote_requests": 0,
+  "benchmark_state_modified": false,
+  "file": "billing_export.csv",
+  "detected_type": "xlsx",
+  "reconstruction": "Private rewrite reconstructed from the original input, frozen detector observations and accepted identity snapshot.",
+  "accepted_rewrite_sha256": "ff653ce4f88ed068c121a13c3949e6d3ffe5b10cb641b75298ff695e65be3583",
+  "reconstructed_rewrite_sha256": "ff653ce4f88ed068c121a13c3949e6d3ffe5b10cb641b75298ff695e65be3583",
+  "hashes_match": true,
+  "native_field": "workbook sheet-name attribute",
+  "part": "xl/workbook.xml",
+  "field_state": "Unchanged generic business title; original text omitted.",
+  "field_characters": 6,
+  "field_digits": 0,
+  "deterministic_sensitive_ranges": 0,
+  "model_entity_type": "contact",
+  "model_span": [
+    0,
+    6
+  ],
+  "verification_reason": "residual_phi_detected",
+  "other_exposed_cell_checks_passed": true,
+  "failure_path": "redactor.verification.residuals.scan_residuals rejects an unexplained model span.",
+  "fresh_synthetic_example": {
+    "text": "Census",
+    "intended_role": "Generic worksheet title",
+    "model_entity_type": "time",
+    "model_span": [
+      0,
+      6
+    ],
+    "verification_reason": "residual_phi_detected"
+  },
+  "tested_benign_controls": {
+    "texts": [
+      "Ledger",
+      "Orders",
+      "Visits",
+      "Claims",
+      "Results",
+      "Records",
+      "Notes",
+      "Staff schedule",
+      "Laboratory results",
+      "Clinical codes",
+      "Invoices"
+    ],
+    "model_entity_count_each": 0,
+    "verification": "Each unchanged text passed verify_text_changes with free_text=True and the selected local adapter."
+  },
+  "limits": [
+    "This isolates an observed false positive; passing the other exposed-cell checks does not prove that all identifiers were detected.",
+    "No publication policy or verifier logic changed during this diagnosis.",
+    "Worksheet titles can contain identifying text and must not be globally exempted.",
+    "No PHI-bearing title controls were run as part of this diagnostic."
+  ]
+}
