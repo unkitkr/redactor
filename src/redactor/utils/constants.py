@@ -534,6 +534,8 @@ AGE_YEARS_PATTERN: Final = (
 )
 TEXT_MASK_TOKEN: Final = " [REDACTED] "
 TEXT_CLINICAL_PATTERNS: Final = (
+    r"(?i)\b(?:renal|diabetic|cardiac|low[- ]sodium|low[- ]fat|clear[- ]liquid)"
+    r"\s+diet\b",
     r"\b[A-Z][0-9][0-9A-Z](?:\.[A-Z0-9]{1,4})?\b",
     r"(?i)\b(?:LOINC|CPT|HCPCS|RxNorm|NDC|ICD[- ]?10)\s*[:#]?\s*[A-Z0-9.\-]+\b",
     r"(?i)\b[a-z][\w-]*\s+[0-9]+(?:[./][0-9]+)?\s*(?:mg|mcg|µg|g|mL|units?|mmol|mEq|puffs?)\b",
