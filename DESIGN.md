@@ -17,23 +17,37 @@ substrate. The healthcare policies and verifier semantics are unchanged.
 
 ## System shape
 
-```text
-            raw bucket (S3, versioned, object-lock)
-                          |
-              inventory service (event-driven)
-                          |  one parent workflow per file (Temporal)
-        +-----------------+------------------+------------------+
-        |                 |                  |                  |
-   parse task queue   ocr task queue   model task queue   verify task queue
-   (CSV/JSON/native   (PDF pages,      (hosted detector/   (independent
-    parsers, CPU)      photos, CPU)     judge, rate-leased)  spaCy/Tesseract)
-        |                 |                  |                  |
-        +-------- writes staged batch artifacts, content-addressed ------+
-                          |                                    |
-            DynamoDB identity + resolution store       published bucket (S3
-            (global tables, per-component)             or R2) + quarantine
-                          |                            bucket (reason JSON)
-              reconcile workflow (terminal states, byte accounting)
+```mermaid
+flowchart TB
+    raw[("Raw bucket<br/>S3, versioned, object-lock")]
+    inv["Inventory service<br/>freezes version, size, content hash"]
+    wf["Temporal parent workflow<br/>one per file, or per pack of small files"]
+
+    subgraph pools["Workers polling Temporal task queues"]
+        q1["parse workers<br/>CSV, JSON, native parsers"]
+        q2["OCR workers<br/>PDF pages, photos"]
+        q3["model workers<br/>hosted detector and judge"]
+        q4["verify workers<br/>independent spaCy and Tesseract"]
+    end
+
+    ids[("DynamoDB identity store<br/>resolution and bindings")]
+    tokens["Reservation service<br/>dollar and provider-rate tokens"]
+    staged[("Staged batch artifacts<br/>content-addressed, write-once")]
+    pub[("Published bucket<br/>S3, or R2 for multi-region reads")]
+    quar[("Quarantine bucket<br/>original plus reason JSON")]
+    rec["Reconcile workflow<br/>byte accounting to terminal states"]
+
+    raw --> inv --> wf
+    wf --> q1 & q2 & q3 & q4
+    q1 & q2 --> staged
+    staged --> q4
+    q3 -.->|lease and settle| tokens
+    q1 & q2 & q4 -.-> ids
+    q4 -->|verdict| wf
+    wf -->|published| pub
+    wf -->|quarantined| quar
+    pub & quar --> rec
+    rec -->|"run complete when every entry is terminal"| inv
 ```
 
 Chosen infrastructure, with reasons:
