@@ -133,7 +133,15 @@ def replace_typed_cell(
     if policy.kind in (FIELD_PATIENT_NAME, FIELD_PROVIDER_NAME):
         if identity is None:
             raise ValueError(ERROR_IDENTITY_EVIDENCE)
-        replacement = format_person_name(value, identity.surrogate_name)
+        replacement = format_person_name(
+            value,
+            identity.surrogate_name,
+            known_original=(
+                context.provider_name
+                if policy.kind == FIELD_PROVIDER_NAME
+                else context.patient_name
+            ),
+        )
     elif policy.kind == FIELD_RELATIVE_NAME:
         replacement = format_person_name(
             value, mention_name(value, context, key, provider=False, relative=True)

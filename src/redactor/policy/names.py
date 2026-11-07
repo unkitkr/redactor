@@ -39,9 +39,15 @@ def person_name(identity_key: str, key: bytes, original_name: str = "") -> str:
     raise ValueError(ERROR_REPLACEMENT_COLLISION)
 
 
-def format_person_name(original: str, surrogate: str) -> str:
+def format_person_name(
+    original: str, surrogate: str, *, known_original: str = ""
+) -> str:
     """Preserve common display forms without guessing uncorroborated identities."""
-    given, family = surrogate.split(maxsplit=1)
+    words = surrogate.split()
+    if len(words) < 2:
+        # The caller already shape-matched a one-word mention.
+        return surrogate
+    given, family = words[0], words[-1]
     if "^" in original:
         parts = original.split("^")
         parts[0] = family
@@ -50,4 +56,17 @@ def format_person_name(original: str, surrogate: str) -> str:
         return "^".join(parts[:2] + ["" for _ in parts[2:]])
     if "," in original:
         return f"{family}, {given}"
+    if len(original.split()) == 1:
+        # A one-word mention keeps a one-word surrogate of the same part, so
+        # narrow surfaces stay width-compatible and distinct parts of one
+        # person map to distinct surrogate words. Without a matching part the
+        # given word is the deterministic fallback.
+        known = normalize_name(known_original).split() if known_original else []
+        normalized = normalize_name(original)
+        if len(known) >= 2:
+            if normalized == known[0]:
+                return given
+            if normalized == known[-1]:
+                return family
+        return given
     return surrogate

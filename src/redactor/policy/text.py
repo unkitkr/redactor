@@ -84,7 +84,9 @@ def text_edits(
                 namespace=UNLINKED_PERSON_NAMESPACE,
                 scope=context.context_key,
             )
-            replacement = person_name(identity_key, key, value)
+            surrogate = person_name(identity_key, key, value)
+            # One-word mentions keep a one-word surrogate of the same shape.
+            replacement = surrogate if len(value.split()) > 1 else surrogate.split()[0]
         elif finding.kind in (
             FIELD_PATIENT_NAME,
             FIELD_PROVIDER_NAME,

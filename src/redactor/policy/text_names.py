@@ -35,10 +35,14 @@ def mention_name(
             )
         )
     ):
-        return format_person_name(value, identity.surrogate_name)
+        return format_person_name(
+            value, identity.surrogate_name, known_original=known_name
+        )
     scope = (
         context.patient.match.identity_key if context.patient else context.context_key
     )
     namespace = IDENTITY_PROVIDER if provider else RELATIVE_NAME_NAMESPACE
     identity_key = evidence_key(key, normalized, namespace=namespace, scope=scope)
-    return person_name(identity_key, key, normalized)
+    surrogate = person_name(identity_key, key, normalized)
+    # One-word mentions keep a one-word surrogate of the same shape.
+    return surrogate if len(normalized.split()) > 1 else surrogate.split()[0]
