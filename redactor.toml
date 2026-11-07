@@ -43,12 +43,12 @@ ocr_directory = ".models/ppocr-v5"
 [verification]
 judge_enabled = true
 # Judge selection is independent of the detection model. Blank disables remote judging.
-# Detection scores do not validate a judge; no judge was benchmarked.
-judge_model = ""
-judge_vision = false
+# The judge uses the same hosted model and rates as remote detection.
+judge_model = "z-ai/glm-5.3-flash"
+judge_vision = true
 # Judge prices are separate because its model may have different rates.
-# input_usd_per_million = "0.00"
-# output_usd_per_million = "0.00"
+input_usd_per_million = "0.15"
+output_usd_per_million = "0.50"
 
 [resources]
 max_record_bytes = 1048576
