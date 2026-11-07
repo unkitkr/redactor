@@ -17,7 +17,8 @@ uv run --env-file .env.local redactor --input input --state tmp/local/.redactor 
 ```
 
 Keep the generated secret and state to resume with the same command. Model weights
-are downloaded separately from Python dependencies. [Docker and configuration](docs/usage.md).
+are downloaded separately from Python dependencies; `Dockerfile` builds a container
+image with the same dependencies.
 
 For hosted mode, create `.env.hosted` with the same `REDACTOR_SECRET_KEY`,
 `LLM_ENABLED=1` and your OpenRouter `LLM_API_KEY`:
@@ -80,5 +81,5 @@ holds precision 86.11% and recall 79.49% with zero clinical overlaps and zero
 verifier false accepts or rejects; today's detection fixes target native-format
 failures that corpus does not measure, and show up as published-file outcomes.
 
-[Design](DESIGN.md) · [Decisions and limitations](notes.md) ·
-[Requirement coverage](docs/requirements.md) · [Accuracy](benchmarks/accuracy-v28.json)
+[Design](DESIGN.md) · [Decisions, limitations and requirement status](notes.md) ·
+[Accuracy](benchmarks/accuracy-v30.json)

@@ -30,6 +30,18 @@
 - Labelled 40-case corpus: precision 86.11%, recall 79.49%, zero labelled clinical overlaps, zero verifier false accepts or false rejects ([evidence](benchmarks/accuracy-v30.json)).
 - Two seeded SIGKILL recoveries reproduced identical verdicts, counts and surrogate values; every published file matched the clean run byte for byte except the FHIR bundle, whose embedded PDF is written with run-varying internal serialization (extracted text equal), so that file's digest differs between runs ([evidence](benchmarks/crash-replay-v30.json)).
 
+## Requirements
+
+- A1 detect: native inspection, typed fields, contextual patterns, NER, OCR, barcode and face adapters; whole-document recall is not proven.
+- A2 pseudonymise: keyed same-value surrogates, corroborated identity matching, separate provider namespace; cross-issuer linkage and collision audits are missing.
+- A3 write output: same-format writers and independent readers for CSV, text, XLSX, JSON, HL7, FHIR, DOCX, PDF, images and DICOM; eight supplied files publish.
+- A4 verify: saved bytes, structure, clinical preservation and independent spaCy and Tesseract, plus hosted text and vision judging that only adds failures; judge false positives are observed only in hosted runs.
+- A5 operate: fenced attempts, checkpoints, atomic publication, encrypted replay and shared budgets; crash coverage is two demonstrated kill points and vision detection is not integrated.
+- A6 account: per-file status, reasons, detected/applied/confirmed counts, timing, tokens, cost and judge degradation, with PHI-free logs.
+- A7 limits: the 100,000-row file completes inside the container limits; the full 2 GiB gate is not met (see Measurements).
+- Healthcare rules: consistent per-patient date offsets, 90+ ages, ZIP rules, provider separation, relatives and preserved clinical codes, values and scales.
+- Part B: all ten scale questions are answered with the measured A7 numbers; fleet operation and rate limits remain projections.
+
 ## Known limitations
 
 - The A7 30-minute limit on the full 2 GiB file is not met: analysis at full scale runs at about 1,040 rows/s where roughly 6,200 is needed. The causes are per-row encrypted identity state (about 19 GB for 11.2M rows) and single-task analysis that leaves the second CPU mostly idle; fixing either means redesigning the bulk path, which was cut for time.
