@@ -16,13 +16,20 @@ upper-bound extensions. Clinical values remain unchanged. Saved images must matc
 source pixels plus recorded masks; PNG/TIFF preserve other pixels exactly, while
 JPEG uses a defined codec round trip.
 
-The [complete 100,000-row run](benchmarks/bulk-100k-v29.json) published 19.18 MB
-in 286.56 seconds under two CPUs and 1,000,000,000 bytes of RAM, with no swap or
-external calls. Independent verification took 178.70 seconds; peak memory was
-970.94 MB. An auxiliary artifact observer was included in these unadjusted totals.
-This subset does not establish large-file throughput. **A7 remains failed:** the
-[full 2 GiB v18 run](benchmarks/large-csv-2g-v18.json) timed out at 1,800.25 seconds,
-having analyzed 1.82 million of 11.2 million rows and published none.
+The [complete 100,000-row v30 run](benchmarks/bulk-100k-v30.json) published 19.18 MB
+in 120.29 seconds under two CPUs and 1,000,000,000 bytes of RAM, with no swap or
+external calls: 831 rows/s end to end, peak memory at the container ceiling and
+zero out-of-memory kills. This is 2.4x the previous committed measurement.
+**A7's 30-minute gate is still not met at full size:** the
+[timed 2 GiB v30 attempt](benchmarks/large-csv-2g-v30.json) analyzed 1.87 million
+of 11.2 million rows in 1,800 seconds, and completing the file is projected at
+roughly four hours and about 19 GB of state at the measured rate, so the
+full-coverage run was stopped and this projection is recorded instead of a
+completed measurement. Peak memory stayed
+inside the limit with zero OOM kills in every run. The measured full-scale rate
+is about 1,040 analyzed rows/s where roughly 6,200 is needed; the causes are
+per-row encrypted identity state (about 19 GB for 11.2M rows) and single-task
+analysis that leaves the second CPU mostly idle.
 
 The [v28 text accuracy record](benchmarks/accuracy-v28.json) binds measurements to
 source, corpus and model hashes. Its 40 reused development cases are not new

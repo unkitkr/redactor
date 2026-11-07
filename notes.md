@@ -1,38 +1,40 @@
 ## Architecture
 
-- Native extraction, redaction, saving and independent verification precede publication; every input publishes or quarantines with a reason.
-- SQLite WAL, record-boundary checkpoints, encrypted evidence, atomic artifacts and an inherited run lock protect recovery.
-- Replay freezes inputs, code, configuration, models and key; native Linux storage avoids observed macOS bind-mount database corruption.
-- Native labels and bounded document context support detection; bounded verification batches retain exact text, saved-byte checks and row coverage.
-- CSV verification checks raw source and saved bytes; statistical NER runs on source views only, normalizing just confirmed scalar digits while every word, punctuation and offset stays intact, and saved outputs are bound by exact recomputed edits plus deterministic output scans, with native formats still scanning saved text fully. Cached observations never replace per-row coverage checks.
-- A separate [direct-function experiment](simple_pipeline/) removes execution infrastructure while retaining native processing and verification; it deliberately has no recovery or bulk guarantees.
+- One command reads input/, decides what each file really is from its content, removes identifiers, writes the same format back, checks the saved bytes independently, then publishes or quarantines with a machine-readable reason.
+- An SQLite ledger, record-boundary checkpoints, encrypted evidence and atomic writes make runs resumable; a killed run resumes without double work or half-written files.
+- Local mode is the default and makes no network calls. Hosted mode adds a remote detector and a remote judge that reviews saved-output evidence; both share one $3 budget, with retries, replay and local fallback.
+- Verification never trusts the detector: saved files are reopened, structure is rechecked, edits are recomputed, and a separate model scans the text again. A judge can only add failures; it can never clear a failed check.
+- A separate [direct-function experiment](simple_pipeline/) runs the same readers and checks without the durable machinery; it is a diagnostic, with no recovery or bulk guarantees.
 
 ## Stack
 
-- GLiNER Edge UINT8 and PP-OCRv5 detect; independent spaCy and Tesseract verify, with ZXing-C++ and YuNet for barcodes and faces.
-- Optional GLM 5.3 Flash uses encrypted replay, retries, local fallback and a shared $3 budget; local mode makes zero calls.
-- Python, Pydantic, TOML and AES-GCM provide contracts and protected state; native parsers include PyMuPDF (AGPL), pydicom, lxml and openpyxl.
+- GLiNER PII Edge UINT8 and PP-OCRv5 detect; spaCy and Tesseract verify independently; ZXing-C++ reads barcodes and YuNet finds faces.
+- Optional GLM 5.3 Flash (text detection, plus text and vision judging) with encrypted replay and cost accounting; Python, Pydantic, TOML and AES-GCM; PyMuPDF, pydicom, lxml and openpyxl parse native formats.
 
 ## Choices
 
-- Content determines format, including mislabeled files; only assessed native structures publish.
-- Corroborated identifiers link patients; names alone cannot merge identities. Providers retain a separate namespace; unlinked people retain contextual identities.
-- Patient dates share an offset; unattributable dates use stable context. Exactly 90 and older become 90+; FHIR extensions and DICOM annotations express bounded birth dates.
-- ZIPs retain permitted prefixes or 000. Smaller geography, lots and device identifiers are pseudonymized; clinical codes, values, units, medications and diseases remain unchanged.
-- Pixel PHI is masked; PNG/TIFF preserve other pixels exactly, JPEG retains codec loss. DOCX drops unused previews; hidden surfaces still require verification.
+- File content decides the format, not the file name or extension.
+- Two mentions are the same person only when evidence corroborates it; a shared name alone never merges two people. Providers keep their own namespace and never receive patient pseudonyms.
+- Each patient's dates shift by one constant offset, so intervals survive across files and notations. A date that cannot be tied to a patient keeps a stable per-context offset.
+- Ages of 90 and above become 90+. ZIP codes keep three digits, or 000 for restricted prefixes. Smaller places, device identifiers and lot numbers get stable pseudonyms.
+- Clinical codes, lab values, units, medications and disease names are never touched. Standard clinical scales (Hoehn and Yahr, NYHA and similar) and software attribution strings count as clinical content, not identifiers.
+- A bare run of six or more digits beside a person's name is treated as that person's identifier; a genuine quantity in that position would be pseudonymized too, which is accepted to close a real leak.
+- DICOM private creator tags are pseudonymized as vendor identifiers.
+- Pixel PHI is masked, not redrawn; PNG and TIFF keep other pixels exactly, JPEG keeps its normal compression loss.
 
 ## Measurements
 
-- Two CPUs / 1 GB / no swap: [local](benchmarks/held-in-local-v28.json) published 6/12 in 21.32 s at 801.74 MiB; [hosted](benchmarks/held-in-hosted-v28.json) 5/12 in 408.58 s at 802.29 MiB, 121 attempts and $0.0215 receipts ($0.0293 bound).
-- [100,000 complete CSV rows](benchmarks/bulk-100k-v29.json): 286.56 s, 970.94 MB peak, zero remote calls; verification took 178.70 s. The [full 2 GiB attempt failed](benchmarks/large-csv-2g-v18.json) its 30-minute gate.
-- [Identity-resolution and keyed-index components](benchmarks/identity-100k-optimization.json) measured on a 100,000-row analysis copy confirmed baseline output parity, with batched anchor probes and compact payloads; the final compatibility run was slower than the isolated component comparisons, so no complete-file throughput is claimed.
-- Pipeline v29 designates the committed [100,000-row bulk measurement](benchmarks/bulk-100k-v29.json); v30 designates this identity optimization.
-- [40 development cases](benchmarks/accuracy-v28.json): precision 86.11%, recall 79.49%, F1 82.67%; no labelled clinical overlap or false verdicts among 35 verifier checks.
+- Two CPUs / 1 GB / no swap: local mode published 8 of 12 supplied files in 36.74 s ([evidence](benchmarks/held-in-local-v30.json)); hosted mode with judging published 6 of 12 in 388.19 s with 133 receipts and $0.0207 recorded ([evidence](benchmarks/held-in-hosted-v30.json)). Hosted publication varies run to run (three runs published 5, 3 and 6 of 12) because the endpoint serves the model from many providers with differing responses; every run stays fail-closed.
+- 100,000-row CSV, same limits, model disabled: 120.29 s, every row published, 831 rows/s, peak memory at the 1 GB ceiling, no out-of-memory kills ([evidence](benchmarks/bulk-100k-v30.json)).
+- Full 2 GiB CSV, 11.2M rows: the 30-minute gate was not met. The timed attempt reached 1.87M analyzed rows in 1800 s ([evidence](benchmarks/large-csv-2g-v30.json)); at the measured at-scale rate of about 1,040 analyzed rows/s, completing the file is projected at roughly four hours and about 19 GB of state, so the full-coverage run was stopped and this projection is recorded instead of a completed measurement. Peak memory stayed inside 1 GB with zero out-of-memory kills in every run.
+- Labelled 40-case corpus: precision 86.11%, recall 79.49%, zero labelled clinical overlaps, zero verifier false accepts or false rejects ([evidence](benchmarks/accuracy-v30.json)).
+- Two seeded SIGKILL recoveries reproduced identical verdicts, counts and surrogate values; every published file matched the clean run byte for byte except the FHIR bundle, whose embedded PDF is written with run-varying internal serialization (extracted text equal), so that file's digest differs between runs ([evidence](benchmarks/crash-replay-v30.json)).
 
 ## Known limitations
 
-- Five valid supplied files quarantine locally. Statistical misses and false positives remain; the reused text corpus does not establish full-document recall.
-- Hosted fallback covers request/schema/span failures; semantic ambiguity still quarantines. Hosted judging and vision, cross-issuer linkage and collision auditing remain incomplete.
-- Native limits are 32 MiB files, 256 MiB expanded archives and 16 million image pixels; unsupported structures quarantine. Age bounds require downstream interpretation; clinical syntax checks do not validate complete terminology dictionaries.
-- [Two SIGKILL recoveries](benchmarks/crash-replay-v28.json) reproduced all artifact bytes; this is not exhaustive crash coverage. Atomic publication needs one filesystem; lost remote responses can incur repeat charges.
-- [Requirement coverage](docs/requirements.md) separates demonstrated results from omissions. Bulk throughput remains below the required gate.
+- The A7 30-minute limit on the full 2 GiB file is not met: analysis at full scale runs at about 1,040 rows/s where roughly 6,200 is needed. The causes are per-row encrypted identity state (about 19 GB for 11.2M rows) and single-task analysis that leaves the second CPU mostly idle; fixing either means redesigning the bulk path, which was cut for time.
+- Four supplied files still quarantine, each with a verified cause: the corrupt ZIP container (correct); referral_packet.pdf, whose all-caps comma-form patient cell (written LAST, FIRST) is not recognized by known-name matching, so that cell is left unreplaced and verification refuses to publish; progress_note.txt, where the verifier's word model tags an ordinary clinical verb as a person in the rewritten text (a false positive that varies with the word-model build); and wristband_photo.jpg, where an OCR role mention (Dr. NAME ADM) needs a wider exemption than word-level spans and the word model tags the all-caps drug name PENICILLIN as an organization.
+- Whole-document recall is not proven; the labelled corpus is small and synthetic.
+- Native limits: 32 MiB files, 256 MiB expanded archives and 16 million image pixels; anything unsupported or oversized quarantines.
+- Crash coverage is demonstrated kill points, not every possible interruption. Hosted vision detection is not integrated (judging has vision, detection does not). Cross-issuer linkage and surrogate collision audits are not implemented.
+- [Requirement coverage](docs/requirements.md) separates demonstrated results from omissions.
