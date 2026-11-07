@@ -49,4 +49,3 @@
 - Whole-document recall is not proven; the labelled corpus is small and synthetic.
 - Native limits: 32 MiB files, 256 MiB expanded archives and 16 million image pixels; anything unsupported or oversized quarantines.
 - Crash coverage is demonstrated kill points, not every possible interruption. Hosted vision detection is not integrated (judging has vision, detection does not). Cross-issuer linkage and surrogate collision audits are not implemented.
-- [Requirement coverage](docs/requirements.md) separates demonstrated results from omissions.
