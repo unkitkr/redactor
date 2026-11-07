@@ -6,7 +6,7 @@ from redactor.policy.normalization import normalize_name
 def compatible_name_spelling(
     left: str, right: str, *, allow_surname: bool = False
 ) -> bool:
-    first, second = normalize_name(left).split(), normalize_name(right).split()
+    first, second = _name_words(left), _name_words(right)
     if first == second:
         return bool(first)
     if not first or not second or first[-1] != second[-1]:
@@ -20,6 +20,17 @@ def compatible_name_spelling(
     return all(
         _same_or_initial(a, b) for a, b in zip(first[1:-1], second[1:-1], strict=False)
     )
+
+
+def _name_words(value: str) -> list[str]:
+    """A comma separates family from given names; compare in one order."""
+    if "," in value:
+        family, _, given = value.partition(",")
+        return [
+            *normalize_name(given.replace(",", " ")).split(),
+            *normalize_name(family).split(),
+        ]
+    return normalize_name(value).split()
 
 
 def _same_or_initial(left: str, right: str) -> bool:
