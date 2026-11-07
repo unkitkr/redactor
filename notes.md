@@ -4,6 +4,7 @@
 - SQLite WAL, record-boundary checkpoints, encrypted evidence, atomic artifacts and an inherited run lock protect recovery.
 - Replay freezes inputs, code, configuration, models and key; native Linux storage avoids observed macOS bind-mount database corruption.
 - Native labels and bounded document context support detection; bounded verification batches retain exact text, saved-byte checks and row coverage.
+- A separate [direct-function experiment](simple_pipeline/) removes execution infrastructure while retaining native processing and verification; it deliberately has no recovery or bulk guarantees.
 
 ## Stack
 

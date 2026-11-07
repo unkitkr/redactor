@@ -30,6 +30,16 @@ OUTCOME_QUARANTINED: Final = "quarantined"
 QUARANTINE_DIRECTORY: Final = "quarantine"
 FILE_LOCATION_FIELDS: Final = ("temporary_directory", "output_path")
 
+# Standalone, in-memory comparison experiment
+SIMPLE_OUTPUT_DIRECTORY: Final = "tmp/simple-output"
+SIMPLE_MAX_FILES: Final = 100
+SIMPLE_MAX_RECORDS: Final = 10_000
+SIMPLE_MAX_INPUT_BYTES: Final = 32 * 1024 * 1024
+SIMPLE_STAGE_EXTRACT: Final = "extract"
+SIMPLE_STAGE_REDACT: Final = "redact"
+SIMPLE_STAGE_SAVE: Final = "save"
+SIMPLE_STAGE_RESOLVE: Final = "resolve"
+
 # Coordinator ownership and placeholder work
 RUN_LOCK_FILENAME: Final = "coordinator.lock"
 PRINT_TASK_STEP: Final = "print_task"
