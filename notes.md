@@ -4,6 +4,7 @@
 - SQLite WAL, record-boundary checkpoints, encrypted evidence, atomic artifacts and an inherited run lock protect recovery.
 - Replay freezes inputs, code, configuration, models and key; native Linux storage avoids observed macOS bind-mount database corruption.
 - Native labels and bounded document context support detection; bounded verification batches retain exact text, saved-byte checks and row coverage.
+- CSV verification checks raw source and saved bytes; statistical NER runs on source views only, normalizing just confirmed scalar digits while every word, punctuation and offset stays intact, and saved outputs are bound by exact recomputed edits plus deterministic output scans, with native formats still scanning saved text fully. Cached observations never replace per-row coverage checks.
 - A separate [direct-function experiment](simple_pipeline/) removes execution infrastructure while retaining native processing and verification; it deliberately has no recovery or bulk guarantees.
 
 ## Stack
@@ -24,6 +25,8 @@
 
 - Two CPUs / 1 GB / no swap: [local](benchmarks/held-in-local-v28.json) published 6/12 in 21.32 s at 801.74 MiB; [hosted](benchmarks/held-in-hosted-v28.json) 5/12 in 408.58 s at 802.29 MiB, 121 attempts and $0.0215 receipts ($0.0293 bound).
 - [100,000 complete CSV rows](benchmarks/bulk-100k-v29.json): 286.56 s, 970.94 MB peak, zero remote calls; verification took 178.70 s. The [full 2 GiB attempt failed](benchmarks/large-csv-2g-v18.json) its 30-minute gate.
+- [Identity-resolution and keyed-index components](benchmarks/identity-100k-optimization.json) measured on a 100,000-row analysis copy confirmed baseline output parity, with batched anchor probes and compact payloads; the final compatibility run was slower than the isolated component comparisons, so no complete-file throughput is claimed.
+- Pipeline v29 designates the committed [100,000-row bulk measurement](benchmarks/bulk-100k-v29.json); v30 designates this identity optimization.
 - [40 development cases](benchmarks/accuracy-v28.json): precision 86.11%, recall 79.49%, F1 82.67%; no labelled clinical overlap or false verdicts among 35 verifier checks.
 
 ## Known limitations

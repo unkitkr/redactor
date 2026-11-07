@@ -1,0 +1,76 @@
+{
+  "benchmark": "Identity resolution and keyed-index preparation",
+  "date": "2026-11-07",
+  "baseline_commit": "61335249f8fc1a91262bc667b085fe93afbbeb7b",
+  "scope": "Component measurements on copies of an existing 100000-row analysis database, not an A7 acceptance run",
+  "container": {
+    "image_id": "sha256:664a64340f21fd8a30b536802ef788dde4d25893ba92754c63c95343570e6c51",
+    "cpus": 2,
+    "memory_bytes": 1000000000,
+    "additional_swap_bytes": 0,
+    "storage": "Native Linux container storage",
+    "code": "Existing image with temporary source overlay for each comparison"
+  },
+  "input": {
+    "source_csv_bytes": 19179827,
+    "source_csv_rows": 100000,
+    "note": "Generated source CSV behind the copied 100000-row analysis database"
+  },
+  "peak_memory": {
+    "captured": false,
+    "container_limit_bytes": 1000000000,
+    "note": "The component harness did not record peak memory; completed runs stayed within the container limit, so no peak value is claimed"
+  },
+  "resolution": {
+    "source_count": 1,
+    "observation_count": 100400,
+    "identity_count": 100400,
+    "method": "Copy SQLite state, clear only copied resolution bindings/cohorts/progress, resolve all accepted observations and build the complete canonical snapshot",
+    "first_pair_seconds": {
+      "baseline_resolve": 8.392752212006599,
+      "optimized_resolve": 8.940017462009564
+    },
+    "repeat_pair_seconds": {
+      "baseline_resolve": 8.103540170006454,
+      "optimized_resolve": 5.644170502084307,
+      "baseline_snapshot": 1.1651137090520933,
+      "optimized_snapshot": 1.1309300009161234
+    },
+    "profiled_seconds": {
+      "baseline_resolve": 12.747,
+      "optimized_resolve": 8.224
+    },
+    "canonical_snapshot_equal": true,
+    "change": "Batch indexed tests for uncontested anchors and batch cohort reads; conflicting, ambiguous and weak evidence retains full matching",
+    "limitations": "Sequential component comparisons show storage/cache variability; these timings do not establish complete-file throughput, and the harness captured no peak-memory readings"
+  },
+  "keyed_index_preparation": {
+    "patient_and_provider_pairs": 100400,
+    "cycling_provider_evidences": 400,
+    "uncached_seconds": 5.532047585002147,
+    "cached_seconds": 4.312559460988268,
+    "complete_observation_digest_equal": true,
+    "method": "Stream decoded observations from the copied analysis family, prepare each with a cycling provider, hash complete serialized results; timing includes database reads and decryption",
+    "cache_bound": {
+      "component_entries": 65536,
+      "provider_observation_entries": 512,
+      "other_observation_entries": 512,
+      "maximum_component_characters": 256
+    },
+    "limitations": "A preparation-only comparison, not a complete pipeline result; mostly unique observations without repeating providers showed no speedup"
+  },
+  "compact_payloads": {
+    "method": "Exclude schema-default values only inside encrypted payloads; retain full canonical serialization for identity digests and checkpoints",
+    "sample_observation_bytes_before": 645,
+    "sample_observation_bytes_after": 606,
+    "sample_cohort_bytes_before": 266,
+    "sample_cohort_bytes_after": 239,
+    "decoded_schema_equality": true,
+    "full_snapshot_parity_with_old_payloads": true,
+    "parity_run_seconds": {
+      "resolve": 20.771376301068813,
+      "snapshot": 3.4959993769880384
+    },
+    "limitations": "The final compatibility run was slower than the earlier component comparisons; complete pipeline performance must be measured afresh rather than inferred from isolated improvements"
+  }
+}
