@@ -16,7 +16,7 @@ import pymupdf
 from defusedxml.ElementTree import fromstring
 from PIL import Image
 
-from redactor.formats.tabular_fields import column_policies
+from redactor.formats.tabular_fields import column_policies, validate_clinical_field
 from redactor.formats.text import replace_text_fields, text_record
 from redactor.identity.tabular import row_evidence
 from redactor.schemas.configuration import ResourceSettings
@@ -28,6 +28,8 @@ from redactor.schemas.native import (
 )
 from redactor.schemas.redaction import ColumnPolicy, RowEvidence, TextRange
 from redactor.utils.constants import (
+    APPLICATION_NAMESPACE,
+    FIELD_CLINICAL,
     FIELD_IDENTIFIER,
     FIELD_PATIENT_ID,
     FIELD_PATIENT_NAME,
@@ -171,21 +173,32 @@ def pdf_images(document: pymupdf.Document) -> list[tuple[int, int]]:
     return images
 
 
-def _metadata_record(document: pymupdf.Document) -> NativeRecord:
-    return NativeRecord(
-        values=tuple(
-            (document.metadata or {}).get(key, "") or "" for key in PDF_METADATA_FIELDS
-        ),
-        policies=tuple(
-            ColumnPolicy(
-                index=index,
-                kind=FIELD_IDENTIFIER
-                if key in ("creationDate", "modDate")
-                else FIELD_TEXT,
-                namespace=PDF_METADATA_PART
-                if key in ("creationDate", "modDate")
-                else "",
+def _metadata_policy(index: int, key: str, value: str) -> ColumnPolicy:
+    """Software attribution is exempt clinical tooling; facilities stay free text."""
+    if key in ("creationDate", "modDate"):
+        return ColumnPolicy(
+            index=index, kind=FIELD_IDENTIFIER, namespace=PDF_METADATA_PART
+        )
+    if key in ("creator", "producer") and value:
+        try:
+            validate_clinical_field(value, APPLICATION_NAMESPACE)
+        except ValueError:
+            pass  # Unknown attributions retain complete contextual assessment.
+        else:
+            return ColumnPolicy(
+                index=index, kind=FIELD_CLINICAL, namespace=APPLICATION_NAMESPACE
             )
+    return ColumnPolicy(index=index, kind=FIELD_TEXT)
+
+
+def _metadata_record(document: pymupdf.Document) -> NativeRecord:
+    values = {
+        key: (document.metadata or {}).get(key, "") or "" for key in PDF_METADATA_FIELDS
+    }
+    return NativeRecord(
+        values=tuple(values[key] for key in PDF_METADATA_FIELDS),
+        policies=tuple(
+            _metadata_policy(index, key, values[key])
             for index, key in enumerate(PDF_METADATA_FIELDS)
         ),
         locations=tuple((PDF_METADATA_PART, key) for key in PDF_METADATA_FIELDS),

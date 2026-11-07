@@ -30,6 +30,8 @@ from redactor.utils.constants import (
     DICOM_IDENTITY_FIELDS,
     DICOM_PIXEL_LOCATION,
     DICOM_PIXEL_TAG,
+    DICOM_PRIVATE_CREATOR_ELEMENT,
+    DICOM_PRIVATE_CREATOR_NAMESPACE,
     DICOM_RESERVED_ATTRIBUTES,
     DICOM_SCHEMA_UID_FIELDS,
     DICOM_STRING_LIMITS,
@@ -72,6 +74,9 @@ def dicom_record(
         name: (kind, namespace) for name, kind, namespace in DICOM_IDENTITY_FIELDS
     }
     kind, namespace = fields.get(element.keyword, (FIELD_TEXT, ""))
+    if element.tag.is_private and element.tag.element == DICOM_PRIVATE_CREATOR_ELEMENT:
+        # A private creator names the vendor software that owns the group.
+        kind, namespace = FIELD_IDENTIFIER, DICOM_PRIVATE_CREATOR_NAMESPACE
     prefix = ""
     if element.VR == "UI":
         kind, namespace, prefix = (

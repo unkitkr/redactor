@@ -721,6 +721,8 @@ DOCX_TECHNICAL_ATTRIBUTES: Final = (
 )
 DICOM_UID_NAMESPACE: Final = "dicom_uid"
 DICOM_UID_PREFIX: Final = "2.25."
+DICOM_PRIVATE_CREATOR_ELEMENT: Final = 0x0010
+DICOM_PRIVATE_CREATOR_NAMESPACE: Final = "dicom_private_creator"
 DICOM_IDENTITY_FIELDS: Final = (
     ("ImplementationVersionName", "identifier", "dicom_implementation"),
     ("InstitutionName", "organization", "organization"),
@@ -788,6 +790,7 @@ FIELD_CLINICAL: Final = "clinical"
 FIELD_TEXT: Final = "text"
 FIELD_ORGANIZATION: Final = "organization"
 LAB_DESCRIPTION_NAMESPACE: Final = "laboratory-description"
+APPLICATION_NAMESPACE: Final = "application"
 FIELD_LOCATION: Final = "location"
 FIELD_NETWORK: Final = "network"
 FIELD_WEB: Final = "web"
@@ -1539,7 +1542,8 @@ CLINICAL_FIELD_PATTERNS: Final = (
         "application",
         (
             r"(?:Microsoft (?:Excel|(?:Macintosh )?Word)|"
-            r"Microsoft Excel Compatible / Openpyxl [0-9.]+)"
+            r"Microsoft Excel Compatible / Openpyxl [0-9.]+|"
+            r"ReportLab PDF Library(?:[ \t]+-[ \t]+[a-z0-9.:/()-]+)?)"
         ),
     ),
     ("version", r"v?[0-9]+(?:\.[0-9]+)*"),
@@ -1670,9 +1674,29 @@ VERHOEFF_PERMUTATIONS: Final = (
     (2, 7, 9, 3, 8, 0, 6, 4, 1, 5),
     (7, 0, 4, 6, 9, 1, 3, 2, 5, 8),
 )
+# Scale names include author surnames; the qualifier and numeral gate the match.
+CLINICAL_SCALE_NAMES: Final = (
+    "APGAR",
+    "ASA",
+    "CHA2DS2-VASc",
+    "CURB-65",
+    "Child-Pugh",
+    "ECOG",
+    "Fitzpatrick",
+    "Glasgow",
+    "Hoehn and Yahr",
+    "Karnofsky",
+    "MELD",
+    "NYHA",
+)
+TEXT_CLINICAL_SCALE_PATTERN: Final = (
+    r"(?i)\b(?:" + "|".join(CLINICAL_SCALE_NAMES) + r")"
+    r"[ \t]+(?:stage|grade|class|type|scale|score)\b[ \t]*[:=]?[ \t]*[0-9]+"
+)
 TEXT_CLINICAL_PATTERNS: Final = (
     r"(?i)\bGlasgow[ \t]+Coma[ \t]+Scale\b(?:[ \t]*(?:score[ \t]*)?[:=]?[ \t]*"
     r"(?:[3-9]|1[0-5])(?:[ \t]*/[ \t]*15)?(?![\w./]))?",
+    TEXT_CLINICAL_SCALE_PATTERN,
     r"(?i)\b(?:spoke|discussed|reviewed)\s+w/",
     r"(?im)^(?:progress note|discharge summary|referral (?:letter|packet)|"
     r"clinical note|history of present illness|assessment and plan)\s*$",
