@@ -1,14 +1,14 @@
 {
-  "run_id": "3c4f81e1eddd25255f3b06e379f06b9b38adb66919adb4d037223dd5a11e0cac",
+  "run_id": "e10d9100a6d4e513653a1ebf6025a62eb2e49085b07ccc2d442e515088560569",
   "complete": true,
   "inventoried": 12,
-  "published": 6,
-  "quarantined": 6,
+  "published": 8,
+  "quarantined": 4,
   "files": [
     {
       "file_id": "c242ea71d6cc8c2f22378798863b8939b1a80bd022fee7e6c5dbaa902006f392",
       "input_sha256": "b55e503684f01532eb11c84c82394b11af6b81424893e335c68efb5fbfb7b53a",
-      "output_sha256": "027dc7c6f0ab4826f460accc07807cc9bca43e14f51a3bcaa7089a7f0d894624",
+      "output_sha256": "6f1c2e1bfe7282f79b5e48880d83cfe3a770823f41e529296be97ff77e1a6693",
       "actual_type": "hl7",
       "status": "published",
       "reason": null,
@@ -67,15 +67,16 @@
         "provider_id": 2,
         "provider_name": 2
       },
-      "duration_seconds": 1.789,
+      "duration_seconds": 3.661,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     },
     {
       "file_id": "fc36469d6d9b0e1069c23cff6d77d461e9ebd4db14dbb03ffc6dbb8a69be5ab9",
       "input_sha256": "ef3ecec38c50654f5a4bc899a34935c1f38e22c152a92aebb5c20b0607968251",
-      "output_sha256": "e257cc34d9eb17bce06972e528995c60d6137faca665f05f21916527d18c2bc2",
+      "output_sha256": "5087830d9bacf70a90fb68aafedd35b5885d840831c350e347a31e978c5d5837",
       "actual_type": "xlsx",
       "status": "published",
       "reason": null,
@@ -98,10 +99,11 @@
         "identifier": 6,
         "patient_name": 3
       },
-      "duration_seconds": 0.066,
+      "duration_seconds": 1.841,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     },
     {
       "file_id": "8cffa8467d58827499854b15f15d0724f10807cf5e75602a6289d29448d27d27",
@@ -162,10 +164,11 @@
         "web": 1,
         "phone": 1
       },
-      "duration_seconds": 0.395,
+      "duration_seconds": 1.579,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     },
     {
       "file_id": "fa57a8776e544bb0e29aa0bd4b7a6b1b4f89b0739bd4681afe1ea1601d8f4f08",
@@ -178,15 +181,16 @@
       "detected": {},
       "applied": {},
       "confirmed": {},
-      "duration_seconds": 0.016,
+      "duration_seconds": 0.02,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     },
     {
       "file_id": "db596168ac928b2698d35bca37a4989385c4d64420fadd138b5b31a5a4e071f3",
       "input_sha256": "bb4139d7302d6666e518601dacf27287dbc35601a76f73625cd937d6dba5e400",
-      "output_sha256": "4ab987b96a58b767d339dcd86b34c9eb41109b898759282d3b745878d81b4955",
+      "output_sha256": "b853affe70a6fb647694fc318cabb5bc8e0c83b373aafb7c58aa2cbe1053bf62",
       "actual_type": "docx",
       "status": "published",
       "reason": null,
@@ -248,15 +252,16 @@
         "patient_id": 1,
         "birth_date": 1
       },
-      "duration_seconds": 5.241,
+      "duration_seconds": 5.777,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     },
     {
       "file_id": "e4521d3a0908a554246ed84d737dcdef019f773d8acbdf8e7d856d113b10109c",
       "input_sha256": "ddd0d900033bf8b64c7973491d49758588a03187ad726fc59a211499c0a90c09",
-      "output_sha256": "6de7440a4ff91275a5c54a4094eebfa7d783c9be49e26ee84ab55ba9cdeb1b14",
+      "output_sha256": "cef9074541e07e1ec7a7a7dbf776b862dea1a303a00d927dbae133e3d76d121d",
       "actual_type": "csv",
       "status": "published",
       "reason": null,
@@ -306,18 +311,19 @@
         "address": 1,
         "location": 1
       },
-      "duration_seconds": 0.283,
+      "duration_seconds": 0.251,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     },
     {
       "file_id": "8d4ce704ee2f91d95b54ce09b89d49389b609772de6b341f43efbd54e61ae59b",
       "input_sha256": "ff34e7fa3aded1eeb3961d31aaf335cfb5e730f35fd050def24e7e3a17450ba9",
-      "output_sha256": "ff34e7fa3aded1eeb3961d31aaf335cfb5e730f35fd050def24e7e3a17450ba9",
+      "output_sha256": "af1e95964286ff14f363ffe75fbde51ddb2b3dab31f4cbd63d386213640ff299",
       "actual_type": "fhir",
-      "status": "quarantined",
-      "reason": "residual_phi_detected",
+      "status": "published",
+      "reason": null,
       "records": 93,
       "detected": {
         "identifier": 32,
@@ -355,23 +361,41 @@
         "organization": 1,
         "person_name": 1
       },
-      "confirmed": {},
-      "duration_seconds": 0.588,
+      "confirmed": {
+        "identifier": 32,
+        "date": 11,
+        "patient_name": 6,
+        "relative_name": 1,
+        "patient_id": 2,
+        "ssn": 1,
+        "phone": 2,
+        "email": 1,
+        "birth_date": 2,
+        "address": 1,
+        "location": 1,
+        "zip": 1,
+        "provider_name": 7,
+        "provider_id": 2,
+        "organization": 1,
+        "person_name": 1
+      },
+      "duration_seconds": 0.705,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     },
     {
       "file_id": "b4cf8c8d331aca74d54a2564c3f55fa0bf864e27e8cba9d57137cbfd5e55643d",
       "input_sha256": "053573f3fada2e2e76c78349baeb15cad64988e97c906263a777a47dae67fb43",
-      "output_sha256": "053573f3fada2e2e76c78349baeb15cad64988e97c906263a777a47dae67fb43",
+      "output_sha256": "0fd17c2c06e243a99986786023d84cabd88a31f2b48c90eac62b1401b4d9de6a",
       "actual_type": "dicom",
-      "status": "quarantined",
-      "reason": "residual_phi_detected",
+      "status": "published",
+      "reason": null,
       "records": 32,
       "detected": {
         "patient_name": 3,
-        "identifier": 8,
+        "identifier": 10,
         "date": 8,
         "person_name": 3,
         "organization": 3,
@@ -384,7 +408,7 @@
       },
       "applied": {
         "patient_name": 3,
-        "identifier": 8,
+        "identifier": 10,
         "date": 8,
         "person_name": 3,
         "organization": 3,
@@ -395,16 +419,29 @@
         "phone": 1,
         "relative": 1
       },
-      "confirmed": {},
-      "duration_seconds": 1.809,
+      "confirmed": {
+        "patient_name": 3,
+        "identifier": 10,
+        "date": 8,
+        "person_name": 3,
+        "organization": 3,
+        "address": 2,
+        "patient_id": 2,
+        "birth_date": 1,
+        "age": 1,
+        "phone": 1,
+        "relative": 1
+      },
+      "duration_seconds": 4.69,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     },
     {
       "file_id": "6d9648fc64276a04c2ee7aea97904882b1765cbf81106649c863ceadf13deb35",
       "input_sha256": "1b05e8bbf9ba432160d6a30c33ee5972f076d52a266f67185bb7a34c556d9ca4",
-      "output_sha256": "1332c8fe18bdf0e5d046b006712f263079c9a628f555df862c5aec491aaa4687",
+      "output_sha256": "fc5feb73fa45a9ddec9c8cfef2ba7f4e4c67dca0d8b978b478ce7b2289e949b3",
       "actual_type": "xlsx",
       "status": "published",
       "reason": null,
@@ -463,10 +500,11 @@
         "age": 1,
         "relative": 1
       },
-      "duration_seconds": 0.249,
+      "duration_seconds": 0.257,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     },
     {
       "file_id": "de474a5b215b286d76eb1550f89de52a20253964428f6fc7a9b8b084942e2bb0",
@@ -477,6 +515,7 @@
       "reason": "residual_phi_detected",
       "records": 1,
       "detected": {
+        "organization": 1,
         "patient_name": 3,
         "patient_id": 1,
         "birth_date": 1,
@@ -495,6 +534,7 @@
         "network": 1
       },
       "applied": {
+        "organization": 1,
         "patient_name": 3,
         "patient_id": 1,
         "birth_date": 1,
@@ -513,10 +553,11 @@
         "network": 1
       },
       "confirmed": {},
-      "duration_seconds": 0.57,
+      "duration_seconds": 0.639,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     },
     {
       "file_id": "1477b8afeabad25bdefbde9c16665c20181251bd0d37f7be60faee8ad0536de5",
@@ -524,27 +565,48 @@
       "output_sha256": "2d16dfbb1773d8cdb01b58d023a789504bc26bdef2f94f198623bf0caf96ea9b",
       "actual_type": "pdf",
       "status": "quarantined",
-      "reason": "incomplete_surface_coverage",
-      "records": 3,
+      "reason": "residual_phi_detected",
+      "records": 50,
       "detected": {
-        "identifier": 1,
-        "date": 4,
-        "person_name": 2,
+        "identifier": 5,
+        "date": 10,
+        "person_name": 13,
         "ssn": 1,
-        "address": 1,
-        "location": 2,
-        "zip": 1,
-        "phone": 2,
-        "organization": 1,
-        "provider_name": 1,
-        "provider_id": 1
+        "address": 2,
+        "location": 4,
+        "zip": 2,
+        "phone": 5,
+        "organization": 3,
+        "provider_name": 2,
+        "provider_id": 2,
+        "email": 3,
+        "network": 1,
+        "patient_id": 1,
+        "birth_date": 1
       },
-      "applied": {},
+      "applied": {
+        "identifier": 5,
+        "date": 10,
+        "person_name": 13,
+        "ssn": 1,
+        "address": 2,
+        "location": 4,
+        "zip": 2,
+        "phone": 5,
+        "organization": 3,
+        "provider_name": 2,
+        "provider_id": 2,
+        "email": 3,
+        "network": 1,
+        "patient_id": 1,
+        "birth_date": 1
+      },
       "confirmed": {},
-      "duration_seconds": 4.517,
+      "duration_seconds": 6.752,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     },
     {
       "file_id": "f385791dd82094bd0ece308db4c8b8112f81dc3dd19c1a4f70b2b6059fee20cc",
@@ -552,15 +614,16 @@
       "output_sha256": "0d3fe7b69942cde6377394d255a36287daea6c44ddf989df1afa95fd7b90b76e",
       "actual_type": "jpeg",
       "status": "quarantined",
-      "reason": "incomplete_surface_coverage",
+      "reason": "residual_phi_detected",
       "records": 0,
       "detected": {},
       "applied": {},
       "confirmed": {},
-      "duration_seconds": 1.212,
+      "duration_seconds": 1.337,
       "input_tokens": 0,
       "output_tokens": 0,
-      "cost_bound_nanos": 0
+      "cost_bound_nanos": 0,
+      "judge_degradation": null
     }
   ]
 }

@@ -1,0 +1,309 @@
+{
+  "candidate": "pipeline-v30",
+  "evaluation_split": "held-in development regression; unchanged existing annotations",
+  "new_full_file_labels_added": false,
+  "source_edits_performed_by_evaluation": false,
+  "verifier_version": "verifier-v23",
+  "measured_at_utc": "2026-11-07T11:53:29.194169+00:00",
+  "git_revision": "b9925ac3789d6d5244e127a73ba22fd0d13ca1e9",
+  "dirty_source_tree": false,
+  "source_tree_sha256": "208065dda8bc6cfeb8213c23c1118de7bca5a4dc9bd4071f077128f9f653e54b",
+  "source_tree_sha256_after": "208065dda8bc6cfeb8213c23c1118de7bca5a4dc9bd4071f077128f9f653e54b",
+  "source_unchanged_during_measurement": true,
+  "source_hash_definition": "SHA256 of compact JSON sorted (relative path, file SHA256) pairs for src/redactor excluding __pycache__ and .pyc",
+  "corpus": "benchmarks/corpus/text.json",
+  "corpus_sha256": "505eba742bd5b07087cbe69988073754150a38a8556329edfce8c7f956453ee5",
+  "corpus_cases": 40,
+  "reference_mentions": 39,
+  "labelled_clinical_spans": 35,
+  "detector": {
+    "backend": "gliner",
+    "model": "knowledgator/gliner-pii-edge-v1.0",
+    "revision": "9b7f39b0a2da971a5beea78d35f1539d4009c891",
+    "precision": "ONNX QUINT8",
+    "verified_artifacts": [
+      {
+        "filename": "gliner_config.json",
+        "bytes": 4316,
+        "sha256": "77e6b57335c4bfd461e9041682196dd6c373a0b09bbd9269ef9e95b807915340"
+      },
+      {
+        "filename": "tokenizer.json",
+        "bytes": 3583593,
+        "sha256": "84b3a9b18f04a0ccd03b72d9f871b7e0bec40fd7021ef50bc30a7c3693c11205"
+      },
+      {
+        "filename": "tokenizer_config.json",
+        "bytes": 21214,
+        "sha256": "3398f6d1ad4b4c4f9874d390d060a75c58cad5e5ce9b22841b3e40643b4ada27"
+      },
+      {
+        "filename": "special_tokens_map.json",
+        "bytes": 694,
+        "sha256": "ea97ecdbcc73713039d8d64dbb05e3689495c96657fbd9a18f5bed381be81049"
+      },
+      {
+        "filename": "onnx/model_quint8.onnx",
+        "bytes": 45820894,
+        "sha256": "988acb03456b26e2d9f2521016d820310c2ed64deb4a846297d3289f0c2eb7e4"
+      }
+    ]
+  },
+  "verifier": {
+    "backend": "spacy",
+    "model": "en_core_web_sm",
+    "model_version": "3.8.0",
+    "model_tree_sha256": "a42d62254073fc02c5c8f5fe24728bea4faa9b7d914b52563fd3d6d354913c7b",
+    "independent_from_detector": true
+  },
+  "dependencies": {
+    "spacy": "3.8.18",
+    "onnxruntime": "1.31.1",
+    "tokenizers": "0.23.3",
+    "numpy": "2.5.4",
+    "pydantic": "2.14.3"
+  },
+  "python": "3.12.16",
+  "platform": "Linux-6.12.54-linuxkit-aarch64-with-glibc2.41",
+  "execution_scope": "Container process pinned to the measured source snapshot; not bulk throughput",
+  "model_load_seconds": 3.320968585088849,
+  "remote_models_enabled": false,
+  "paid_calls": 0,
+  "evaluations": [
+    {
+      "mode": "raw_ner",
+      "case_count": 40,
+      "seconds": 1.0163824170595035,
+      "exact_typed_span_counts": {
+        "true_positive": 27,
+        "false_positive": 29,
+        "false_negative": 12,
+        "precision": 0.48214285714285715,
+        "recall": 0.6923076923076923,
+        "f1": 0.5684210526315789
+      },
+      "totals": {
+        "true_positive": 27,
+        "false_positive": 29,
+        "false_negative": 12,
+        "reference_mentions": 39,
+        "fully_covered_mentions": 33,
+        "clinical_span_false_positives": 15
+      },
+      "per_kind": {
+        "age": {
+          "true_positive": 2,
+          "false_positive": 2,
+          "false_negative": 1,
+          "precision": 0.5,
+          "recall": 0.6666666666666666,
+          "f1": 0.5714285714285714
+        },
+        "contact": {
+          "true_positive": 3,
+          "false_positive": 8,
+          "false_negative": 4,
+          "precision": 0.2727272727272727,
+          "recall": 0.42857142857142855,
+          "f1": 0.3333333333333333
+        },
+        "date": {
+          "true_positive": 5,
+          "false_positive": 0,
+          "false_negative": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "identifier": {
+          "true_positive": 4,
+          "false_positive": 5,
+          "false_negative": 1,
+          "precision": 0.4444444444444444,
+          "recall": 0.8,
+          "f1": 0.5714285714285714
+        },
+        "location": {
+          "true_positive": 1,
+          "false_positive": 0,
+          "false_negative": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666
+        },
+        "organization": {
+          "true_positive": 1,
+          "false_positive": 1,
+          "false_negative": 0,
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6666666666666666
+        },
+        "person": {
+          "true_positive": 10,
+          "false_positive": 7,
+          "false_negative": 5,
+          "precision": 0.5882352941176471,
+          "recall": 0.6666666666666666,
+          "f1": 0.625
+        },
+        "time": {
+          "true_positive": 1,
+          "false_positive": 6,
+          "false_negative": 0,
+          "precision": 0.14285714285714285,
+          "recall": 1.0,
+          "f1": 0.25
+        }
+      },
+      "outcome_counts": {
+        "not_verified": 40
+      },
+      "abstention_reason_counts": {}
+    },
+    {
+      "mode": "combined_text_policy",
+      "case_count": 40,
+      "seconds": 0.749823626014404,
+      "exact_typed_span_counts": {
+        "true_positive": 31,
+        "false_positive": 5,
+        "false_negative": 8,
+        "precision": 0.8611111111111112,
+        "recall": 0.7948717948717948,
+        "f1": 0.8266666666666667
+      },
+      "totals": {
+        "true_positive": 31,
+        "false_positive": 5,
+        "false_negative": 8,
+        "reference_mentions": 39,
+        "fully_covered_mentions": 33,
+        "clinical_span_false_positives": 0,
+        "verifier_checked_cases": 35,
+        "verifier_false_accepts": 0,
+        "verifier_false_rejects": 0,
+        "abstentions": 5
+      },
+      "per_kind": {
+        "age": {
+          "true_positive": 3,
+          "false_positive": 0,
+          "false_negative": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "contact": {
+          "true_positive": 6,
+          "false_positive": 0,
+          "false_negative": 1,
+          "precision": 1.0,
+          "recall": 0.8571428571428571,
+          "f1": 0.9230769230769231
+        },
+        "date": {
+          "true_positive": 4,
+          "false_positive": 0,
+          "false_negative": 1,
+          "precision": 1.0,
+          "recall": 0.8,
+          "f1": 0.8888888888888888
+        },
+        "identifier": {
+          "true_positive": 4,
+          "false_positive": 0,
+          "false_negative": 1,
+          "precision": 1.0,
+          "recall": 0.8,
+          "f1": 0.8888888888888888
+        },
+        "location": {
+          "true_positive": 0,
+          "false_positive": 1,
+          "false_negative": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "organization": {
+          "true_positive": 1,
+          "false_positive": 0,
+          "false_negative": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "person": {
+          "true_positive": 13,
+          "false_positive": 4,
+          "false_negative": 2,
+          "precision": 0.7647058823529411,
+          "recall": 0.8666666666666667,
+          "f1": 0.8125
+        },
+        "time": {
+          "true_positive": 0,
+          "false_positive": 0,
+          "false_negative": 1,
+          "precision": null,
+          "recall": 0.0,
+          "f1": 0.0
+        }
+      },
+      "outcome_counts": {
+        "accepted": 33,
+        "rejected": 2,
+        "abstained": 5
+      },
+      "abstention_reason_counts": {
+        "incomplete_surface_coverage": 4,
+        "unassessed_identifier_value": 1
+      }
+    }
+  ],
+  "peak_process_rss_bytes": 265060352,
+  "elapsed_seconds": 5.9740560030331835,
+  "limitations": [
+    "Existing 40-case manually labelled development corpus; reused during policy development, not held-out or population-representative.",
+    "Exact typed span metrics include abstentions as missed reference spans; coverage and verifier false accepts/rejects are reported separately.",
+    "Verifier false-accept labels mean incomplete annotated PHI coverage or overlap with annotated clinical spans; unannotated content is not a correctness oracle.",
+    "Only text policy composition is evaluated; no native format, OCR, identity-linkage, remote detector, full-document preservation, container memory, or bulk acceptance claim.",
+    "Fresh integration fixtures test selected expected outcomes and corruption rejection, not a separately labelled statistical accuracy corpus."
+  ],
+  "fresh_integration_inspection": [
+    {
+      "file": "tests/test_contextual_pipeline.py",
+      "scope": "GLiNER selected-model end-to-end text/CSV, six files, 15 contextual CSV rows, unlinked and contextual names, ages, date intervals, clinical preservation and replay; requires staged model assets."
+    },
+    {
+      "file": "tests/test_fhir_pipeline.py",
+      "scope": "Two synthetic FHIR bundles through spaCy CLI, young/elderly DOB policy, names split across XHTML tags, references/contained/encoded JSON attachment, exact numbers, corruption/MIME rejection and replay."
+    },
+    {
+      "file": "tests/test_json_pipeline.py",
+      "scope": "Nested JSON and typed numbers/attachments, cross-file CSV identity agreement, older birth bound, malformed payload quarantine, exact-byte replay and unassessed-surface corruption rejection."
+    },
+    {
+      "file": "tests/test_docx_pipeline.py",
+      "scope": "Synthetic Word CLI and native checks: inherited subject context, runs/metadata/hidden surfaces, thumbnails, original container preservation and replay; configured spaCy in the CLI fixture."
+    },
+    {
+      "file": "tests/test_pdf_pipeline.py",
+      "scope": "Native PDF adapter round trips with explicit test replacements; text, metadata, XMP, annotation, widget, outline, text/CSV attachment, image, geometry and unsupported-surface checks. This is not a labelled detector accuracy run."
+    },
+    {
+      "file": "tests/test_dicom_pipeline.py",
+      "scope": "Native DICOM adapter round trip and clinical-damage rejection; not a general radiology corpus."
+    },
+    {
+      "file": "tests/test_image_pipeline.py",
+      "scope": "Real OCR and independent verification on a small rendered image in PNG/JPEG/TIFF, with source/clinical pixel/metadata/trailing-byte tamper rejection; asset-gated."
+    },
+    {
+      "file": "tests/test_calendar_policy.py, tests/test_saved_mentions.py",
+      "scope": "Focused date/age interval boundaries and partial-name/residual verification regressions; deterministic assertion fixtures, not independent population accuracy labels."
+    }
+  ],
+  "fresh_integration_execution": "Source inspection only in this report; current suite results are recorded separately by the coordinator."
+}

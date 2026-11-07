@@ -1,0 +1,280 @@
+{
+  "resourceType": "Bundle",
+  "id": "701931253881182571",
+  "type": "collection",
+  "timestamp": "2027-02-22T10:40:00+00:00",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:421658251440689241",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "421658251440689241",
+        "text": {
+          "status": "generated",
+          "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>Lane Northhurst</b>, born April 23, 1936, MRN 997858259911988206</p></div>"
+        },
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName",
+            "valueString": "Jordan"
+          }
+        ],
+        "identifier": [
+          {
+            "system": "urn:oid:2.16.840.1.113883.3.4321.1",
+            "type": {
+              "text": "MRN"
+            },
+            "value": "997858259911988206"
+          },
+          {
+            "system": "http://hl7.org/fhir/sid/us-ssn",
+            "value": "641-84-7947"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "family": "Northhurst",
+            "given": [
+              "Lane",
+              "L"
+            ]
+          }
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "734-599-0662",
+            "use": "home"
+          },
+          {
+            "system": "email",
+            "value": "userec399d701e2971e240c782ca@example.org"
+          }
+        ],
+        "gender": "male",
+        "_birthDate": {"extension": [{"url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason", "valueCode": "masked"}, {"url": "urn:redactor:structure-definition:age-band", "valueString": "90+"}, {"url": "urn:redactor:structure-definition:birth-date-upper-bound", "valueDate": "1936"}]},
+        "address": [
+          {
+            "line": [
+              "7378 Millridge Road"
+            ],
+            "city": "Northhaven",
+            "state": "MA",
+            "postalCode": "021"
+          }
+        ],
+        "generalPractitioner": [
+          {
+            "reference": "Practitioner/834977245458877661",
+            "display": "Quinn Langbrook"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:834977245458877661",
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "834977245458877661",
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "2860119058"
+          }
+        ],
+        "name": [
+          {
+            "family": "Langbrook",
+            "given": [
+              "Quinn"
+            ],
+            "prefix": [
+              "Dr."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:773479153622067286",
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "773479153622067286",
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1353150976"
+          }
+        ],
+        "name": [
+          {
+            "family": "Ravenridge",
+            "given": [
+              "Harper"
+            ],
+            "suffix": [
+              "RN"
+            ]
+          }
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "729-590-9042",
+            "use": "mobile"
+          }
+        ],
+        "birthDate": "1988-06-16"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:379224767240589072",
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "379224767240589072",
+        "status": "finished",
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "AMB"
+        },
+        "subject": {
+          "reference": "Patient/421658251440689241",
+          "display": "Northhurst, Lane"
+        },
+        "participant": [
+          {
+            "individual": {
+              "reference": "Practitioner/834977245458877661"
+            }
+          },
+          {
+            "individual": {
+              "reference": "Practitioner/773479153622067286"
+            }
+          }
+        ],
+        "period": {
+          "start": "2026-04-12T10:40:00-05:00",
+          "end": "2026-04-12T15:40:00-05:00"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:286975673601895052",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "286975673601895052",
+        "code": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/sid/icd-10-cm",
+              "code": "G20",
+              "display": "Parkinson's disease"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/421658251440689241"
+        },
+        "onsetAge": {
+          "value": 89,
+          "unit": "a",
+          "system": "http://unitsofmeasure.org",
+          "code": "a"
+        },
+        "recordedDate": "2026-04-12"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:527703651241984897",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "527703651241984897",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "2160-0",
+              "display": "Creatinine [Mass/volume] in Serum or Plasma"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/421658251440689241"
+        },
+        "effectiveDateTime": "2026-04-12T10:40:00-05:00",
+        "valueQuantity": {
+          "value": 1.1,
+          "unit": "mg/dL",
+          "system": "http://unitsofmeasure.org",
+          "code": "mg/dL"
+        },
+        "contained": [
+          {
+            "resourceType": "Specimen",
+            "id": "613508125545157907",
+            "accessionIdentifier": {
+              "value": "816171040556030315"
+            },
+            "collection": {
+              "collectedDateTime": "2026-04-12T10:40:00-05:00"
+            }
+          }
+        ],
+        "specimen": {
+          "reference": "#613508125545157907"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:034573258055458399",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "034573258055458399",
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "197444",
+              "display": "carbidopa 25 MG / levodopa 100 MG Oral Tablet"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/421658251440689241"
+        },
+        "requester": {
+          "reference": "Practitioner/834977245458877661",
+          "display": "Langbrook, Quinn"
+        },
+        "authoredOn": "2026-04-12"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:821600780347511827",
+      "resource": {
+        "resourceType": "DocumentReference",
+        "id": "821600780347511827",
+        "status": "current",
+        "subject": {
+          "reference": "Patient/421658251440689241"
+        },
+        "date": "2026-05-12T09:00:00-05:00",
+        "content": [
+          {
+            "attachment": {
+              "contentType": "application/pdf",
+              "title": "Neurology consult",
+              "data": "JVBERi0xLjMKJcK1wrYKJSBXcml0dGVuIGJ5IE11UERGIDEuMjguMgoKMSAwIG9iago8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9IZWx2ZXRpY2EvRW5jb2RpbmcvV2luQW5zaUVuY29kaW5nL05hbWUvRjE+PgplbmRvYmoKCjIgMCBvYmoKPDwvVHlwZS9QYWdlL0NvbnRlbnRzIDcgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9QYXJlbnQgNSAwIFIvUmVzb3VyY2VzPDwvRm9udDw8L0YxIDEgMCBSL2hlbHYgNiAwIFI+Pj4+L1JvdGF0ZSAwL1RyYW5zPDw+Pi9Bbm5vdHNbXT4+CmVuZG9iagoKMyAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZU1vZGUvVXNlTm9uZS9QYWdlcyA1IDAgUj4+CmVuZG9iagoKNCAwIG9iago8PC9BdXRob3IoYW5vbnltb3VzKS9DcmVhdGlvbkRhdGUoODAzNDkyOTcyNDU5MDU0MTUwKS9DcmVhdG9yKGFub255bW91cykvS2V5d29yZHMgbnVsbC9Nb2REYXRlKDgwMzQ5Mjk3MjQ1OTA1NDE1MCkvUHJvZHVjZXIoUmVwb3J0TGFiIFBERiBMaWJyYXJ5IC0gXChvcGVuc291cmNlXCkpL1N1YmplY3QodW5zcGVjaWZpZWQpL1RpdGxlKFNhZ2UgUGluZWhhdmVuKS9UcmFwcGVkL0ZhbHNlPj4KZW5kb2JqCgo1IDAgb2JqCjw8L1R5cGUvUGFnZXMvQ291bnQgMS9LaWRzWzIgMCBSXT4+CmVuZG9iagoKNiAwIG9iago8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9IZWx2ZXRpY2EvRW5jb2RpbmcvV2luQW5zaUVuY29kaW5nPj4KZW5kb2JqCgo3IDAgb2JqCjw8L0xlbmd0aCAzMDkvRmlsdGVyL0ZsYXRlRGVjb2RlPj4Kc3RyZWFtCnicldDBUsIwFAXQX7k7YUZKktK06Q6mgjoKyHTjiIsAoa2WBJICo19vqaJbTBZ5m5x35+4wSLtDCkqRrhEycMGQJmj1nVPObZSuYkylfS+0M/rKYVU4JZ3CvDViZN6+xq1RuYbUKzzL3MJVMlNgXjt9w01a6w0a8gadllLHWEq7KFZmKzulOpjTABZ0KSHYZEjvkvPfJ+xAmmuzn2E2OuXNVXn4Sxz2SI2/tCY2k7r4lFVhNKgIfR74YVS/tOfziGNptNuXVfs1vf+PznqNPq3dpowHqRXGxlZ5vrfuQo57gtGIB+FZJVGjJpNBjDqusViotbGqDu5zAI+zcQwhwiiIWCAEpSKKGOEXhieeOJ3zNs6/GxqasjTHzn4bg9SFsy4jjONYVDkS66F/UPbjd8MXl8iQoQplbmRzdHJlYW0KZW5kb2JqCgp4cmVmCjAgOAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNDIgMDAwMDAgbiAKMDAwMDAwMDEzOSAwMDAwMCBuIAowMDAwMDAwMjkxIDAwMDAwIG4gCjAwMDAwMDAzNTQgMDAwMDAgbiAKMDAwMDAwMDU5MyAwMDAwMCBuIAowMDAwMDAwNjQ1IDAwMDAwIG4gCjAwMDAwMDA3MzQgMDAwMDAgbiAKCnRyYWlsZXIKPDwvU2l6ZSA4L0luZm8gNCAwIFIvUm9vdCAzIDAgUi9JRFs8MjFDM0I3NzUyMEMyQjNDMjk5QzI4NDJEQzM4REMzOEI+PEY2NzhGMzY0RjUyMDA0QkMwRDU0RTUwMzY2NzBDNjNEPl0+PgpzdGFydHhyZWYKMTExMgolJUVPRgo="
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

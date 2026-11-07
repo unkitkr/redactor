@@ -1,0 +1,126 @@
+{
+  "measurement": "large_csv_pipeline",
+  "generator": {
+    "measurement": "large_csv_generation",
+    "generator": "tools/make_large_csv.py",
+    "generator_sha256": "ec2d9caa5095ddedc6846bb986d95db9f44b04def7ba20fd06999c65a5607c8c",
+    "command": [
+      "python",
+      "tools/make_large_csv.py",
+      "--size-gb",
+      "2",
+      "--seed",
+      "1",
+      "--out",
+      "tmp/large-csv-2g-20261107/input/big_encounters.csv"
+    ],
+    "requested_size_gib": 2,
+    "seed": 1,
+    "input_bytes": 2147950662,
+    "input_rows": 11200000,
+    "columns": 14,
+    "multiline_records": 2798860,
+    "input_sha256": "282517b6eb4d8ab15fd68c67a4286bd7dd417b06a2fa6c83d68324ccb906e415",
+    "full_file_validated": true,
+    "validation_wall_seconds": 26.368649375042878,
+    "scope": "Generation and complete structural validation only; no pipeline performance claim."
+  },
+  "command": [
+    "/opt/redactor/.venv/bin/python",
+    "-m",
+    "redactor",
+    "--input",
+    "/bulk2g/input",
+    "--state",
+    "/benchmark/run-1/.redactor",
+    "--config",
+    "/work/redactor.toml",
+    "--workers",
+    "2"
+  ],
+  "platform": "Linux-6.12.54-linuxkit-aarch64-with-glibc2.41",
+  "python_version": "3.12.16",
+  "model_mode": "local_only",
+  "local_ner": {
+    "backend": "gliner",
+    "artifact_directory": "gliner-pii-edge-v1.0",
+    "artifacts": {
+      "gliner_config.json": {
+        "bytes": 4316,
+        "sha256": "77e6b57335c4bfd461e9041682196dd6c373a0b09bbd9269ef9e95b807915340"
+      },
+      "tokenizer.json": {
+        "bytes": 3583593,
+        "sha256": "84b3a9b18f04a0ccd03b72d9f871b7e0bec40fd7021ef50bc30a7c3693c11205"
+      },
+      "onnx/model_quint8.onnx": {
+        "bytes": 45820894,
+        "sha256": "988acb03456b26e2d9f2521016d820310c2ed64deb4a846297d3289f0c2eb7e4"
+      }
+    }
+  },
+  "source_sha256": "2a527fb18e43629f06216d5082433dd528625ce66d1b286df83f7b34775036ec",
+  "source_unchanged": true,
+  "image_id": "redactor:bulk-v29",
+  "probe_sha256": "4c30bf24ee37ba01043daa4484e13448522586e491fe2e478d9f070e124ee215",
+  "configuration_sha256": "7caa2f94f6924cc50ebc0984968d098dcacca9f2edb30f9c49a4f2806d054c7a",
+  "input_unchanged": true,
+  "exit_code": 143,
+  "timed_out": true,
+  "termination_started_at": "2026-11-07T09:50:41.391469+00:00",
+  "process_stopped_at": "2026-11-07T09:50:41.577512+00:00",
+  "workers_stopped_before_snapshot": true,
+  "deadline_seconds": 1800.0,
+  "wall_seconds": 1800.1931325299665,
+  "cgroup": {
+    "cpu.max": "200000 100000",
+    "memory.max": 999997440,
+    "memory.swap.max": 0,
+    "memory.peak": 999997440
+  },
+  "requested_memory_limit_bytes": 1000000000,
+  "page_size_bytes": 4096,
+  "cgroup_memory_events": {
+    "low": 0,
+    "high": 0,
+    "max": 107000,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "memory_scope": "Entire container, including probe, workers and dashboard",
+  "stdout_bytes": 0,
+  "stderr_bytes": 0,
+  "progress": {
+    "steps": [
+      {
+        "step": "analyze",
+        "status": "running",
+        "tasks": 1
+      },
+      {
+        "step": "inspect",
+        "status": "succeeded",
+        "tasks": 1
+      },
+      {
+        "step": "resolve",
+        "status": "pending",
+        "tasks": 1
+      }
+    ],
+    "analysis_checkpoint_rows": 1870000,
+    "rewrite_checkpoint_rows": 0,
+    "model_attempts": 0
+  },
+  "state_bytes": 3157391355,
+  "worker_failures": [],
+  "report": null,
+  "published_rows": 0,
+  "all_rows_published": false,
+  "publication_rows_per_second": 0.0,
+  "completed_input_mib_per_second": null,
+  "full_acceptance_target_exercised": true,
+  "acceptance_passed": false,
+  "scope": "One complete generated CSV; a quarantine outcome is not complete row processing and cannot establish redaction throughput."
+}

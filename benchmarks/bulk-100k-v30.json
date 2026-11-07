@@ -1,0 +1,189 @@
+{
+  "measurement": "large_csv_pipeline",
+  "generator": {
+    "input_rows": 100000,
+    "input_bytes": 19179827,
+    "input_sha256": "39e65090776c0a7443fd15fcc8829560f940b48a08c0156e8c5c47662901950e",
+    "scope": "Complete 100000-row subset for before/after profiling; not A7 acceptance"
+  },
+  "command": [
+    "/opt/redactor/.venv/bin/python",
+    "-m",
+    "redactor",
+    "--input",
+    "/input",
+    "--state",
+    "/benchmark/run-1/.redactor",
+    "--config",
+    "/work/redactor.toml",
+    "--workers",
+    "2"
+  ],
+  "platform": "Linux-6.12.54-linuxkit-aarch64-with-glibc2.41",
+  "python_version": "3.12.16",
+  "model_mode": "local_only",
+  "local_ner": {
+    "backend": "gliner",
+    "artifact_directory": "gliner-pii-edge-v1.0",
+    "artifacts": {
+      "gliner_config.json": {
+        "bytes": 4316,
+        "sha256": "77e6b57335c4bfd461e9041682196dd6c373a0b09bbd9269ef9e95b807915340"
+      },
+      "tokenizer.json": {
+        "bytes": 3583593,
+        "sha256": "84b3a9b18f04a0ccd03b72d9f871b7e0bec40fd7021ef50bc30a7c3693c11205"
+      },
+      "onnx/model_quint8.onnx": {
+        "bytes": 45820894,
+        "sha256": "988acb03456b26e2d9f2521016d820310c2ed64deb4a846297d3289f0c2eb7e4"
+      }
+    }
+  },
+  "source_sha256": "2a527fb18e43629f06216d5082433dd528625ce66d1b286df83f7b34775036ec",
+  "source_unchanged": true,
+  "image_id": "redactor:bulk-v29",
+  "probe_sha256": "4c30bf24ee37ba01043daa4484e13448522586e491fe2e478d9f070e124ee215",
+  "configuration_sha256": "7caa2f94f6924cc50ebc0984968d098dcacca9f2edb30f9c49a4f2806d054c7a",
+  "input_unchanged": true,
+  "exit_code": 0,
+  "timed_out": false,
+  "termination_started_at": null,
+  "process_stopped_at": "2026-11-07T09:19:56.612914+00:00",
+  "workers_stopped_before_snapshot": true,
+  "deadline_seconds": 600.0,
+  "wall_seconds": 120.2894978049444,
+  "cgroup": {
+    "cpu.max": "200000 100000",
+    "memory.max": 999997440,
+    "memory.swap.max": 0,
+    "memory.peak": 999997440
+  },
+  "requested_memory_limit_bytes": 1000000000,
+  "page_size_bytes": 4096,
+  "cgroup_memory_events": {
+    "low": 0,
+    "high": 0,
+    "max": 88,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "memory_scope": "Entire container, including probe, workers and dashboard",
+  "stdout_bytes": 0,
+  "stderr_bytes": 0,
+  "progress": {
+    "steps": [
+      {
+        "step": "analyze",
+        "status": "succeeded",
+        "tasks": 1
+      },
+      {
+        "step": "inspect",
+        "status": "succeeded",
+        "tasks": 1
+      },
+      {
+        "step": "publish",
+        "status": "succeeded",
+        "tasks": 1
+      },
+      {
+        "step": "resolve",
+        "status": "succeeded",
+        "tasks": 1
+      },
+      {
+        "step": "rewrite",
+        "status": "succeeded",
+        "tasks": 1
+      },
+      {
+        "step": "verify",
+        "status": "succeeded",
+        "tasks": 1
+      }
+    ],
+    "analysis_checkpoint_rows": 100000,
+    "rewrite_checkpoint_rows": 100000,
+    "model_attempts": 0
+  },
+  "state_bytes": 293101620,
+  "worker_failures": [],
+  "report": {
+    "run_id": "b16d9880f4e52615100e1665c36333f308ab5c33a5c692c406a39625492ada2d",
+    "complete": true,
+    "inventoried": 1,
+    "published": 1,
+    "quarantined": 0,
+    "files": [
+      {
+        "file_id": "6945c9afe23a3afd64e8c00842be3e4bbf6dd6c3378954fb44ad85791b029a51",
+        "input_sha256": "39e65090776c0a7443fd15fcc8829560f940b48a08c0156e8c5c47662901950e",
+        "output_sha256": "04c1e01277ae4c07b8c0fe92d135f1ef2f940f5922da7d86a6434a6c9590e699",
+        "actual_type": "csv",
+        "status": "published",
+        "reason": null,
+        "records": 100000,
+        "detected": {
+          "identifier": 100000,
+          "patient_id": 100000,
+          "patient_name": 100000,
+          "birth_date": 100000,
+          "date": 224979,
+          "provider_name": 100000,
+          "provider_id": 100000,
+          "lot": 100000,
+          "phone": 124979,
+          "address": 24878,
+          "relative": 24878,
+          "age": 1871,
+          "person_name": 12622
+        },
+        "applied": {
+          "identifier": 100000,
+          "patient_id": 100000,
+          "patient_name": 100000,
+          "birth_date": 100000,
+          "date": 224979,
+          "provider_name": 100000,
+          "provider_id": 100000,
+          "lot": 100000,
+          "phone": 124979,
+          "address": 24878,
+          "relative": 24878,
+          "age": 1871,
+          "person_name": 12622
+        },
+        "confirmed": {
+          "identifier": 100000,
+          "patient_id": 100000,
+          "patient_name": 100000,
+          "birth_date": 100000,
+          "date": 224979,
+          "provider_name": 100000,
+          "provider_id": 100000,
+          "lot": 100000,
+          "phone": 124979,
+          "address": 24878,
+          "relative": 24878,
+          "age": 1871,
+          "person_name": 12622
+        },
+        "duration_seconds": 108.702,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_bound_nanos": 0,
+        "judge_degradation": null
+      }
+    ]
+  },
+  "published_rows": 100000,
+  "all_rows_published": true,
+  "publication_rows_per_second": 831.327770294254,
+  "completed_input_mib_per_second": 0.15206072630443127,
+  "full_acceptance_target_exercised": false,
+  "acceptance_passed": false,
+  "scope": "One complete generated CSV; a quarantine outcome is not complete row processing and cannot establish redaction throughput."
+}
