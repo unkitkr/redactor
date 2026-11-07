@@ -28,6 +28,7 @@ from redactor.schemas.verification import ResidualCheck, VerificationCheck
 from redactor.utils.constants import (
     FIELD_PERSON_NAME,
     FIELD_TEXT,
+    JUDGE_MAXIMUM_COLLECTED_RESIDUALS,
     REQUIRED_VERIFICATION_CHECKS,
     STEP_ANALYZE,
     STEP_INSPECT,
@@ -57,6 +58,7 @@ def verify_csv(
     local_ner: NerAdapter,
     resolution_task_id: str,
     verification_batch: NerBatchAdapter | None = None,
+    judge_residuals: list[ResidualCheck] | None = None,
 ) -> tuple[VerificationCheck, ...]:
     source = inspect_artifact(task.input_path, persist=False)
     staged = inspect_artifact(artifact.path, persist=False)
@@ -175,6 +177,12 @@ def verify_csv(
                     )
                     counts.update(edit.kind for edit in expected)
                 records = number
+            # Bounded collection for optional hosted judging; verdicts never
+            # depend on it, and the cap bounds memory on very large files.
+            if judge_residuals is not None and residual_checks:
+                capacity = JUDGE_MAXIMUM_COLLECTED_RESIDUALS - len(judge_residuals)
+                if capacity > 0:
+                    judge_residuals.extend(residual_checks[:capacity])
             verifier = batch_verifier(
                 residual_checks,
                 local_ner,

@@ -15,6 +15,7 @@ from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.inventory import PreparedRun
 from redactor.schemas.outcomes import FileOutcome
 from redactor.schemas.reporting import FileReport, RunReport
+from redactor.schemas.verification import VerificationVerdict
 from redactor.utils.configuration import key_fingerprint
 from redactor.utils.constants import (
     OUTCOME_PUBLISHED,
@@ -27,6 +28,7 @@ from redactor.utils.constants import (
     STEP_PUBLISH,
     STEP_QUARANTINE,
     STEP_REWRITE,
+    STEP_VERIFY,
 )
 from redactor.utils.errors import ERROR_ARTIFACT_CORRUPT, ERROR_PIPELINE_BLOCKED
 from redactor.utils.filesystem import sync_directory
@@ -66,6 +68,22 @@ def reconcile_run(
             FileAnalysis,
             encryption_key=mapping_key,
         )
+        verify = connection.execute(
+            "SELECT task_id FROM tasks WHERE processing_version = ? "
+            "AND input_path = ? AND step = ? AND status = ?",
+            (
+                run.manifest.sha256,
+                str(source.input_path),
+                STEP_VERIFY,
+                STATUS_SUCCEEDED,
+            ),
+        ).fetchone()
+        judge_degradation = None
+        if verify is not None:
+            verdict = read_step_result(
+                connection, verify["task_id"], VerificationVerdict
+            )
+            judge_degradation = verdict.judge_degradation
         rewrite = file_step(connection, run.manifest, source, STEP_REWRITE)
         checkpoint = latest_checkpoint(connection, rewrite.task_id)
         applied = checkpoint.counts if checkpoint else {}
@@ -103,6 +121,7 @@ def reconcile_run(
                 input_tokens=usage[0],
                 output_tokens=usage[1],
                 cost_bound_nanos=usage[2],
+                judge_degradation=judge_degradation,
             )
         )
     report = RunReport(

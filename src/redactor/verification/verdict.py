@@ -28,6 +28,8 @@ def conclude_verification(
     producer_task_id: str,
     artifact: Artifact,
     checks: Sequence[VerificationCheck],
+    *,
+    judge_degradation: str | None = None,
 ) -> VerificationVerdict:
     required = set(REQUIRED_VERIFICATION_CHECKS)
     if context.has_pixels:
@@ -62,6 +64,7 @@ def conclude_verification(
         artifact=artifact,
         checks=tuple(checks),
         status=status,
+        judge_degradation=judge_degradation,
     )
 
 

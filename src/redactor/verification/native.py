@@ -20,7 +20,7 @@ from redactor.schemas.entities import NerAdapter
 from redactor.schemas.formats import FileInspection
 from redactor.schemas.native import NativeDocument
 from redactor.schemas.persistence import Artifact, Task
-from redactor.schemas.verification import VerificationCheck
+from redactor.schemas.verification import ResidualCheck, VerificationCheck
 from redactor.utils.constants import (
     CHECK_PIXELS,
     FIELD_TEXT,
@@ -31,6 +31,7 @@ from redactor.utils.constants import (
     FORMAT_JSON,
     FORMAT_PDF,
     FORMAT_XLSX,
+    JUDGE_MAXIMUM_COLLECTED_RESIDUALS,
     REQUIRED_VERIFICATION_CHECKS,
     STEP_ANALYZE,
     TEXT_ENCODING,
@@ -66,6 +67,7 @@ def verify_native(
     mapping_key: bytes,
     local_ner: NerAdapter,
     resolution_task_id: str,
+    judge_residuals: list[ResidualCheck] | None = None,
 ) -> tuple[VerificationCheck, ...]:
     source = inspect_artifact(task.input_path, persist=False)
     if (
@@ -176,6 +178,12 @@ def verify_native(
                 provider_name=context.provider_name,
             )
             edits = cell_edits(value, column, findings, context, mapping_key)
+            collect = (
+                judge_residuals.append
+                if judge_residuals is not None
+                and len(judge_residuals) < JUDGE_MAXIMUM_COLLECTED_RESIDUALS
+                else None
+            )
             verify_text_changes(
                 value,
                 after.values[column.index],
@@ -188,6 +196,7 @@ def verify_native(
                 free_text=column.kind == FIELD_TEXT,
                 patient_name=context.patient_name,
                 provider_name=context.provider_name,
+                collect=collect,
             )
             counts.update(edit.kind for edit in edits)
             cells += 1

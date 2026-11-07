@@ -66,6 +66,7 @@ def pipeline_handlers(
             local_ner=verifier_ner or local_ner,
             verification_batch=verification_batch,
             resolution_task_id=resolution_task_id,
+            transport=model_transport,
         ),
         STEP_PUBLISH: partial(
             publish_task,

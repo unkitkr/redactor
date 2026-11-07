@@ -38,6 +38,7 @@ class VerificationVerdict(BaseModel, frozen=True, extra="forbid"):
     artifact: Artifact
     checks: tuple[VerificationCheck, ...]
     status: VerificationStatus
+    judge_degradation: str | None = None
 
 
 class ResidualCheck(BaseModel, frozen=True, extra="forbid"):

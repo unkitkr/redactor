@@ -20,6 +20,7 @@ class FileReport(BaseModel, frozen=True, extra="forbid"):
     input_tokens: NonNegativeInt
     output_tokens: NonNegativeInt
     cost_bound_nanos: NonNegativeInt
+    judge_degradation: str | None = None
 
 
 class RunReport(BaseModel, frozen=True, extra="forbid"):
