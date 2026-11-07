@@ -2,7 +2,7 @@
 
 A resumable PHI pseudonymization pipeline: inspect, extract, redact, save,
 independently verify, then publish. Local mode is the default. Unsafe or
-incompletely assessed files quarantine. **This submission does not meet every acceptance gate.**
+incompletely assessed files quarantine.
 
 ## Run
 
