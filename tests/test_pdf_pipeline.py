@@ -7,8 +7,9 @@ import pymupdf
 import pytest
 from PIL import Image
 
-from redactor.formats.pdf import read_pdf, write_pdf
+from redactor.formats.pdf import pdf_lines, read_pdf, write_pdf
 from redactor.schemas.configuration import ResourceSettings
+from redactor.utils.constants import PDF_ADJACENT_OVERLAP_POINTS
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_STRUCTURE
 from redactor.verification.pdf import check_pdf_structure
 
@@ -126,3 +127,65 @@ def test_pdf_unsupported_actions_and_nontext_attachments_fail_closed(
             pdf.save(source)
         with pytest.raises(ValueError, match=ERROR_COVERAGE):
             read_pdf(source, ResourceSettings())
+
+
+def test_pdf_adjacent_redaction_rows_rewrite_and_preserved_overlap_fails_closed(
+    tmp_path: Path,
+) -> None:
+    """Table rows redacted together may share a shallow band; preserved text may not."""
+    overlap = 1.4
+    source = tmp_path / "adjacent-rows.pdf"
+    saved = tmp_path / "adjacent-rows-saved.pdf"
+    with pymupdf.open() as pdf:
+        page = pdf.new_page()
+        page.insert_text((132, 280.5), "Oliver", fontsize=10)
+        first = pymupdf.Rect(pdf_lines(page)[0]["bbox"])
+        page.insert_text(
+            (132, first.y1 - overlap + (280.5 - first.y0)), "Lindgren", fontsize=10
+        )
+        page.insert_text((300, 280.5), "Hemoglobin A1c", fontsize=10)
+        pdf.save(source)
+    with pymupdf.open(source) as pdf:
+        rows = {line["text"]: pymupdf.Rect(line["bbox"]) for line in pdf_lines(pdf[0])}
+    shared = rows["Oliver"] & rows["Lindgren"]
+    assert 0 < min(shared.width, shared.height) <= PDF_ADJACENT_OVERLAP_POINTS
+    document = read_pdf(source, ResourceSettings())
+    replacements = {
+        location: "Quinn" if value == "Oliver" else "Ashbrook"
+        for record in document.records
+        for location, value in zip(record.locations, record.values, strict=True)
+        if value in ("Oliver", "Lindgren")
+    }
+    write_pdf(source, saved, replacements, {})
+    written = read_pdf(saved, ResourceSettings())
+    assert len(written.records) == len(document.records)
+    for before, after in zip(document.records, written.records, strict=True):
+        assert before.locations == after.locations
+        assert after.values == tuple(
+            replacements.get(location, value)
+            for location, value in zip(before.locations, before.values, strict=True)
+        )
+    values = [value for record in written.records for value in record.values]
+    assert "Quinn" in values and "Ashbrook" in values
+    assert "Oliver" not in values and "Lindgren" not in values
+    assert "Hemoglobin A1c" in values
+
+    # The same shallow band against a line kept intact would strip its glyphs.
+    conflicting = tmp_path / "preserved-overlap.pdf"
+    with pymupdf.open() as pdf:
+        page = pdf.new_page()
+        page.insert_text((132, 280.5), "Hemoglobin A1c", fontsize=10)
+        first = pymupdf.Rect(pdf_lines(page)[0]["bbox"])
+        page.insert_text(
+            (132, first.y1 - overlap + (280.5 - first.y0)), "Lindgren", fontsize=10
+        )
+        pdf.save(conflicting)
+    document = read_pdf(conflicting, ResourceSettings())
+    replacements = {
+        location: "Ashbrook"
+        for record in document.records
+        for location, value in zip(record.locations, record.values, strict=True)
+        if value == "Lindgren"
+    }
+    with pytest.raises(ValueError, match=ERROR_COVERAGE):
+        write_pdf(conflicting, tmp_path / "rejected.pdf", replacements, {})

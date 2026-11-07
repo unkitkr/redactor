@@ -37,6 +37,7 @@ from redactor.utils.constants import (
     FIELD_PROVIDER_NAME,
     FIELD_TEXT,
     MAX_NATIVE_TEXT_CONTEXT_CHARACTERS,
+    PDF_ADJACENT_OVERLAP_POINTS,
     PDF_ANNOTATION_PART,
     PDF_ATTACHMENT_PART,
     PDF_FONT_NAMES,
@@ -278,6 +279,31 @@ def read_pdf(
         return NativeDocument(records=tuple(records), images=tuple(images))
 
 
+def _conflicting_redactions(
+    rectangles: list[pymupdf.Rect], redacted: list[bool]
+) -> bool:
+    """Report whether any redaction could remove text kept outside the pass.
+
+    Every redacted line is removed by its own rectangle before replacement text
+    is inserted, so a shallow overlap between two redacted lines only shares the
+    band that adjacent table rows leave between their boxes. A line that is not
+    redacted itself must not intersect any redaction at all, because the
+    neighbouring rectangle would strip its preserved characters.
+    """
+    for index, rectangle in enumerate(rectangles):
+        if not redacted[index]:
+            continue
+        for other, neighbour in enumerate(rectangles):
+            if other == index or not rectangle.intersects(neighbour):
+                continue
+            if redacted[other]:
+                shared = rectangle & neighbour
+                if min(shared.width, shared.height) <= PDF_ADJACENT_OVERLAP_POINTS:
+                    continue
+            return True
+    return False
+
+
 def _write_page(page: pymupdf.Page, replacements: dict[tuple[str, ...], str]) -> None:
     lines = pdf_lines(page)
     changed = [
@@ -288,18 +314,15 @@ def _write_page(page: pymupdf.Page, replacements: dict[tuple[str, ...], str]) ->
     ]
     if any("\n" in text or "\r" in text for text in changed):
         raise ValueError(ERROR_COVERAGE)
+    rectangles = [pymupdf.Rect(line["bbox"]) for line in lines]
+    redacted = [text != line["text"] for line, text in zip(lines, changed, strict=True)]
+    if _conflicting_redactions(rectangles, redacted):
+        raise ValueError(ERROR_COVERAGE)
     inserts: list[tuple[dict[str, Any], str, float]] = []
-    for line, text in zip(lines, changed, strict=True):
+    for line, text, rectangle in zip(lines, changed, rectangles, strict=True):
         if text == line["text"]:
             continue
         if any(ord(char) < 32 or ord(char) > 126 for char in text):
-            raise ValueError(ERROR_COVERAGE)
-        rectangle = pymupdf.Rect(line["bbox"])
-        if any(
-            rectangle.intersects(pymupdf.Rect(other["bbox"]))
-            for other in lines
-            if other is not line
-        ):
             raise ValueError(ERROR_COVERAGE)
         size = min(float(span["size"]) for span in line["spans"])
         width = pymupdf.get_text_length(text, fontname="helv", fontsize=size)

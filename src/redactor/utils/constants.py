@@ -2598,6 +2598,8 @@ PDF_ATTACHMENT_PART: Final = "pdf-attachment"
 PDF_IMAGE_PART: Final = "pdf-image"
 PDF_GARBAGE_LEVEL: Final = 4
 PDF_MINIMUM_FONT_SIZE: Final = 4.0
+# Adjacent table rows routinely share a shallow band between their line boxes.
+PDF_ADJACENT_OVERLAP_POINTS: Final = 2.0
 PDF_METADATA_FIELDS: Final = (
     "title",
     "author",
