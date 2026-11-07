@@ -117,6 +117,11 @@ MODEL_REASON_CODES: Final = (
     ERROR_MODEL_PRICE_BOUND,
 )
 
+# Hosted judge degradation is outcome-level, separate from provider decisions.
+ERROR_JUDGE_EVIDENCE: Final = "invalid_judge_evidence"
+JUDGE_REASON_CODES: Final = (ERROR_JUDGE_EVIDENCE,)
+JUDGE_DEGRADATION_CODES: Final = (*MODEL_REASON_CODES, *JUDGE_REASON_CODES)
+
 VERIFICATION_REASON_CODES: Final = (
     ERROR_CHECK_MISSING,
     ERROR_COVERAGE,

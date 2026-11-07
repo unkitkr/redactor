@@ -333,6 +333,30 @@ DETECTOR_PROMPT_VERSION: Final = "text-entities-v2"
 DETECTOR_OBSERVATION_CONTEXT: Final = b"redactor-detection-observation-v1:"
 DETECTOR_TEXT_FIELD: Final = "text"
 
+# Hosted judging of saved-output evidence
+JUDGE_PROMPT_VERSION: Final = "saved-evidence-v1"
+JUDGE_VERDICT_LEAK: Final = "leak"
+JUDGE_VERDICT_LIKELY_LEAK: Final = "likely_leak"
+JUDGE_VERDICT_UNSURE: Final = "unsure"
+JUDGE_VERDICT_CLEAN: Final = "clean"
+JUDGE_FAILING_VERDICTS: Final = (
+    JUDGE_VERDICT_LEAK,
+    JUDGE_VERDICT_LIKELY_LEAK,
+    JUDGE_VERDICT_UNSURE,
+)
+JUDGE_TEXT_REFERENCE_PREFIX: Final = "text"
+JUDGE_IMAGE_REFERENCE_PREFIX: Final = "image"
+JUDGE_REFERENCE_PATTERN: Final = r"^(?:text|image):[0-9]{1,3}$"
+JUDGE_IMAGE_FIELD: Final = "images"
+JUDGE_MAXIMUM_EVIDENCE_ITEMS: Final = 8
+JUDGE_MAXIMUM_EVIDENCE_BYTES: Final = 12_000
+JUDGE_MAXIMUM_ITEM_CHARACTERS: Final = 1024
+JUDGE_MAXIMUM_VERIFIED_SPANS: Final = 16
+JUDGE_MAXIMUM_IMAGES: Final = 2
+JUDGE_MAXIMUM_IMAGE_BYTES: Final = 512 * 1024
+JUDGE_MAXIMUM_FINDINGS: Final = 64
+JUDGE_VISION_INPUT_BYTES: Final = 2 * 1024 * 1024
+
 # Native delimited text
 CSV_ADAPTER_VERSION: Final = "csv-utf8-v1"
 CSV_DELIMITERS: Final = (",", "\t", ";")
