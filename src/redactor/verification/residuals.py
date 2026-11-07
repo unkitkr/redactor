@@ -8,6 +8,7 @@ from redactor.inference.semantics import possible_entity, refine_entity
 from redactor.policy.text_patterns import age_mentions, clinical_ranges
 from redactor.schemas.entities import NerAdapter, TextEntities
 from redactor.schemas.redaction import TextRange
+from redactor.schemas.verification import ResidualCheck, ResidualCheckCollector
 from redactor.utils.constants import (
     AGE_GROUP_MINIMUM,
     ENTITY_LOCATION,
@@ -68,6 +69,8 @@ def scan_residuals(
     clinical: tuple[TextRange, ...] | None = None,
     assessed_ages: tuple[TextRange, ...] | None = None,
     structural: tuple[TextRange, ...] = (),
+    collect: ResidualCheckCollector | None = None,
+    numeric_spans: tuple[TextRange, ...] = (),
 ) -> None:
     clinical = protected_clinical_ranges(text) if clinical is None else clinical
     for mention in sensitive_ranges(
@@ -85,10 +88,37 @@ def scan_residuals(
             raise ValueError(ERROR_RESIDUAL_PHI)
     age_ranges = assessed_age_ranges(text) if assessed_ages is None else assessed_ages
     allowed = exemptions + clinical + age_ranges + structural
+    if collect is not None and (
+        not text.strip()
+        or covered_by_ranges(text, TextRange(start=0, end=len(text)), allowed)
+    ):
+        return
+    check = ResidualCheck(
+        text=text,
+        statistical_text=_numeric_statistical_view(text, numeric_spans),
+        exemptions=exemptions,
+        allowed=allowed,
+    )
+    if collect is not None:
+        collect(check)
+        return
+    verify_residual_entities(check, local_ner)
+
+
+def verify_residual_entities(check: ResidualCheck, local_ner: NerAdapter) -> None:
+    """Unresolved text keeps its complete context, including rewritten spans."""
+    text, exemptions, allowed = check.text, check.exemptions, check.allowed
     # Do not hide edited words before inference: they can provide the context
     # needed to recognize an initial or surname that the writer left behind.
-    entities = validate_entity_evidence(text, TextEntities(entities=local_ner(text)))
-    for entity in entities:
+    entities = validate_entity_evidence(
+        check.statistical_text,
+        TextEntities(entities=local_ner(check.statistical_text)),
+    )
+    for observation in entities:
+        # ASCII digit substitution preserves every character offset and all words.
+        entity = observation.model_copy(
+            update={"text": text[observation.start : observation.end]}
+        )
         if not possible_entity(entity, text):
             continue
         entity = refine_entity(entity)
@@ -147,3 +177,15 @@ def _covered_name_with_role(
         return True
     suffix = re.match(VERIFIER_MENTION_SUFFIX_PATTERN, text[cursor:])
     return bool(covered and suffix and cursor + suffix.end() >= mention.end)
+
+
+def _numeric_statistical_view(text: str, spans: tuple[TextRange, ...]) -> str:
+    """Keep lexical context intact while ignoring already verified scalar digits."""
+    if not spans:
+        return text
+    characters = list(text)
+    for span in spans:
+        for index in range(span.start, span.end):
+            if "0" <= characters[index] <= "9":
+                characters[index] = "0"
+    return "".join(characters)

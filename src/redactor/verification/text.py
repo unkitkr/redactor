@@ -5,6 +5,7 @@ from unicodedata import normalize
 
 from redactor.schemas.entities import NerAdapter
 from redactor.schemas.redaction import TextEdit, TextRange
+from redactor.schemas.verification import ResidualCheckCollector
 from redactor.utils.constants import (
     FIELD_DATE,
     FIELD_EMAIL,
@@ -19,6 +20,7 @@ from redactor.utils.constants import (
     VERIFIER_DOCUMENT_HEADING_PREFIX_PATTERN,
     VERIFIER_EMAIL_CUE_PATTERN,
     VERIFIER_IMAGE_DESCRIPTOR_PATTERN,
+    VERIFIER_NUMERIC_CANONICAL_KINDS,
     VERIFIER_PHONE_CUE_PATTERN,
     VERIFIER_SURFACE_PUNCTUATION,
 )
@@ -45,6 +47,7 @@ def verify_text_changes(
     provider_name: str = "",
     output_ner: NerAdapter | None = None,
     field_label: str = "",
+    collect: ResidualCheckCollector | None = None,
 ) -> None:
     """An exemption belongs to one span, never every occurrence of its value."""
     source_end = output_end = 0
@@ -91,6 +94,12 @@ def verify_text_changes(
             provider_name=provider_name,
             clinical=clinical,
             structural=structural,
+            collect=collect,
+            numeric_spans=tuple(
+                TextRange(start=edit.start, end=edit.end)
+                for edit in expected
+                if collect is not None and edit.kind in VERIFIER_NUMERIC_CANONICAL_KINDS
+            ),
         )
         age_ranges = assessed_age_ranges(original)
         scan_residuals(
@@ -102,6 +111,7 @@ def verify_text_changes(
             clinical=_output_ranges(clinical, expected),
             assessed_ages=_output_ranges(age_ranges, expected),
             structural=_output_ranges(structural, expected),
+            collect=collect if output_ner is None else None,
         )
         canonical_original = normalize(UNICODE_NORMAL_FORM, original)
         canonical_output = normalize(UNICODE_NORMAL_FORM, output)
@@ -118,6 +128,7 @@ def verify_text_changes(
                 provider_name=provider_name,
                 output_ner=output_ner,
                 field_label=field_label,
+                collect=collect,
             )
 
 

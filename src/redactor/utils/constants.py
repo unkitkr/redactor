@@ -189,7 +189,7 @@ STEP_PUBLISH: Final = "publish"
 STEP_QUARANTINE: Final = "quarantine"
 STEP_RECONCILE: Final = "reconcile"
 INFERENCE_STEPS: Final = (STEP_ANALYZE, STEP_REWRITE, STEP_VERIFY)
-VERIFIER_VERSION: Final = "verifier-v22"
+VERIFIER_VERSION: Final = "verifier-v23"
 VERIFIER_RESIDUAL_PATTERNS: Final = (
     r"(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b",
     r"(?<!\d)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]\d{3}[ .-]\d{4}(?!\d)",
@@ -3079,4 +3079,13 @@ CONTEXT_FREE_FIELD_KINDS: Final = (
     FIELD_EMAIL,
     FIELD_ADDRESS,
     FIELD_LOCATION,
+)
+
+# Statistical CSV views normalize digits only inside confirmed scalar edits.
+VERIFIER_NUMERIC_CANONICAL_KINDS: Final = (
+    FIELD_DATE,
+    FIELD_PHONE,
+    FIELD_ADDRESS,
+    FIELD_IDENTIFIER,
+    FIELD_SSN,
 )

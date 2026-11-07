@@ -1,10 +1,12 @@
 """Evidence attached to the exact original, output and policy being verified."""
 
+from collections.abc import Callable
 from typing import Literal
 
 from pydantic import BaseModel, Field, NonNegativeInt
 
 from redactor.schemas.persistence import Artifact
+from redactor.schemas.redaction import TextRange
 from redactor.utils.constants import SHA256_PATTERN, VERIFIER_VERSION
 
 VerificationStatus = Literal["pass", "fail", "unknown"]
@@ -36,3 +38,15 @@ class VerificationVerdict(BaseModel, frozen=True, extra="forbid"):
     artifact: Artifact
     checks: tuple[VerificationCheck, ...]
     status: VerificationStatus
+
+
+class ResidualCheck(BaseModel, frozen=True, extra="forbid"):
+    """One bounded semantic check after exact byte and deterministic checks pass."""
+
+    text: str
+    statistical_text: str
+    exemptions: tuple[TextRange, ...]
+    allowed: tuple[TextRange, ...]
+
+
+ResidualCheckCollector = Callable[[ResidualCheck], None]
