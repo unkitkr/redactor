@@ -65,24 +65,35 @@ def cell_findings(
     patient_name: str = "",
     provider_name: str = "",
 ) -> tuple[TextFinding, ...]:
-    if not value.strip():
+    if policy.kind == FIELD_TEXT:
+        return (
+            find_text_phi(
+                value, local_ner, patient_name=patient_name, provider_name=provider_name
+            )
+            if value.strip()
+            else ()
+        )
+    if not assess_typed_cell(value, policy):
         return ()
+    return (TextFinding(start=0, end=len(value), original=value, kind=policy.kind),)
+
+
+def assess_typed_cell(value: str, policy: ColumnPolicy) -> bool:
+    """Validate a whole typed value without allocating an edit description."""
+    if not value.strip():
+        return False
     if policy.kind == FIELD_CLINICAL:
         validate_clinical_field(value, policy.namespace)
-        return ()
-    if policy.kind == FIELD_TEXT:
-        return find_text_phi(
-            value, local_ner, patient_name=patient_name, provider_name=provider_name
-        )
+        return False
     if policy.kind in (FIELD_DATE, FIELD_BIRTH_DATE):
         parse_date(value.strip())
     if policy.kind == FIELD_AGE:
         age = int(value.rstrip("+"))
         if age < AGE_GROUP_MINIMUM or generalize_age(age) == value:
-            return ()
+            return False
     if policy.kind == FIELD_ZIP and generalize_zip(value) == value:
-        return ()
-    return (TextFinding(start=0, end=len(value), original=value, kind=policy.kind),)
+        return False
+    return True
 
 
 def cell_edits(
@@ -98,6 +109,24 @@ def cell_edits(
         return text_edits(findings, context, key)
     if len(findings) != 1 or findings[0].original != value:
         raise ValueError(ERROR_COVERAGE)
+    replacement = replace_typed_cell(value, policy, context, key)
+    finding = findings[0]
+    return (
+        TextEdit(
+            start=finding.start,
+            end=finding.end,
+            original=finding.original,
+            kind=finding.kind,
+            namespace=finding.namespace,
+            replacement=replacement,
+        ),
+    )
+
+
+def replace_typed_cell(
+    value: str, policy: ColumnPolicy, context: TextContext, key: bytes
+) -> str:
+    """Transform a validated typed cell; text spans use their separate policy."""
     identity = (
         context.provider if policy.kind == FIELD_PROVIDER_NAME else context.patient
     )
@@ -170,6 +199,9 @@ def cell_edits(
             evidence_key(key, value.casefold(), namespace=FIELD_LOCATION), key
         ).split()[-1]
     else:
+        # FIELD_PERSON_NAME never reaches this typed branch: tabular field
+        # aliases do not emit it, and verification routes such columns through
+        # the text findings path. A new alias must keep that routing.
         raise ValueError(ERROR_COVERAGE)
     if policy.name_part:
         words = replacement.split()
@@ -185,4 +217,4 @@ def cell_edits(
         if not value.isascii() or not value.isdigit() or not replacement.isdigit():
             raise ValueError(ERROR_IDENTIFIER)
         replacement = str(int(replacement))
-    return (TextEdit(**findings[0].model_dump(), replacement=replacement),)
+    return replacement

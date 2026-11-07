@@ -1,6 +1,8 @@
 """Locate full and initial spellings inside an already established record context."""
 
 import re
+from collections.abc import Callable
+from functools import lru_cache
 
 from redactor.policy.normalization import normalize_name
 from redactor.schemas.redaction import TextRange
@@ -13,9 +15,30 @@ from redactor.utils.constants import (
 
 def known_name_ranges(text: str, name: str) -> tuple[TextRange, ...]:
     """Match corroborated names and initial forms only inside the current record."""
+    return _matched_ranges(text, _name_pattern(name))
+
+
+def make_name_matcher(
+    *, maximum_entries: int, maximum_name_characters: int
+) -> Callable[[str, str], tuple[TextRange, ...]]:
+    """Keep compiled name patterns local and bounded, without caching role evidence."""
+    cached = lru_cache(maxsize=maximum_entries)(_name_pattern)
+
+    def locate(text: str, name: str) -> tuple[TextRange, ...]:
+        pattern = (
+            cached(name)
+            if len(name) <= maximum_name_characters
+            else _name_pattern(name)
+        )
+        return _matched_ranges(text, pattern)
+
+    return locate
+
+
+def _name_pattern(name: str) -> re.Pattern[str] | None:
     words = normalize_name(name).split()
     if not words:
-        return ()
+        return None
     family = _name_word_pattern(words[-1])
     pattern = family
     if len(words) > 1:
@@ -24,13 +47,22 @@ def known_name_ranges(text: str, name: str) -> tuple[TextRange, ...]:
             rf"(?:[ \t]+{_given_name_pattern(word)})?" for word in words[1:-1]
         )
         pattern = rf"(?:{given}{middle}[ \t]+{family}|{family},[ \t]*{given}{middle})"
-    return tuple(
-        TextRange(start=match.start(), end=match.end())
-        for match in re.finditer(
-            VERIFIER_NAME_BOUNDARY_START + pattern + VERIFIER_NAME_BOUNDARY_END,
-            text,
-            re.IGNORECASE,
+    return re.compile(
+        VERIFIER_NAME_BOUNDARY_START + pattern + VERIFIER_NAME_BOUNDARY_END,
+        re.IGNORECASE,
+    )
+
+
+def _matched_ranges(
+    text: str, pattern: re.Pattern[str] | None
+) -> tuple[TextRange, ...]:
+    return (
+        tuple(
+            TextRange(start=match.start(), end=match.end())
+            for match in pattern.finditer(text)
         )
+        if pattern is not None
+        else ()
     )
 
 

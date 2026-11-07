@@ -1,6 +1,7 @@
 """Locate deterministic text evidence and protect explicit clinical expressions."""
 
 import re
+from collections.abc import Callable
 
 from redactor.policy.clinical_codes import snomed_ranges
 from redactor.schemas.redaction import TextRange
@@ -29,6 +30,34 @@ def clinical_ranges(text: str) -> tuple[TextRange, ...]:
         + snomed_ranges(text)
         + narrative_predicates(text)
     )
+    return _merge_clinical_ranges(text, ranges)
+
+
+def make_clinical_matcher() -> Callable[[str], tuple[TextRange, ...]]:
+    """Compile the fixed clinical expressions once for one processing stage."""
+    patterns = tuple(
+        re.compile(pattern)
+        for pattern in (*TEXT_CLINICAL_PATTERNS, VERIFIER_RELATIVE_TIME_PATTERN)
+    )
+
+    def locate(text: str) -> tuple[TextRange, ...]:
+        ranges = (
+            tuple(
+                TextRange(start=match.start(), end=match.end())
+                for pattern in patterns
+                for match in pattern.finditer(text)
+            )
+            + snomed_ranges(text)
+            + narrative_predicates(text)
+        )
+        return _merge_clinical_ranges(text, ranges)
+
+    return locate
+
+
+def _merge_clinical_ranges(
+    text: str, ranges: tuple[TextRange, ...]
+) -> tuple[TextRange, ...]:
     expanded: list[TextRange] = []
     for span in ranges:
         negation = re.search(CLINICAL_NEGATION_PREFIX_PATTERN, text[: span.start])

@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from redactor.inference.deterministic_text import prepare_text_phi
+from redactor.inference.deterministic_text import make_text_preparer, prepare_text_phi
 from redactor.inference.model_loader import load_local_ner
-from redactor.inference.text import find_text_phi, finish_text_phi
+from redactor.inference.text import find_text_phi, finish_text_phi, make_text_finder
 from redactor.policy.text import apply_text_edits, text_edits
 from redactor.schemas.configuration import LocalSettings
 from redactor.schemas.entities import PreparedTextAssessment, TextEntity
@@ -206,3 +206,49 @@ def test_saved_preparation_preserves_offsets_and_rejects_unhandled_predictions(
 
 def _unexpected_model(_text: str) -> tuple[TextEntity, ...]:
     raise AssertionError("Fully assessed text must not invoke a model")
+
+
+def test_cached_preparation_saved_parity_preserves_each_record_role(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "contexts.csv"
+    shared = "Alex Morgan. Glucose 106 mg/dL."
+    rows = (
+        (shared, "Alex Morgan", ""),
+        (shared, "", "Alex Morgan"),
+        (shared, "Alex Morgan", "Alex Morgan"),
+        (shared, "Unrelated Person", ""),
+        ("Age 91", "", ""),
+        ("Call 206-555-0182", "", ""),
+        ("Metformin 850 mg daily", "", ""),
+        (shared, "Alex Morgan", ""),
+        ("Siobhan D’Avila. " + "Glucose 106 mg/dL. " * 8, "Siobhan D'Avila", ""),
+    )
+    with source.open("w", newline="") as stream:
+        csv.writer(stream).writerows(rows)
+    prepare = make_text_preparer(maximum_entries=2, maximum_text_characters=64)
+    ner = load_local_ner(LocalSettings())
+    find = make_text_finder(ner, maximum_entries=2, maximum_text_characters=64)
+    saved = tmp_path / "prepared.json"
+    kinds = []
+    with source.open(newline="") as stream:
+        for number, (text, patient, provider) in enumerate(csv.reader(stream)):
+            expected = prepare_text_phi(
+                text, patient_name=patient, provider_name=provider
+            )
+            cached = prepare(text, patient, provider)
+            saved.write_text(cached.model_dump_json())
+            assert PreparedTextAssessment.model_validate_json(saved.read_text()) == (
+                expected
+            )
+            assert find(text, patient, provider) == find_text_phi(
+                text, ner, patient_name=patient, provider_name=provider
+            )
+            if number < 4:
+                kinds.append(tuple(finding.kind for finding in cached.findings))
+    assert kinds == [
+        ("patient_name",),
+        ("provider_name",),
+        ("person_name",),
+        (),
+    ]

@@ -2,7 +2,7 @@
 
 import csv
 import io
-from collections.abc import Generator, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterator, Sequence
 from pathlib import Path
 from typing import BinaryIO, Literal
 
@@ -95,6 +95,22 @@ def encode_csv_record(values: Sequence[str], layout: CsvLayout) -> bytes:
         )
         writer.writerow(values)
         return text.getvalue().encode(TEXT_ENCODING)
+
+
+def csv_record_encoder(layout: CsvLayout) -> Callable[[Sequence[str]], bytes]:
+    """Reuse the CSV writer and its bounded record buffer within one file."""
+    text = io.StringIO(newline="")
+    writer = csv.writer(
+        text, delimiter=layout.delimiter, lineterminator=layout.line_ending
+    )
+
+    def encode(values: Sequence[str]) -> bytes:
+        text.seek(0)
+        text.truncate()
+        writer.writerow(values)
+        return text.getvalue().encode(TEXT_ENCODING)
+
+    return encode
 
 
 def encode_csv_header(layout: CsvLayout) -> bytes:

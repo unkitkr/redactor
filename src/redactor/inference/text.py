@@ -1,8 +1,9 @@
 """Finish prepared text assessment with grounded model observations."""
 
 import re
+from collections.abc import Callable
 
-from redactor.inference.deterministic_text import prepare_text_phi
+from redactor.inference.deterministic_text import make_text_preparer, prepare_text_phi
 from redactor.inference.evidence import validate_entity_evidence
 from redactor.inference.masking import mask_assessed_ranges, restore_entity
 from redactor.inference.semantics import possible_entity, refine_entity
@@ -42,6 +43,26 @@ def find_text_phi(
         prepare_text_phi(text, patient_name=patient_name, provider_name=provider_name),
         local_ner,
     )
+
+
+def make_text_finder(
+    local_ner: NerAdapter,
+    *,
+    maximum_entries: int,
+    maximum_text_characters: int,
+) -> Callable[[str, str, str], tuple[TextFinding, ...]]:
+    """Prepare repeated text efficiently without caching identity decisions."""
+    prepare = make_text_preparer(
+        maximum_entries=maximum_entries,
+        maximum_text_characters=maximum_text_characters,
+    )
+
+    def find(
+        text: str, patient_name: str, provider_name: str
+    ) -> tuple[TextFinding, ...]:
+        return finish_text_phi(prepare(text, patient_name, provider_name), local_ner)
+
+    return find
 
 
 def finish_text_phi(

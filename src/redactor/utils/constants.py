@@ -3060,3 +3060,23 @@ MEDICATION_DOSE_FORM_PATTERN: Final = (
     r"(?:tablet|capsule|solution|suspension|cream|ointment|gel|patch|powder|"
     r"spray|drop|injection)s?"
 )
+
+# Bounded exact-value caches for typed CSV cells.
+TABULAR_CACHE_ENTRIES: Final = 4096
+TABULAR_CACHE_VALUE_CHARACTERS: Final = 128
+CONTEXT_FREE_FIELD_KINDS: Final = (
+    FIELD_SSN,
+    FIELD_NETWORK,
+    FIELD_WEB,
+    FIELD_PROVIDER_ID,
+    FIELD_IDENTIFIER,
+    FIELD_PATIENT_ID,
+    FIELD_ORGANIZATION,
+    FIELD_LOT,
+    FIELD_AGE,
+    FIELD_ZIP,
+    FIELD_PHONE,
+    FIELD_EMAIL,
+    FIELD_ADDRESS,
+    FIELD_LOCATION,
+)

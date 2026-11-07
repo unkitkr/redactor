@@ -1,11 +1,17 @@
 """Prepare deterministic text evidence without loading or invoking a model."""
 
 import re
+from collections.abc import Callable
+from functools import lru_cache
 from ipaddress import ip_address
 
 from redactor.policy.dates import parse_date
-from redactor.policy.name_mentions import known_name_ranges
-from redactor.policy.text_patterns import age_mentions, clinical_ranges
+from redactor.policy.name_mentions import known_name_ranges, make_name_matcher
+from redactor.policy.text_patterns import (
+    age_mentions,
+    clinical_ranges,
+    make_clinical_matcher,
+)
 from redactor.schemas.entities import PreparedTextAssessment
 from redactor.schemas.redaction import TextFinding, TextRange
 from redactor.utils.constants import (
@@ -47,21 +53,95 @@ def prepare_text_phi(
     provider_name: str = "",
 ) -> PreparedTextAssessment:
     """Keep source offsets and role evidence in a serializable private value."""
-    protected = list(clinical_ranges(text))
+    findings, protected = _deterministic_findings(
+        text, _finding_patterns(), _identifier_patterns(), clinical_ranges
+    )
+    return _bind_names(
+        text,
+        findings,
+        protected,
+        patient_name,
+        provider_name,
+        known_name_ranges,
+        known_name_ranges,
+    )
+
+
+def make_text_preparer(
+    *, maximum_entries: int, maximum_text_characters: int
+) -> Callable[[str, str, str], PreparedTextAssessment]:
+    """Reuse bounded, context-free evidence; bind actual names on every call."""
+    patterns = _finding_patterns()
+    identifiers = _identifier_patterns()
+    clinical = make_clinical_matcher()
+    patient_matches = make_name_matcher(
+        maximum_entries=maximum_entries,
+        maximum_name_characters=maximum_text_characters,
+    )
+    provider_matches = make_name_matcher(
+        maximum_entries=maximum_entries,
+        maximum_name_characters=maximum_text_characters,
+    )
+
+    def assess(text: str) -> tuple[tuple[TextFinding, ...], tuple[TextRange, ...]]:
+        return _deterministic_findings(text, patterns, identifiers, clinical)
+
+    cached = lru_cache(maxsize=maximum_entries)(assess)
+
+    def prepare(
+        text: str, patient_name: str, provider_name: str
+    ) -> PreparedTextAssessment:
+        findings, protected = (
+            cached(text) if len(text) <= maximum_text_characters else assess(text)
+        )
+        return _bind_names(
+            text,
+            findings,
+            protected,
+            patient_name,
+            provider_name,
+            patient_matches,
+            provider_matches,
+        )
+
+    return prepare
+
+
+def _finding_patterns() -> tuple[tuple[re.Pattern[str], str], ...]:
+    return tuple(
+        (re.compile(pattern), kind)
+        for pattern, kind in (
+            (TEXT_URL_PATTERN, FIELD_WEB),
+            (TEXT_IPV4_PATTERN, FIELD_NETWORK),
+            (TEXT_ZIP_PATTERN, FIELD_ZIP),
+            (TEXT_EMAIL_PATTERN, FIELD_EMAIL),
+            (TEXT_PHONE_PATTERN, FIELD_PHONE),
+            (TEXT_DATE_PATTERN, FIELD_DATE),
+            (TEXT_NAMED_DATE_PATTERN, FIELD_DATE),
+            (TEXT_STREET_PATTERN, FIELD_ADDRESS),
+            (TEXT_RELATIVE_PATTERN, IDENTITY_RELATIVE),
+            (TEXT_PROVIDER_PATTERN, FIELD_PROVIDER_NAME),
+        )
+    )
+
+
+def _identifier_patterns() -> tuple[tuple[re.Pattern[str], str], ...]:
+    return tuple(
+        (re.compile(pattern), namespace)
+        for pattern, namespace in TEXT_IDENTIFIER_PATTERNS
+    )
+
+
+def _deterministic_findings(
+    text: str,
+    patterns: tuple[tuple[re.Pattern[str], str], ...],
+    identifiers: tuple[tuple[re.Pattern[str], str], ...],
+    clinical: Callable[[str], tuple[TextRange, ...]],
+) -> tuple[tuple[TextFinding, ...], tuple[TextRange, ...]]:
+    protected = list(clinical(text))
     findings: list[TextFinding] = []
-    for pattern, kind in (
-        (TEXT_URL_PATTERN, FIELD_WEB),
-        (TEXT_IPV4_PATTERN, FIELD_NETWORK),
-        (TEXT_ZIP_PATTERN, FIELD_ZIP),
-        (TEXT_EMAIL_PATTERN, FIELD_EMAIL),
-        (TEXT_PHONE_PATTERN, FIELD_PHONE),
-        (TEXT_DATE_PATTERN, FIELD_DATE),
-        (TEXT_NAMED_DATE_PATTERN, FIELD_DATE),
-        (TEXT_STREET_PATTERN, FIELD_ADDRESS),
-        (TEXT_RELATIVE_PATTERN, IDENTITY_RELATIVE),
-        (TEXT_PROVIDER_PATTERN, FIELD_PROVIDER_NAME),
-    ):
-        for match in re.finditer(pattern, text):
+    for pattern, kind in patterns:
+        for match in pattern.finditer(text):
             group = (
                 "name"
                 if "name" in match.re.groupindex
@@ -82,8 +162,8 @@ def prepare_text_phi(
             findings.append(
                 TextFinding(start=start, end=end, original=value, kind=kind)
             )
-    for pattern, namespace in TEXT_IDENTIFIER_PATTERNS:
-        for match in re.finditer(pattern, text):
+    for pattern, namespace in identifiers:
+        for match in pattern.finditer(text):
             start, end = match.span("value")
             if any(start < found.end and end > found.start for found in findings):
                 continue
@@ -116,14 +196,27 @@ def prepare_text_phi(
                     kind=FIELD_AGE,
                 )
             )
+    return tuple(findings), tuple(protected)
+
+
+def _bind_names(
+    text: str,
+    base_findings: tuple[TextFinding, ...],
+    protected: tuple[TextRange, ...],
+    patient_name: str,
+    provider_name: str,
+    patient_matches: Callable[[str, str], tuple[TextRange, ...]],
+    provider_matches: Callable[[str, str], tuple[TextRange, ...]],
+) -> PreparedTextAssessment:
+    findings = list(base_findings)
     # A model is not needed to rediscover a corroborated full name or initial
     # spelling already present in this record's typed identity fields.
     mentions: dict[tuple[int, int], set[str]] = {}
-    for name, kind in (
-        (patient_name, FIELD_PATIENT_NAME),
-        (provider_name, FIELD_PROVIDER_NAME),
+    for name, kind, locate in (
+        (patient_name, FIELD_PATIENT_NAME, patient_matches),
+        (provider_name, FIELD_PROVIDER_NAME, provider_matches),
     ):
-        for span in known_name_ranges(text, name):
+        for span in locate(text, name):
             mentions.setdefault((span.start, span.end), set()).add(kind)
     for (start, end), roles in sorted(mentions.items()):
         if any(start < found.end and end > found.start for found in findings):

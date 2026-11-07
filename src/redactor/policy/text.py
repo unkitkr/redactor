@@ -104,7 +104,16 @@ def text_edits(
             replacement = person_name(location_key, key).split()[-1]
         else:
             raise ValueError(ERROR_COVERAGE)
-        edits.append(TextEdit(**finding.model_dump(), replacement=replacement))
+        edits.append(
+            TextEdit(
+                start=finding.start,
+                end=finding.end,
+                original=finding.original,
+                kind=finding.kind,
+                namespace=finding.namespace,
+                replacement=replacement,
+            )
+        )
     return tuple(edits)
 
 
