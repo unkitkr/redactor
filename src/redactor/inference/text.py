@@ -69,6 +69,17 @@ _CONTACT_SYNTAX = tuple(
         (NER_IP_LABEL, TEXT_IPV4_PATTERN, FIELD_NETWORK),
     )
 )
+# Label-less identifier or contact observations ground on complete value shapes.
+_SHAPE_SYNTAX = tuple(
+    (re.compile(pattern), kind)
+    for pattern, kind in (
+        (TEXT_PHONE_PATTERN, FIELD_PHONE),
+        (TEXT_EMAIL_PATTERN, FIELD_EMAIL),
+        (TEXT_URL_PATTERN, FIELD_WEB),
+        (TEXT_IPV4_PATTERN, FIELD_NETWORK),
+    )
+)
+_SHAPE_IDENTIFIER = re.compile(r"[0-9][0-9-]*")
 
 
 def find_text_phi(
@@ -220,6 +231,19 @@ def finish_text_phi(
                 if entity.label == label and syntax.fullmatch(entity.text):
                     entity_kind = kind
                     break
+        if entity_kind is None and entity.entity_type in (
+            ENTITY_IDENTIFIER,
+            ENTITY_CONTACT,
+        ):
+            # Hosted models often return these types without a fine-grained
+            # label; a complete supported value shape still grounds them.
+            for syntax, kind in _SHAPE_SYNTAX:
+                if syntax.fullmatch(entity.text):
+                    entity_kind = kind
+                    break
+            else:
+                if _SHAPE_IDENTIFIER.fullmatch(entity.text) and len(entity.text) >= 4:
+                    entity_kind = FIELD_IDENTIFIER
         if entity_kind is None:
             raise ValueError(ERROR_COVERAGE)
         findings.append(
