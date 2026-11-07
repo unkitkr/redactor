@@ -13,7 +13,11 @@ from redactor.persistence.queue.tasks import get_task, require_attempt
 from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.identity import IdentityObservation
 from redactor.schemas.persistence import Task
-from redactor.utils.constants import STEP_ANALYZE, STEP_RESOLVE
+from redactor.utils.constants import (
+    IDENTITY_CANDIDATE_LIMIT,
+    STEP_ANALYZE,
+    STEP_RESOLVE,
+)
 from redactor.utils.errors import ERROR_IDENTITY_SNAPSHOT, ERROR_INCOMPLETE_INPUT
 
 
@@ -119,3 +123,61 @@ def identity_candidates(
             )
     finally:
         cursor.close()
+
+
+def uncontested_anchors(
+    connection: sqlite3.Connection,
+    task_id: str,
+    observations: Sequence[IdentityObservation],
+) -> set[str]:
+    """Find anchors whose complete candidate group contains only their own key.
+
+    Matching cannot change these identities. Probe all accepted sources using the
+    same indexes as candidate lookup, without decrypting the anchor again. A
+    different spelling or conflicting anchor keeps the full matching path.
+    """
+    source_count = connection.execute(
+        "SELECT count(*) FROM identity_resolution_sources WHERE resolution_task_id = ?",
+        (task_id,),
+    ).fetchone()[0]
+    if source_count > IDENTITY_CANDIDATE_LIMIT:
+        return set()
+    accepted: set[str] = set()
+    maximum_parameters = connection.getlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER) - 1
+    batch_size = maximum_parameters // 3
+    for has_birth in (True, False):
+        selected = [
+            observation
+            for observation in observations
+            if observation.is_anchor and bool(observation.birth_key) == has_birth
+        ]
+        birth_condition = (
+            "AND observations.birth_key = requested.birth_key" if has_birth else ""
+        )
+        for start in range(0, len(selected), batch_size):
+            batch = selected[start : start + batch_size]
+            placeholders = ",".join("(?, ?, ?)" for _ in batch)
+            parameters = tuple(
+                value
+                for observation in batch
+                for value in (
+                    observation.observation_key,
+                    observation.identifier_key,
+                    observation.birth_key,
+                )
+            )
+            rows = connection.execute(
+                "WITH requested(observation_key, identifier_key, birth_key) AS "
+                f"(VALUES {placeholders}) "
+                "SELECT requested.observation_key FROM requested WHERE NOT EXISTS ("
+                "SELECT 1 FROM identity_observations AS observations "
+                "JOIN identity_resolution_sources AS sources "
+                "ON sources.source_task_id = observations.task_id "
+                "WHERE sources.resolution_task_id = ? AND observations.is_anchor = 1 "
+                "AND observations.identifier_key = requested.identifier_key "
+                f"{birth_condition} "
+                "AND observations.observation_key != requested.observation_key)",
+                (*parameters, task_id),
+            )
+            accepted.update(row[0] for row in rows)
+    return accepted

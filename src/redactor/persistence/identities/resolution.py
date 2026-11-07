@@ -8,7 +8,10 @@ from contextlib import closing
 from redactor.identity.cohorts import merge_cohorts
 from redactor.identity.matching import match_identity
 from redactor.persistence.database import transaction
-from redactor.persistence.identities.sources import identity_candidates
+from redactor.persistence.identities.sources import (
+    identity_candidates,
+    uncontested_anchors,
+)
 from redactor.persistence.queue.tasks import require_attempt
 from redactor.policy.keys import evidence_key
 from redactor.schemas.identity import (
@@ -21,6 +24,7 @@ from redactor.schemas.persistence import Task
 from redactor.utils.constants import (
     IDENTITY_BINDING_NAMESPACE,
     IDENTITY_COHORT_CONTEXT,
+    IDENTITY_CORROBORATED,
     IDENTITY_RESOLUTION_BATCH_SIZE,
     JSON_SEPARATORS,
     MAX_PRIVATE_RECORD_BYTES,
@@ -60,18 +64,31 @@ def resolve_batch(
     byte_count = 0
     matches: list[tuple[str, IdentityMatch]] = []
     cohorts: dict[str, IdentityCohort] = {}
-    original_cohorts: dict[str, IdentityCohort | None] = {}
+    unopposed = uncontested_anchors(connection, claimed.task_id, observations)
     for observation in observations:
         position = (source_task_id, observation.observation_key)
         byte_count += len(observation.model_dump_json().encode())
         if position <= previous_position or byte_count > MAX_PRIVATE_RECORD_BYTES:
             raise ValueError(ERROR_INVALID_CHECKPOINT)
         previous_position = position
-        with closing(
-            identity_candidates(connection, claimed.task_id, observation, key)
-        ) as (candidates):
-            match = match_identity(observation, candidates)
+        if observation.observation_key in unopposed:
+            match = IdentityMatch(
+                identity_key=observation.observation_key,
+                status=IDENTITY_CORROBORATED,
+            )
+        else:
+            with closing(
+                identity_candidates(connection, claimed.task_id, observation, key)
+            ) as candidates:
+                match = match_identity(observation, candidates)
         matches.append((observation.observation_key, match))
+    original_cohorts = _read_cohorts(
+        connection,
+        claimed.task_id,
+        tuple(dict.fromkeys(match.identity_key for _, match in matches)),
+        key,
+    )
+    for observation, (_, match) in zip(observations, matches, strict=True):
         cohort = IdentityCohort(
             identity_key=match.identity_key,
             birth_date=observation.evidence.birth_date,
@@ -83,8 +100,7 @@ def resolve_batch(
         )
         existing = cohorts.get(match.identity_key)
         if existing is None:
-            existing = read_cohort(connection, claimed.task_id, match.identity_key, key)
-            original_cohorts[match.identity_key] = existing
+            existing = original_cohorts.get(match.identity_key)
         cohorts[match.identity_key] = (
             merge_cohorts(existing, cohort) if existing is not None else cohort
         )
@@ -99,7 +115,7 @@ def resolve_batch(
             ),
         )
         for cohort in cohorts.values()
-        if cohort != original_cohorts[cohort.identity_key]
+        if cohort != original_cohorts.get(cohort.identity_key)
     ]
     with transaction(connection):
         require_attempt(connection, claimed)
@@ -142,17 +158,26 @@ def resolve_batch(
         )
 
 
-def read_cohort(
-    connection: sqlite3.Connection, task_id: str, identity_key: str, key: bytes
-) -> IdentityCohort | None:
-    row = connection.execute(
-        "SELECT encrypted_payload FROM identity_cohorts "
-        "WHERE resolution_task_id = ? AND identity_key = ?",
-        (task_id, identity_key),
-    ).fetchone()
-    if row is None:
-        return None
-    return decode_cohort(key, task_id, identity_key, row[0])
+def _read_cohorts(
+    connection: sqlite3.Connection,
+    task_id: str,
+    identity_keys: tuple[str, ...],
+    key: bytes,
+) -> dict[str, IdentityCohort]:
+    cohorts: dict[str, IdentityCohort] = {}
+    batch_size = connection.getlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER) - 1
+    for start in range(0, len(identity_keys), batch_size):
+        batch = identity_keys[start : start + batch_size]
+        placeholders = ",".join("?" for _ in batch)
+        rows = connection.execute(
+            "SELECT identity_key, encrypted_payload FROM identity_cohorts "
+            "WHERE resolution_task_id = ? "
+            f"AND identity_key IN ({placeholders})",
+            (task_id, *batch),
+        )
+        for identity_key, payload in rows:
+            cohorts[identity_key] = decode_cohort(key, task_id, identity_key, payload)
+    return cohorts
 
 
 def decode_cohort(
