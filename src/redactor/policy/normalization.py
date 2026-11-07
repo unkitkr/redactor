@@ -6,6 +6,8 @@ import unicodedata
 from redactor.utils.constants import NAME_TITLES, UNICODE_NORMAL_FORM
 from redactor.utils.errors import ERROR_IDENTIFIER
 
+_DIGIT_SEPARATORS = re.compile(r"\+?[0-9 ().-]+")
+
 
 def normalize_name(value: str) -> str:
     normalized = unicodedata.normalize(UNICODE_NORMAL_FORM, value).strip().casefold()
@@ -36,7 +38,7 @@ def normalize_identifier(value: str) -> str:
 def normalize_digits(value: str) -> str:
     """Remove conventional separators without silently dropping arbitrary text."""
     normalized = unicodedata.normalize(UNICODE_NORMAL_FORM, value).strip()
-    if not re.fullmatch(r"\+?[0-9 ().-]+", normalized):
+    if not _DIGIT_SEPARATORS.fullmatch(normalized):
         raise ValueError(ERROR_IDENTIFIER)
     digits = "".join(character for character in normalized if character.isdigit())
     if not digits:

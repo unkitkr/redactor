@@ -9,10 +9,12 @@ from redactor.utils.constants import (
 )
 from redactor.utils.errors import ERROR_IDENTIFIER
 
+_ZIP_CODE = re.compile(ZIP_CODE_PATTERN)
+
 
 def generalize_zip(value: str) -> str:
     """Call only for a location already identified as a ZIP field or text span."""
-    if re.fullmatch(ZIP_CODE_PATTERN, value) is None:
+    if _ZIP_CODE.fullmatch(value) is None:
         raise ValueError(ERROR_IDENTIFIER)
     prefix = value[:3]
     return ZIP_REDACTED_PREFIX if prefix in RESTRICTED_ZIP_PREFIXES else prefix

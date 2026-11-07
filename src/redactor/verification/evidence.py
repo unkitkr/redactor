@@ -18,6 +18,16 @@ from redactor.utils.constants import (
     VERIFIER_SIGNED_DECIMAL_PATTERN,
 )
 
+_RESIDUAL_PATTERNS = tuple(
+    re.compile(pattern)
+    for pattern in (*VERIFIER_RESIDUAL_PATTERNS, VERIFIER_FACILITY_PATTERN)
+)
+_LABELLED_VALUE = re.compile(VERIFIER_LABELLED_VALUE_PATTERN)
+_LABEL_VALUE_END = re.compile(VERIFIER_LABEL_VALUE_END_PATTERN)
+_CONTACT_CANDIDATE = re.compile(VERIFIER_CONTACT_CANDIDATE_PATTERN)
+_IPV6_CANDIDATE = re.compile(VERIFIER_IPV6_CANDIDATE_PATTERN)
+_SIGNED_DECIMAL = re.compile(VERIFIER_SIGNED_DECIMAL_PATTERN)
+
 
 def contains_range(outer: TextRange, inner: TextRange) -> bool:
     return outer.start <= inner.start and inner.end <= outer.end
@@ -61,13 +71,13 @@ def sensitive_ranges(
 ) -> tuple[TextRange, ...]:
     """Conflicting labels/name evidence outranks generic clinical shape matches."""
     found: list[TextRange] = []
-    for pattern in (*VERIFIER_RESIDUAL_PATTERNS, VERIFIER_FACILITY_PATTERN):
-        for match in re.finditer(pattern, text):
+    for pattern in _RESIDUAL_PATTERNS:
+        for match in pattern.finditer(text):
             group = "value" if "value" in match.re.groupindex else 0
             found.append(TextRange(start=match.start(group), end=match.end(group)))
-    for match in re.finditer(VERIFIER_LABELLED_VALUE_PATTERN, text):
+    for match in _LABELLED_VALUE.finditer(text):
         value = match["value"]
-        boundary = re.search(VERIFIER_LABEL_VALUE_END_PATTERN, value)
+        boundary = _LABEL_VALUE_END.search(value)
         value = value[: boundary.start()] if boundary else value
         value = value.rstrip(". \t")
         if value:
@@ -76,14 +86,14 @@ def sensitive_ranges(
                     start=match.start("value"), end=match.start("value") + len(value)
                 )
             )
-    for match in re.finditer(VERIFIER_CONTACT_CANDIDATE_PATTERN, text):
+    for match in _CONTACT_CANDIDATE.finditer(text):
         digits = sum(character.isdigit() for character in match["number"])
         if digits < VERIFIER_CONTACT_MINIMUM_DIGITS:
             continue
         candidate = TextRange(start=match.start(), end=match.end())
         if not _clinical_number(match["number"], candidate, clinical):
             found.append(candidate)
-    for match in re.finditer(VERIFIER_IPV6_CANDIDATE_PATTERN, text):
+    for match in _IPV6_CANDIDATE.finditer(text):
         value = match[0].rstrip(".")
         try:
             IPv6Address(value)
@@ -103,7 +113,7 @@ def _clinical_number(
         # A single decimal point and a clinical unit establish a signed decimal
         # measurement. Unseparated international digits remain ambiguous even
         # when followed by a unit, and therefore require coverage or quarantine.
-        if re.fullmatch(VERIFIER_SIGNED_DECIMAL_PATTERN, number) is None:
+        if _SIGNED_DECIMAL.fullmatch(number) is None:
             return False
         candidate = TextRange(start=candidate.start + 1, end=candidate.end)
     return any(contains_range(span, candidate) for span in clinical)

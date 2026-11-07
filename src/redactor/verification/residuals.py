@@ -28,6 +28,14 @@ from redactor.verification.evidence import (
     sensitive_ranges,
 )
 
+_RELATIVE_TIME = re.compile(VERIFIER_RELATIVE_TIME_PATTERN)
+_ROLE_LABEL = re.compile(VERIFIER_ROLE_LABEL_PATTERN)
+_MENTION_ROLE = re.compile(rf"(?i){VERIFIER_MENTION_ROLE}")
+_MENTION_PREFIX = re.compile(VERIFIER_MENTION_PREFIX_PATTERN)
+_EDIT_JOIN = re.compile(VERIFIER_EDIT_JOIN_PATTERN)
+_SURFACE_PUNCTUATION = re.compile(VERIFIER_SURFACE_PUNCTUATION)
+_MENTION_SUFFIX = re.compile(VERIFIER_MENTION_SUFFIX_PATTERN)
+
 
 def protected_clinical_ranges(text: str) -> tuple[TextRange, ...]:
     """The required older-age generalization is not a changed clinical dose."""
@@ -36,11 +44,8 @@ def protected_clinical_ranges(text: str) -> tuple[TextRange, ...]:
     )
     candidates = clinical_ranges(text) + tuple(
         TextRange(start=match.start(), end=match.end())
-        for pattern in (
-            VERIFIER_RELATIVE_TIME_PATTERN,
-            VERIFIER_ROLE_LABEL_PATTERN,
-        )
-        for match in re.finditer(pattern, text)
+        for pattern in (_RELATIVE_TIME, _ROLE_LABEL)
+        for match in pattern.finditer(text)
     )
     return tuple(
         span
@@ -138,13 +143,9 @@ def _covered_name_with_role(
     text: str, mention: TextRange, exemptions: tuple[TextRange, ...]
 ) -> bool:
     """A prediction can cross verified edits and punctuation, never unseen words."""
-    if re.fullmatch(
-        rf"(?i){VERIFIER_MENTION_ROLE}", text[mention.start : mention.end]
-    ) and any(
+    if _MENTION_ROLE.fullmatch(text[mention.start : mention.end]) and any(
         span.start >= mention.end
-        and re.fullmatch(
-            VERIFIER_MENTION_PREFIX_PATTERN, text[mention.start : span.start]
-        )
+        and _MENTION_PREFIX.fullmatch(text[mention.start : span.start])
         for span in exemptions
     ):
         return True
@@ -156,7 +157,7 @@ def _covered_name_with_role(
         text[cursor].isspace() or category(text[cursor]).startswith("P")
     ):
         cursor += 1
-    prefix = re.match(VERIFIER_MENTION_PREFIX_PATTERN, text[cursor : mention.end])
+    prefix = _MENTION_PREFIX.match(text[cursor : mention.end])
     if prefix:
         cursor += prefix.end()
     covered = False
@@ -165,17 +166,15 @@ def _covered_name_with_role(
             continue
         if span.start > cursor:
             gap = text[cursor : span.start]
-            if not covered or re.fullmatch(VERIFIER_EDIT_JOIN_PATTERN, gap) is None:
+            if not covered or _EDIT_JOIN.fullmatch(gap) is None:
                 return False
         cursor = max(cursor, span.end)
         covered = True
         if cursor >= mention.end:
             return True
-    if covered and re.fullmatch(
-        VERIFIER_SURFACE_PUNCTUATION, text[cursor : mention.end]
-    ):
+    if covered and _SURFACE_PUNCTUATION.fullmatch(text[cursor : mention.end]):
         return True
-    suffix = re.match(VERIFIER_MENTION_SUFFIX_PATTERN, text[cursor:])
+    suffix = _MENTION_SUFFIX.match(text[cursor:])
     return bool(covered and suffix and cursor + suffix.end() >= mention.end)
 
 

@@ -25,6 +25,27 @@ from redactor.utils.constants import (
 )
 from redactor.utils.errors import ERROR_DATE
 
+_NUMERIC_DATE_PATTERNS = tuple(
+    (style, re.compile(pattern))
+    for style, pattern in (
+        (DATE_STYLE_YMD, DATE_YMD_PATTERN),
+        (DATE_STYLE_MDY, DATE_MDY_PATTERN),
+        (DATE_STYLE_COMPACT, DATE_COMPACT_PATTERN),
+    )
+)
+_NAMED_DATE_PATTERNS = tuple(
+    (style, re.compile(pattern))
+    for style, pattern in (
+        (DATE_STYLE_NAMED_MDY, DATE_NAMED_MDY_PATTERN),
+        (DATE_STYLE_NAMED_DMY, DATE_NAMED_DMY_PATTERN),
+    )
+)
+# Shortest accepted value is "1/1/00" (month, day and a two-digit year); the
+# longest all-digit value is a compact timestamp with zone, yyyymmdd plus an
+# 18-character clock. Named notations are unbounded through their trailing clock.
+_MINIMUM_DATE_CHARACTERS = 6
+_MAXIMUM_ALL_DIGIT_DATE_CHARACTERS = 26
+
 
 def patient_date_offset(key: bytes, identity_key: str, maximum_days: int) -> int:
     if maximum_days < 1:
@@ -38,12 +59,10 @@ def patient_date_offset(key: bytes, identity_key: str, maximum_days: int) -> int
 
 def parse_date(value: str) -> ParsedDate:
     """Only accept complete, valid dates; never invent a missing year or day."""
-    for style, pattern in (
-        (DATE_STYLE_YMD, DATE_YMD_PATTERN),
-        (DATE_STYLE_MDY, DATE_MDY_PATTERN),
-        (DATE_STYLE_COMPACT, DATE_COMPACT_PATTERN),
-    ):
-        match = re.fullmatch(pattern, value)
+    if _impossible_date(value):
+        raise ValueError(ERROR_DATE)
+    for style, pattern in _NUMERIC_DATE_PATTERNS:
+        match = pattern.fullmatch(value)
         if match is None:
             continue
         parts = match.groupdict()
@@ -67,11 +86,8 @@ def parse_date(value: str) -> ParsedDate:
             year_width=cast(Literal[2, 4], len(parts["year"])),
             clock=clock,
         )
-    for style, pattern in (
-        (DATE_STYLE_NAMED_MDY, DATE_NAMED_MDY_PATTERN),
-        (DATE_STYLE_NAMED_DMY, DATE_NAMED_DMY_PATTERN),
-    ):
-        match = re.fullmatch(pattern, value)
+    for style, pattern in _NAMED_DATE_PATTERNS:
+        match = pattern.fullmatch(value)
         if match is None:
             continue
         parts = match.groupdict()
@@ -159,3 +175,19 @@ def _validate_clock(value: date, clock: str, *, compact: bool) -> None:
         datetime.fromisoformat(value.isoformat() + "T" + clock)
     else:
         datetime.fromisoformat(value.isoformat() + clock)
+
+
+def _impossible_date(value: str) -> bool:
+    """Reject only shapes no accepted notation can produce, before matching.
+
+    Every notation starts with an ASCII digit or letter. Values that cannot
+    reach the shortest notation, or all-digit values beyond the compact
+    timestamp length, cannot match any pattern; other values are left to the
+    full matchers so no accepted notation is ever gated out.
+    """
+    if not value or len(value) < _MINIMUM_DATE_CHARACTERS:
+        return True
+    first = value[0]
+    return not (first.isascii() and first.isalnum()) or (
+        len(value) > _MAXIMUM_ALL_DIGIT_DATE_CHARACTERS and value.isdigit()
+    )

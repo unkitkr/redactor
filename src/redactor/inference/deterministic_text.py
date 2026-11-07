@@ -45,6 +45,25 @@ from redactor.utils.constants import (
 )
 from redactor.utils.errors import ERROR_ENTITY_EVIDENCE
 
+_FINDING_PATTERNS = tuple(
+    (re.compile(pattern), kind)
+    for pattern, kind in (
+        (TEXT_URL_PATTERN, FIELD_WEB),
+        (TEXT_IPV4_PATTERN, FIELD_NETWORK),
+        (TEXT_ZIP_PATTERN, FIELD_ZIP),
+        (TEXT_EMAIL_PATTERN, FIELD_EMAIL),
+        (TEXT_PHONE_PATTERN, FIELD_PHONE),
+        (TEXT_DATE_PATTERN, FIELD_DATE),
+        (TEXT_NAMED_DATE_PATTERN, FIELD_DATE),
+        (TEXT_STREET_PATTERN, FIELD_ADDRESS),
+        (TEXT_RELATIVE_PATTERN, IDENTITY_RELATIVE),
+        (TEXT_PROVIDER_PATTERN, FIELD_PROVIDER_NAME),
+    )
+)
+_IDENTIFIER_PATTERNS = tuple(
+    (re.compile(pattern), namespace) for pattern, namespace in TEXT_IDENTIFIER_PATTERNS
+)
+
 
 def prepare_text_phi(
     text: str,
@@ -54,7 +73,7 @@ def prepare_text_phi(
 ) -> PreparedTextAssessment:
     """Keep source offsets and role evidence in a serializable private value."""
     findings, protected = _deterministic_findings(
-        text, _finding_patterns(), _identifier_patterns(), clinical_ranges
+        text, _FINDING_PATTERNS, _IDENTIFIER_PATTERNS, clinical_ranges
     )
     return _bind_names(
         text,
@@ -71,8 +90,6 @@ def make_text_preparer(
     *, maximum_entries: int, maximum_text_characters: int
 ) -> Callable[[str, str, str], PreparedTextAssessment]:
     """Reuse bounded, context-free evidence; bind actual names on every call."""
-    patterns = _finding_patterns()
-    identifiers = _identifier_patterns()
     clinical = make_clinical_matcher()
     patient_matches = make_name_matcher(
         maximum_entries=maximum_entries,
@@ -84,7 +101,9 @@ def make_text_preparer(
     )
 
     def assess(text: str) -> tuple[tuple[TextFinding, ...], tuple[TextRange, ...]]:
-        return _deterministic_findings(text, patterns, identifiers, clinical)
+        return _deterministic_findings(
+            text, _FINDING_PATTERNS, _IDENTIFIER_PATTERNS, clinical
+        )
 
     cached = lru_cache(maxsize=maximum_entries)(assess)
 
@@ -105,31 +124,6 @@ def make_text_preparer(
         )
 
     return prepare
-
-
-def _finding_patterns() -> tuple[tuple[re.Pattern[str], str], ...]:
-    return tuple(
-        (re.compile(pattern), kind)
-        for pattern, kind in (
-            (TEXT_URL_PATTERN, FIELD_WEB),
-            (TEXT_IPV4_PATTERN, FIELD_NETWORK),
-            (TEXT_ZIP_PATTERN, FIELD_ZIP),
-            (TEXT_EMAIL_PATTERN, FIELD_EMAIL),
-            (TEXT_PHONE_PATTERN, FIELD_PHONE),
-            (TEXT_DATE_PATTERN, FIELD_DATE),
-            (TEXT_NAMED_DATE_PATTERN, FIELD_DATE),
-            (TEXT_STREET_PATTERN, FIELD_ADDRESS),
-            (TEXT_RELATIVE_PATTERN, IDENTITY_RELATIVE),
-            (TEXT_PROVIDER_PATTERN, FIELD_PROVIDER_NAME),
-        )
-    )
-
-
-def _identifier_patterns() -> tuple[tuple[re.Pattern[str], str], ...]:
-    return tuple(
-        (re.compile(pattern), namespace)
-        for pattern, namespace in TEXT_IDENTIFIER_PATTERNS
-    )
 
 
 def _deterministic_findings(

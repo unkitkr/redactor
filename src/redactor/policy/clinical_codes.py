@@ -17,19 +17,22 @@ from redactor.utils.constants import (
     VERHOEFF_PERMUTATIONS,
 )
 
+_LABELLED_CODE = re.compile(SNOMED_LABELLED_CODE_PATTERN)
+_CONCEPT_ID = re.compile(SNOMED_CONCEPT_ID_PATTERN)
+
 
 def snomed_ranges(text: str) -> tuple[TextRange, ...]:
     """Only the literal label and its validated code form a clinical expression."""
     return tuple(
         TextRange(start=match.start(), end=match.end())
-        for match in re.finditer(SNOMED_LABELLED_CODE_PATTERN, text)
+        for match in _LABELLED_CODE.finditer(text)
         if is_snomed_concept_id(match["code"])
     )
 
 
 def is_snomed_concept_id(identifier: str) -> bool:
     """Check concept syntax; no assertion is made about release membership."""
-    if re.fullmatch(SNOMED_CONCEPT_ID_PATTERN, identifier) is None:
+    if _CONCEPT_ID.fullmatch(identifier) is None:
         return False
     # The two digits immediately before the checksum identify the component.
     partition = identifier[-3:-1]

@@ -12,6 +12,8 @@ from redactor.utils.constants import (
     VERIFIER_NAME_BOUNDARY_START,
 )
 
+_NAME_APOSTROPHE = re.compile(VERIFIER_NAME_APOSTROPHE_PATTERN)
+
 
 def known_name_ranges(text: str, name: str) -> tuple[TextRange, ...]:
     """Match corroborated names and initial forms only inside the current record."""
@@ -75,5 +77,5 @@ def _given_name_pattern(word: str) -> str:
 def _name_word_pattern(word: str) -> str:
     """Permit typographic apostrophes without rewriting text or its offsets."""
     return VERIFIER_NAME_APOSTROPHE_PATTERN.join(
-        re.escape(part) for part in re.split(VERIFIER_NAME_APOSTROPHE_PATTERN, word)
+        re.escape(part) for part in _NAME_APOSTROPHE.split(word)
     )

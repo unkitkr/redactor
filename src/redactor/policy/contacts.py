@@ -24,6 +24,8 @@ from redactor.utils.constants import (
 )
 from redactor.utils.errors import ERROR_IDENTIFIER, ERROR_REPLACEMENT_COLLISION
 
+_EMAIL_ADDRESS = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
+
 
 def canonical_phone(value: str) -> str:
     normalized = unicodedata.normalize(UNICODE_NORMAL_FORM, value).strip()
@@ -65,7 +67,7 @@ def replace_phone(value: str, key: bytes) -> str:
 
 
 def replace_email(value: str, key: bytes) -> str:
-    if re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", value) is None:
+    if _EMAIL_ADDRESS.fullmatch(value) is None:
         raise ValueError(ERROR_IDENTIFIER)
     digest = derive_digest(key, value.casefold(), namespace=EMAIL_NAMESPACE)
     return f"user{digest.hex()[:24]}@{SURROGATE_DOMAIN}"

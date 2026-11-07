@@ -35,6 +35,14 @@ from redactor.verification.residuals import (
 )
 from redactor.verification.residuals import scan_residuals as scan_residuals
 
+_CONTACT_DATE_JOIN = re.compile(VERIFIER_CONTACT_DATE_JOIN_PATTERN)
+_DOCUMENT_HEADING_PREFIX = re.compile(VERIFIER_DOCUMENT_HEADING_PREFIX_PATTERN)
+_IMAGE_DESCRIPTOR = re.compile(VERIFIER_IMAGE_DESCRIPTOR_PATTERN)
+_SURFACE_PUNCTUATION = re.compile(VERIFIER_SURFACE_PUNCTUATION)
+_PHONE_CUE = re.compile(VERIFIER_PHONE_CUE_PATTERN)
+_EMAIL_CUE = re.compile(VERIFIER_EMAIL_CUE_PATTERN)
+_DATE_CUE = re.compile(VERIFIER_DATE_CUE_PATTERN)
+
 
 def verify_text_changes(
     original: str,
@@ -141,9 +149,7 @@ def _source_contact_date_joins(
         for contact, date in zip(edits, edits[1:], strict=False)
         if contact.kind in (FIELD_PHONE, FIELD_EMAIL)
         and date.kind == FIELD_DATE
-        and re.fullmatch(
-            VERIFIER_CONTACT_DATE_JOIN_PATTERN, text[contact.end : date.start]
-        )
+        and _CONTACT_DATE_JOIN.fullmatch(text[contact.end : date.start])
     )
 
 
@@ -152,9 +158,7 @@ def _source_document_heading(
 ) -> tuple[TextRange, ...]:
     """A document-type prefix ends at its delimiter and a confirmed edit."""
     for edit in edits:
-        heading = re.fullmatch(
-            VERIFIER_DOCUMENT_HEADING_PREFIX_PATTERN, text[: edit.start]
-        )
+        heading = _DOCUMENT_HEADING_PREFIX.fullmatch(text[: edit.start])
         if heading:
             return (TextRange(start=heading.start(), end=heading.end()),)
     return ()
@@ -169,8 +173,8 @@ def _source_image_descriptor(
     edit = edits[0]
     if edit.kind not in (FIELD_PERSON_NAME, FIELD_PATIENT_NAME, FIELD_PROVIDER_NAME):
         return ()
-    prefix = re.fullmatch(VERIFIER_IMAGE_DESCRIPTOR_PATTERN, text[: edit.start])
-    if prefix and re.fullmatch(VERIFIER_SURFACE_PUNCTUATION, text[edit.end :]):
+    prefix = _IMAGE_DESCRIPTOR.fullmatch(text[: edit.start])
+    if prefix and _SURFACE_PUNCTUATION.fullmatch(text[edit.end :]):
         return (TextRange(start=prefix.start(), end=prefix.end()),)
     return ()
 
@@ -180,16 +184,16 @@ def _source_field_cues(text: str, edits: tuple[TextEdit, ...]) -> tuple[TextRang
     ranges: list[TextRange] = []
     for edit in edits:
         pattern = (
-            VERIFIER_PHONE_CUE_PATTERN
+            _PHONE_CUE
             if edit.kind == FIELD_PHONE
-            else VERIFIER_EMAIL_CUE_PATTERN
+            else _EMAIL_CUE
             if edit.kind == FIELD_EMAIL
-            else VERIFIER_DATE_CUE_PATTERN
+            else _DATE_CUE
             if edit.kind == FIELD_DATE
             else None
         )
         if pattern is not None:
-            match = re.search(pattern, text[: edit.start])
+            match = pattern.search(text[: edit.start])
             if match is not None:
                 ranges.append(TextRange(start=match.start(), end=match.end()))
     return tuple(ranges)

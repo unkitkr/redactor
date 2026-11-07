@@ -25,6 +25,8 @@ from redactor.utils.constants import (
 )
 from redactor.utils.errors import ERROR_IDENTIFIER, ERROR_REPLACEMENT_COLLISION
 
+_UUID_VALUE = re.compile(UUID_PATTERN)
+
 
 def replace_identifier(
     value: str, key: bytes, *, namespace: str, scope: str = ""
@@ -48,7 +50,7 @@ def replace_identifier(
 
 def canonical_uuid(value: str) -> str:
     """Accept one complete GUID, with paired optional braces and no extra text."""
-    if re.fullmatch(UUID_PATTERN, value) is None:
+    if _UUID_VALUE.fullmatch(value) is None:
         raise ValueError(ERROR_IDENTIFIER)
     return str(UUID(value))
 

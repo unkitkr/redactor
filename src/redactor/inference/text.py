@@ -30,6 +30,11 @@ from redactor.utils.constants import (
 )
 from redactor.utils.errors import ERROR_COVERAGE, ERROR_ENTITY_EVIDENCE
 
+_FACILITY = re.compile(VERIFIER_FACILITY_PATTERN)
+_ORGANIZATION_CUE = re.compile(ORGANIZATION_CUE_PATTERN)
+_ORGANIZATION_FIELD = re.compile(ORGANIZATION_FIELD_PATTERN)
+_IDENTIFIER_VALUE = re.compile(NER_IDENTIFIER_VALUE_PATTERN)
+
 
 def find_text_phi(
     text: str,
@@ -92,13 +97,13 @@ def finish_text_phi(
                 finding.kind == FIELD_ORGANIZATION
                 and finding.start <= entity.start
                 and entity.end <= finding.end
-                and re.fullmatch(VERIFIER_FACILITY_PATTERN, finding.original)
+                and _FACILITY.fullmatch(finding.original)
                 for finding in findings
             ):
                 # The complete facility replacement already covers this second
                 # grounded fragment. A span extending outside it is not covered.
                 continue
-            for facility in re.finditer(VERIFIER_FACILITY_PATTERN, text):
+            for facility in _FACILITY.finditer(text):
                 if (
                     facility.start() <= entity.start
                     and entity.end <= facility.end()
@@ -148,15 +153,15 @@ def finish_text_phi(
                 continue
             entity_kind = FIELD_LOCATION
         elif entity.entity_type == ENTITY_ORGANIZATION and (
-            re.search(ORGANIZATION_CUE_PATTERN, entity.text)
-            or re.search(ORGANIZATION_FIELD_PATTERN, text[: entity.start])
+            _ORGANIZATION_CUE.search(entity.text)
+            or _ORGANIZATION_FIELD.search(text[: entity.start])
         ):
             entity_kind = FIELD_ORGANIZATION
         elif entity.entity_type == ENTITY_IDENTIFIER and entity.label in dict(
             NER_IDENTIFIER_NAMESPACES
         ):
-            if any(character.isdigit() for character in entity.text) and re.fullmatch(
-                NER_IDENTIFIER_VALUE_PATTERN, entity.text
+            if any(character.isdigit() for character in entity.text) and (
+                _IDENTIFIER_VALUE.fullmatch(entity.text)
             ):
                 entity_kind = FIELD_IDENTIFIER
                 namespace = dict(NER_IDENTIFIER_NAMESPACES)[entity.label]

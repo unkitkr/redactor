@@ -29,6 +29,9 @@ from redactor.utils.constants import (
 )
 from redactor.utils.errors import ERROR_AGE, ERROR_IDENTITY_EVIDENCE
 
+_NUMERIC_AGE_CELL = re.compile(r"[0-9]{1,3}\+?")
+_MRN_SOURCE_CHARACTERS = re.compile(r"[0-9 -]+")
+
 
 def row_evidence(
     values: tuple[str, ...],
@@ -92,7 +95,7 @@ def make_row_evidence(
         for column in policies if maximum_index >= len(values) else age_columns:
             value = values[column.index]
             if column.kind == FIELD_AGE and value.strip():
-                if re.fullmatch(r"[0-9]{1,3}\+?", value.strip()) is None:
+                if _NUMERIC_AGE_CELL.fullmatch(value.strip()) is None:
                     raise ValueError(ERROR_AGE)
                 older_age |= int(value.strip().rstrip("+")) >= AGE_GROUP_MINIMUM
             elif column.kind == FIELD_TEXT:
@@ -136,7 +139,7 @@ def make_row_evidence(
 
 
 def canonical_record_identifier(value: str, namespace: str) -> str:
-    if namespace == MRN_NAMESPACE and re.fullmatch(r"[0-9 -]+", value.strip()):
+    if namespace == MRN_NAMESPACE and _MRN_SOURCE_CHARACTERS.fullmatch(value.strip()):
         return normalize_digits(value)
     return value.strip()
 

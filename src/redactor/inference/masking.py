@@ -11,6 +11,8 @@ from redactor.utils.constants import (
 )
 from redactor.utils.errors import ERROR_ENTITY_EVIDENCE
 
+_MENTION_PREFIX = re.compile(VERIFIER_MENTION_PREFIX_PATTERN)
+
 
 def mask_assessed_ranges(
     text: str, ranges: tuple[TextRange, ...]
@@ -47,7 +49,7 @@ def restore_entity(
         masked_start = selected.index(None)
         if all(
             position is None for position in selected[masked_start:]
-        ) and re.fullmatch(VERIFIER_MENTION_PREFIX_PATTERN, entity.text[:masked_start]):
+        ) and _MENTION_PREFIX.fullmatch(entity.text[:masked_start]):
             # The only visible characters are a role such as "Dr.". Any extra
             # unmasked name fragment still reaches the strict coverage check.
             return None
