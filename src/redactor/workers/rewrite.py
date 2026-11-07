@@ -5,10 +5,12 @@ import sqlite3
 from collections import Counter
 
 from redactor.agents.detector.adapter import detection_adapter
-from redactor.formats.csv import encode_csv_header, encode_csv_record, iter_csv_records
+from redactor.formats.csv import csv_record_encoder, encode_csv_header, iter_csv_records
 from redactor.formats.tabular_fields import column_policies
+from redactor.identity.evidence import observation_preparer
 from redactor.identity.rows import row_context
-from redactor.identity.tabular import row_evidence
+from redactor.identity.tabular import make_row_evidence
+from redactor.inference.text import make_text_finder
 from redactor.persistence.files.artifacts import (
     create_temporary_file,
     seal_temporary_file,
@@ -17,7 +19,8 @@ from redactor.persistence.files.checkpoints import resume_checkpoint, save_check
 from redactor.persistence.files.registration import prepare_successor
 from redactor.persistence.files.results import read_step_result, write_step_result
 from redactor.persistence.identities.snapshots import load_identity_lookup
-from redactor.policy.tabular import cell_edits, cell_findings
+from redactor.policy.tabular import cell_edits
+from redactor.policy.tabular_runtime import typed_column_operations
 from redactor.policy.text import apply_text_edits
 from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.configuration import PipelineSettings
@@ -28,6 +31,7 @@ from redactor.schemas.persistence import Checkpoint, Task
 from redactor.schemas.pipeline import StepResult
 from redactor.utils.constants import (
     CSV_ADAPTER_VERSION,
+    FIELD_TEXT,
     HASH_CHUNK_BYTES,
     IMAGE_FORMATS,
     STEP_ANALYZE,
@@ -120,8 +124,19 @@ def rewrite_task(
             resolution_task_id=resolution_task_id,
         )
     snapshot, lookup = load_identity_lookup(connection, resolution_task_id, mapping_key)
+    prepare_observation = observation_preparer(mapping_key)
+    text_findings = make_text_finder(
+        detector,
+        maximum_entries=settings.local.ner_cache_entries,
+        maximum_text_characters=settings.local.ner_cache_characters,
+    )
     layout = inspection.csv_layout
     policies = column_policies(layout.columns)
+    read_evidence = make_row_evidence(policies, task.input_sha256)
+    typed_operations = tuple(
+        typed_column_operations(column, mapping_key) for column in policies
+    )
+    encode_record = csv_record_encoder(layout)
     resources = settings.resources
     checkpoint = resume_checkpoint(connection, task, CSV_ADAPTER_VERSION)
     path = (
@@ -154,7 +169,7 @@ def rewrite_task(
             start_offset=offset,
             completed_records=completed,
         ):
-            evidence = row_evidence(row.values, policies, task.input_sha256, row.number)
+            evidence = read_evidence(row.values, row.number)
             context = row_context(
                 evidence,
                 lookup,
@@ -163,21 +178,28 @@ def rewrite_task(
                 row.number,
                 mapping_key,
                 snapshot.maximum_date_shift_days,
+                observation_reader=prepare_observation,
             )
             rewritten: list[str] = []
-            for column in policies:
+            for column, (assess, replace) in zip(
+                policies, typed_operations, strict=True
+            ):
                 value = row.values[column.index]
-                findings = cell_findings(
-                    value,
-                    column,
-                    detector,
-                    patient_name=context.patient_name,
-                    provider_name=context.provider_name,
-                )
-                edits = cell_edits(value, column, findings, context, mapping_key)
-                rewritten.append(apply_text_edits(value, edits))
-                counts.update(edit.kind for edit in edits)
-            payload = encode_csv_record(rewritten, layout)
+                if column.kind == FIELD_TEXT:
+                    findings = text_findings(
+                        value,
+                        context.patient_name,
+                        context.provider_name,
+                    )
+                    edits = cell_edits(value, column, findings, context, mapping_key)
+                    rewritten.append(apply_text_edits(value, edits))
+                    counts.update(edit.kind for edit in edits)
+                elif assess(value):
+                    rewritten.append(replace(value, context))
+                    counts[column.kind] += 1
+                else:
+                    rewritten.append(value)
+            payload = encode_record(rewritten)
             if len(payload) > resources.max_record_bytes:
                 raise ValueError(ERROR_RESOURCE_LIMIT)
             stream.write(payload)

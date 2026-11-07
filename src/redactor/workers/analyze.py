@@ -8,8 +8,9 @@ import httpx
 from redactor.agents.detector.adapter import detection_adapter
 from redactor.formats.csv import iter_csv_records
 from redactor.formats.tabular_fields import column_policies
-from redactor.identity.tabular import row_evidence
-from redactor.inference.text import find_text_phi
+from redactor.identity.evidence import observation_preparer
+from redactor.identity.tabular import make_row_evidence
+from redactor.inference.text import find_text_phi, make_text_finder
 from redactor.persistence.files.artifacts import inspect_artifact
 from redactor.persistence.files.hashing import file_version
 from redactor.persistence.files.registration import prepare_successor
@@ -18,7 +19,7 @@ from redactor.persistence.identities.observations import (
     save_observation_batch,
     scan_progress,
 )
-from redactor.policy.tabular import cell_findings
+from redactor.policy.tabular_runtime import typed_column_operations
 from redactor.schemas.analysis import FileAnalysis
 from redactor.schemas.configuration import PipelineSettings
 from redactor.schemas.entities import NerAdapter
@@ -103,7 +104,17 @@ def analyze_task(
             if original.sha256 != task.input_sha256 or original.size != task.input_size:
                 raise ValueError(ERROR_INPUT_CHANGED)
             layout = inspection.csv_layout
+            text_findings = make_text_finder(
+                detector,
+                maximum_entries=settings.local.ner_cache_entries,
+                maximum_text_characters=settings.local.ner_cache_characters,
+            )
             policies = column_policies(layout.columns)
+            read_evidence = make_row_evidence(policies, task.input_sha256)
+            prepare_observation = observation_preparer(mapping_key)
+            typed_operations = tuple(
+                typed_column_operations(column, mapping_key) for column in policies
+            )
             for column in policies:
                 if column.kind == FIELD_TEXT and find_text_phi(
                     layout.columns[column.index], detector
@@ -119,9 +130,7 @@ def analyze_task(
                 start_offset=offset,
                 completed_records=completed,
             ):
-                evidence = row_evidence(
-                    row.values, policies, task.input_sha256, row.number
-                )
+                evidence = read_evidence(row.values, row.number)
                 facts = tuple(
                     fact
                     for fact in (evidence.patient, evidence.provider)
@@ -140,20 +149,21 @@ def analyze_task(
                         input_offset=offset,
                         record_count=completed,
                         counts=dict(counts),
+                        observation_reader=prepare_observation,
                     )
                     batch.clear()
                     batch_bytes = 0
-                for column in policies:
-                    found = cell_findings(
-                        row.values[column.index],
-                        column,
-                        detector,
-                        patient_name=evidence.patient.name if evidence.patient else "",
-                        provider_name=evidence.provider.name
-                        if evidence.provider
-                        else "",
-                    )
-                    counts.update(finding.kind for finding in found)
+                for column, (assess, _) in zip(policies, typed_operations, strict=True):
+                    value = row.values[column.index]
+                    if column.kind == FIELD_TEXT:
+                        found = text_findings(
+                            value,
+                            evidence.patient.name if evidence.patient else "",
+                            evidence.provider.name if evidence.provider else "",
+                        )
+                        counts.update(finding.kind for finding in found)
+                    elif assess(value):
+                        counts[column.kind] += 1
                 batch.extend(facts)
                 batch_bytes += size
                 offset, completed = row.end_offset, row.number
@@ -170,6 +180,7 @@ def analyze_task(
                         input_offset=offset,
                         record_count=completed,
                         counts=dict(counts),
+                        observation_reader=prepare_observation,
                     )
                     batch.clear()
                     batch_bytes = 0
@@ -183,6 +194,7 @@ def analyze_task(
                     input_offset=offset,
                     record_count=completed,
                     counts=dict(counts),
+                    observation_reader=prepare_observation,
                 )
             if file_version(task.input_path.stat()) != before:
                 raise ValueError(ERROR_INPUT_CHANGED)
