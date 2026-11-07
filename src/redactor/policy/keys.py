@@ -1,10 +1,9 @@
 """Keyed derivation for pseudonyms; identity resolution remains a separate step."""
 
 import hmac
-import json
+from json.encoder import encode_basestring
 
 from redactor.utils.constants import (
-    JSON_SEPARATORS,
     PSEUDONYM_KEY_CONTEXT,
     SECRET_KEY_BYTES,
     TEXT_ENCODING,
@@ -18,8 +17,10 @@ def derive_digest(key: bytes, value: str, *, namespace: str, scope: str = "") ->
         raise ValueError(ERROR_MAPPING_KEY)
     if not value or not namespace:
         raise ValueError(ERROR_IDENTIFIER)
-    payload = json.dumps(
-        (namespace, scope, value), separators=JSON_SEPARATORS, ensure_ascii=False
+    # This is the same compact JSON string tuple as before. Encoding its three
+    # known string fields directly avoids creating a JSONEncoder for every cell.
+    payload = (
+        "[" + ",".join(map(encode_basestring, (namespace, scope, value))) + "]"
     ).encode(TEXT_ENCODING)
     return hmac.digest(key, PSEUDONYM_KEY_CONTEXT + payload, "sha256")
 

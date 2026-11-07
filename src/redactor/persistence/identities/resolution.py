@@ -110,7 +110,7 @@ def resolve_batch(
             cohort.identity_key,
             encrypt_payload(
                 key,
-                cohort.model_dump_json().encode(),
+                cohort.model_dump_json(exclude_defaults=True).encode(),
                 context=cohort_context(claimed.task_id, cohort.identity_key),
             ),
         )

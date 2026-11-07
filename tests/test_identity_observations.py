@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from redactor.formats.csv import inspect_csv, iter_csv_records
+from redactor.identity.evidence import observation_preparer, prepare_observation
 from redactor.persistence.database import state_directory
 from redactor.persistence.files.registration import register_file
 from redactor.persistence.identities.observations import (
@@ -155,6 +156,7 @@ def test_repeated_evidence_advances_cursor_without_reencrypting_unchanged_people
     task = claim_task(connection)
     assert task is not None
     key = bytes(range(32))
+    prepare = observation_preparer(key)
     patient = IdentityEvidence(
         role="patient",
         name="Alice Stone",
@@ -176,6 +178,7 @@ def test_repeated_evidence_advances_cursor_without_reencrypting_unchanged_people
         input_offset=len("record\nfirst\n"),
         record_count=1,
         counts={"name": 2},
+        observation_reader=prepare,
     )
     saved = connection.execute(
         "SELECT * FROM identity_observations ORDER BY observation_key"
@@ -199,6 +202,7 @@ def test_repeated_evidence_advances_cursor_without_reencrypting_unchanged_people
         input_offset=len("record\nfirst\nsecond\n"),
         record_count=2,
         counts={"name": 4},
+        observation_reader=prepare,
     )
     assert connection.total_changes == changes + 1
     assert progress.record_count == 2 and progress.counts == {"name": 4}
@@ -219,6 +223,7 @@ def test_repeated_evidence_advances_cursor_without_reencrypting_unchanged_people
             input_offset=len("record\nfirst\nsecond\n"),
             record_count=2,
             counts={"name": 4},
+            observation_reader=prepare,
         )
         == progress
     )
@@ -251,10 +256,22 @@ def test_repeated_evidence_advances_cursor_without_reencrypting_unchanged_people
         input_offset=task.input_size,
         record_count=3,
         counts={"name": 9},
+        observation_reader=prepare,
     )
     complete_task(connection, task)
     observations = tuple(iter_observations(connection, task.task_id, key))
     assert len(observations) == 5
+    for item in observations:
+        assert prepare(item.evidence) == prepare_observation(item.evidence, key)
+    for evidence in (
+        older,
+        provider,
+        conflicting,
+        incomplete,
+        incomplete.model_copy(update={"context_key": "third-b"}),
+        older.model_copy(update={"issuer": "another issuer"}),
+    ):
+        assert prepare(evidence) == prepare_observation(evidence, key)
     matched = next(
         item for item in observations if item.evidence.birth_date == patient.birth_date
     )

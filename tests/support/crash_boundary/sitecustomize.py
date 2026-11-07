@@ -3,7 +3,7 @@
 import os
 import signal
 import sqlite3
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 
@@ -14,7 +14,11 @@ def install_crash_boundary() -> None:
 
     from redactor.persistence.files import checkpoints
     from redactor.persistence.identities import observations
-    from redactor.schemas.identity import IdentityEvidence, IdentityScanProgress
+    from redactor.schemas.identity import (
+        IdentityEvidence,
+        IdentityObservation,
+        IdentityScanProgress,
+    )
     from redactor.schemas.persistence import Checkpoint, Task
     from redactor.schemas.pipeline import StepHandler, StepResult
     from redactor.workers import pipeline
@@ -44,6 +48,8 @@ def install_crash_boundary() -> None:
             input_offset: int,
             record_count: int,
             counts: dict[str, int] | None = None,
+            observation_reader: Callable[[IdentityEvidence], IdentityObservation]
+            | None = None,
         ) -> IdentityScanProgress:
             result = save_observations(
                 connection,
@@ -54,6 +60,7 @@ def install_crash_boundary() -> None:
                 input_offset=input_offset,
                 record_count=record_count,
                 counts=counts,
+                observation_reader=observation_reader,
             )
             crash_once()
             return result

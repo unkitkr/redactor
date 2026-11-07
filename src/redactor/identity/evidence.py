@@ -1,13 +1,18 @@
 """Normalize evidence and derive opaque indexes without merging names alone."""
 
 import json
+from collections.abc import Callable
+from functools import lru_cache
 
 from redactor.policy.keys import evidence_key
 from redactor.policy.normalization import normalize_identifier, normalize_name
 from redactor.schemas.identity import IdentityEvidence, IdentityObservation
 from redactor.utils.constants import (
     IDENTITY_BIRTH_NAMESPACE,
+    IDENTITY_HASH_CACHE_ENTRIES,
+    IDENTITY_HASH_CACHE_MAX_CHARACTERS,
     IDENTITY_IDENTIFIER_NAMESPACE,
+    IDENTITY_LOOKUP_CACHE_ENTRIES,
     IDENTITY_NAME_NAMESPACE,
     IDENTITY_OBSERVATION_NAMESPACE,
     IDENTITY_PROVIDER,
@@ -17,6 +22,54 @@ from redactor.utils.errors import ERROR_IDENTITY_EVIDENCE
 
 
 def prepare_observation(evidence: IdentityEvidence, key: bytes) -> IdentityObservation:
+    return _prepare_observation(
+        evidence,
+        lambda value, namespace, scope: evidence_key(
+            key, value, namespace=namespace, scope=scope
+        ),
+    )
+
+
+def observation_preparer(
+    key: bytes,
+) -> Callable[[IdentityEvidence], IdentityObservation]:
+    """Reuse keyed indexes within one bounded processing phase.
+
+    Only immutable normalized index components are cached. Row context, clinical
+    dates and older-age evidence always come from the current input record.
+    """
+
+    @lru_cache(maxsize=IDENTITY_HASH_CACHE_ENTRIES)
+    def cached_index(value: str, namespace: str, scope: str) -> str:
+        return evidence_key(key, value, namespace=namespace, scope=scope)
+
+    @lru_cache(maxsize=IDENTITY_LOOKUP_CACHE_ENTRIES)
+    def cached_observation_index(value: str, namespace: str, scope: str) -> str:
+        return evidence_key(key, value, namespace=namespace, scope=scope)
+
+    @lru_cache(maxsize=IDENTITY_LOOKUP_CACHE_ENTRIES)
+    def cached_provider_index(value: str, namespace: str, scope: str) -> str:
+        return evidence_key(key, value, namespace=namespace, scope=scope)
+
+    def index(value: str, namespace: str, scope: str) -> str:
+        component_size = len(value) + len(namespace) + len(scope)
+        if component_size > IDENTITY_HASH_CACHE_MAX_CHARACTERS:
+            return evidence_key(key, value, namespace=namespace, scope=scope)
+        if namespace == IDENTITY_OBSERVATION_NAMESPACE:
+            if scope == IDENTITY_PROVIDER:
+                return cached_provider_index(value, namespace, scope)
+            return cached_observation_index(value, namespace, scope)
+        return cached_index(value, namespace, scope)
+
+    def prepare(evidence: IdentityEvidence) -> IdentityObservation:
+        return _prepare_observation(evidence, index)
+
+    return prepare
+
+
+def _prepare_observation(
+    evidence: IdentityEvidence, index: Callable[[str, str, str], str]
+) -> IdentityObservation:
     name = normalize_name(evidence.name) if evidence.name.strip() else ""
     identifier = (
         normalize_identifier(evidence.identifier) if evidence.identifier else ""
@@ -37,29 +90,19 @@ def prepare_observation(evidence: IdentityEvidence, key: bytes) -> IdentityObser
     )
     scope = _encoded((evidence.role, evidence.identifier_namespace, evidence.issuer))
     identifier_key = (
-        evidence_key(
-            key, identifier, namespace=IDENTITY_IDENTIFIER_NAMESPACE, scope=scope
-        )
-        if identifier
-        else None
+        index(identifier, IDENTITY_IDENTIFIER_NAMESPACE, scope) if identifier else None
     )
-    name_key = (
-        evidence_key(key, name, namespace=IDENTITY_NAME_NAMESPACE, scope=evidence.role)
-        if name
-        else None
-    )
+    name_key = index(name, IDENTITY_NAME_NAMESPACE, evidence.role) if name else None
     birth_key = (
-        evidence_key(
-            key,
+        index(
             evidence.birth_date.isoformat(),
-            namespace=IDENTITY_BIRTH_NAMESPACE,
-            scope=evidence.role,
+            IDENTITY_BIRTH_NAMESPACE,
+            evidence.role,
         )
         if evidence.birth_date is not None
         else None
     )
-    observation_key = evidence_key(
-        key,
+    observation_key = index(
         _encoded(
             (
                 identifier_key,
@@ -68,8 +111,8 @@ def prepare_observation(evidence: IdentityEvidence, key: bytes) -> IdentityObser
                 None if is_anchor else evidence.context_key,
             )
         ),
-        namespace=IDENTITY_OBSERVATION_NAMESPACE,
-        scope=evidence.role,
+        IDENTITY_OBSERVATION_NAMESPACE,
+        evidence.role,
     )
     return IdentityObservation(
         observation_key=observation_key,

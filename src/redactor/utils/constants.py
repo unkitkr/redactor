@@ -86,7 +86,7 @@ JSON_SEPARATORS: Final = (",", ":")
 
 # Pipeline configuration and secrets
 CONFIGURATION_FILENAME: Final = "redactor.toml"
-PIPELINE_VERSION: Final = "pipeline-v28"
+PIPELINE_VERSION: Final = "pipeline-v30"
 RUNTIME_SOURCE_SUFFIXES: Final = (".py", ".sql")
 RUNTIME_IGNORED_SUFFIXES: Final = (".pyc", ".pyo")
 RUNTIME_MISSING_ARTIFACT: Final = "missing"
@@ -520,6 +520,8 @@ IDENTITY_SNAPSHOT_NAMESPACE: Final = "identity-snapshot-v1"
 IDENTITY_BINDING_NAMESPACE: Final = "identity-binding-v1"
 IDENTITY_RESOLUTION_BATCH_SIZE: Final = 1000
 IDENTITY_LOOKUP_CACHE_ENTRIES: Final = 512
+IDENTITY_HASH_CACHE_ENTRIES: Final = 65_536
+IDENTITY_HASH_CACHE_MAX_CHARACTERS: Final = 256
 
 # Realistic surrogate vocabulary, independent of the supplied input values
 PERSON_NAME_NAMESPACE: Final = "person-name"

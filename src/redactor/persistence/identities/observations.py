@@ -3,7 +3,7 @@
 import hmac
 import json
 import sqlite3
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 
 from redactor.identity.evidence import prepare_observation
 from redactor.persistence.database import transaction
@@ -58,6 +58,7 @@ def save_observation_batch(
     input_offset: int,
     record_count: int,
     counts: dict[str, int] | None = None,
+    observation_reader: Callable[[IdentityEvidence], IdentityObservation] | None = None,
 ) -> IdentityScanProgress:
     """The byte offset must end a complete native record, never a read buffer."""
     require_attempt(connection, claimed)
@@ -92,8 +93,9 @@ def save_observation_batch(
     # Normalize, merge and encrypt outside the write lock. Only the fenced owner
     # of this task may write its rows; the cursor is checked again inside the lock.
     observations: dict[str, IdentityObservation] = {}
+    prepare = observation_reader or (lambda item: prepare_observation(item, key))
     for item in evidence:
-        observation = prepare_observation(item, key)
+        observation = prepare(item)
         existing = observations.get(observation.observation_key)
         observations[observation.observation_key] = (
             _merge(existing, observation) if existing is not None else observation
@@ -127,7 +129,9 @@ def save_observation_batch(
             int(observation.is_anchor),
             encrypt_payload(
                 key,
-                observation.model_dump_json().encode(),
+                # Excluded defaults decode back from current schema defaults;
+                # changing a model default alters how old payloads decode.
+                observation.model_dump_json(exclude_defaults=True).encode(),
                 context=_context(claimed.task_id, observation.observation_key),
             ),
         )

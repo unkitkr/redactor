@@ -1,7 +1,13 @@
 """Bind one native row to the accepted identity snapshot."""
 
+from collections.abc import Callable
+
 from redactor.identity.evidence import prepare_observation
-from redactor.schemas.identity import IdentityLookup
+from redactor.schemas.identity import (
+    IdentityEvidence,
+    IdentityLookup,
+    IdentityObservation,
+)
 from redactor.schemas.redaction import RowEvidence, TextContext
 from redactor.utils.constants import FIELD_TEXT, ROW_CONTEXT_TEMPLATE
 
@@ -15,9 +21,12 @@ def row_context(
     key: bytes,
     maximum_date_shift_days: int,
     context_scope: str = "",
+    *,
+    observation_reader: Callable[[IdentityEvidence], IdentityObservation] | None = None,
 ) -> TextContext:
     patient = evidence.patient
     provider = evidence.provider
+    prepare = observation_reader or (lambda item: prepare_observation(item, key))
     return TextContext(
         context_key=f"{input_sha256}:{context_scope}"
         if context_scope
@@ -28,14 +37,14 @@ def row_context(
         provider_name=provider.name if provider else "",
         patient=lookup(
             analysis_task_id,
-            prepare_observation(patient, key).observation_key,
+            prepare(patient).observation_key,
             patient.role,
         )
         if patient
         else None,
         provider=lookup(
             analysis_task_id,
-            prepare_observation(provider, key).observation_key,
+            prepare(provider).observation_key,
             provider.role,
         )
         if provider
