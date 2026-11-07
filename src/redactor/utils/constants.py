@@ -151,6 +151,7 @@ ENTITY_LOCATION: Final = "location"
 ENTITY_DATE: Final = "date"
 ENTITY_TIME: Final = "time"
 ENTITY_AGE: Final = "age"
+ENTITY_CONTACT: Final = "contact"
 SPACY_ENTITY_TYPES: Final = (
     ("PERSON", ENTITY_PERSON),
     ("ORG", ENTITY_ORGANIZATION),
@@ -217,7 +218,7 @@ VERIFIER_LABELLED_VALUE_PATTERN: Final = (
 VERIFIER_LABEL_VALUE_END_PATTERN: Final = r"(?<=[^\W\d_]{2})\.(?=[ \t]|$)|[ \t]{2,}"
 VERIFIER_FACILITY_PATTERN: Final = (
     r"\b(?:[A-ZÀ-ÖØ-Þ][\w'’\-]*[ \t]+)+"
-    r"(?:Hospital|Clinic|Centre|Center|Laboratory)\b"
+    r"(?i:Hospital|Clinic|Centre|Center|Laboratory)\b"
 )
 VERIFIER_CONTACT_CANDIDATE_PATTERN: Final = (
     r"(?<![\w+])(?P<number>(?:\+|00)?\d(?:[\d \t().-]*\d))"
@@ -1639,6 +1640,27 @@ TEXT_PROVIDER_PATTERN: Final = (
     r"(?i:\b(?:Dr\.?|Doctor|Prof\.?))\s+"
     r"(?P<name>[A-ZÀ-ÖØ-Þ][\w'’\-]*(?:\s+[A-ZÀ-ÖØ-Þ][\w'’\-]*){0,3})"
 )
+# Facility names in free text. The edit spans the complete block an
+# organization tagger would claim, including a post-dash department run.
+FACILITY_SUFFIX_PATTERN: Final = (
+    r"(?i:Hospital|Clinic|Centre|Center|Laboratory|Department|Dept|Institute)"
+)
+TEXT_FACILITY_PATTERN: Final = (
+    r"\b(?:[A-ZÀ-ÖØ-Þ][\w'’\-]*[ \t]+)+" + FACILITY_SUFFIX_PATTERN + r"\b"
+    r"(?:[ \t]*-[ \t]*(?!(?i:" + "|".join(NAME_TITLES) + r")\b)[A-ZÀ-ÖØ-Þ][\w'’\-]*"
+    r"(?:[ \t]+[A-ZÀ-ÖØ-Þ][\w'’\-]*)*)?"
+)
+# A labelled organization or facility value keeps the same end boundaries as
+# the verifier's labelled-value scan, so the edit covers what it re-checks.
+TEXT_FACILITY_LABEL_PATTERN: Final = (
+    r"(?i:\b(?:facility|hospital|clinic|institution|department|payer|insurer|"
+    r"insurance|organization))[ \t]*:[ \t]*"
+    r"(?P<value>[A-ZÀ-ÖØ-Þ][^\r\n;|]*?)(?=[ \t]{2,}|\r|\n|;|\||$)"
+)
+# A lone capitalized name line (no roles, digits or organization words) lets a
+# mislabeled organization observation ground as the person it points at.
+NAME_LINE_TOKEN_PATTERN: Final = r"[A-ZÀ-ÖØ-Þ][\w'’\-]*"
+NAME_LINE_MAXIMUM_TOKENS: Final = 4
 AGE_YEARS_PATTERN: Final = (
     r"(?i)\b(?P<age>[0-9]{1,3})(?:\+)?(?:[- ]years?[- ]old|\s*y/o)\b"
 )
@@ -1868,8 +1890,16 @@ TEXT_IDENTIFIER_PATTERNS: Final = (
         r"(?P<value>[A-Z0-9]+(?:-[A-Z0-9]+)*)",
         "identifier",
     ),
+    (
+        r"(?i)\b(?:member|policy|group)(?:[ \t]+(?:id|number|no))?[ \t]*[:#][ \t]*"
+        r"(?=[A-Z0-9-]*[0-9])(?P<value>[A-Z0-9]+(?:-[A-Z0-9]+)*)",
+        "identifier",
+    ),
     (r"(?<![0-9])(?P<value>[0-9]{3}-[0-9]{2}-[0-9]{4})(?![0-9])", SSN_NAMESPACE),
 )
+# A bare digit run beside a bound patient or provider name in one free-text
+# value behaves as that person's identifier even without a field label.
+NAME_ADJACENT_IDENTIFIER_PATTERN: Final = r"(?<![\w])[0-9]{6,}(?![\w])"
 TEXT_IPV4_PATTERN: Final = r"(?<![\w.])(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?!\w|\.[0-9])"
 TEXT_URL_PATTERN: Final = r"https?://[^\s<>\"']+"
 TEXT_ZIP_PATTERN: Final = r"\b[A-Z]{2}[ \t]+(?P<value>[0-9]{5}(?:-[0-9]{4})?)\b"
@@ -2194,7 +2224,7 @@ NER_DATE_WORD_PATTERN: Final = (
 NER_EMAIL_CUE_PATTERN: Final = r"(?i)@|\b(?:at|dot)\b"
 NER_URL_CUE_PATTERN: Final = (
     r"(?i)\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b|\bwww\.|"
-    r"\b[a-z][a-z0-9+.-]*:[^\s]|//|[a-z0-9]/[a-z0-9]|\b(?:dot|slash)\b"
+    r"\b[a-z][a-z0-9+.-]*:[^\s]|//|\b(?:dot|slash)\b"
 )
 # Optional model evaluation candidates
 EVALUATION_OPENMED_TYPES: Final = (
@@ -3083,8 +3113,13 @@ NER_IP_CUE_PATTERN: Final = (
 ORGANIZATION_SURROGATE_PREFIX: Final = "Organization "
 ORGANIZATION_CUE_PATTERN: Final = (
     r"(?i)\b(?:hospital|clinic|medical|health|healthcare|university|insurance|"
-    r"association|corporation|inc|ltd|llc)\b"
+    r"association|corporation|inc|ltd|llc|care|medicine|department|dept|ward|"
+    r"institute|surgery|surgical|oncology|cardiology|urology|radiology|"
+    r"dermatology|neurology|psychiatry|pediatrics|orthopedics|anesthesiology)\b"
 )
+# A short all-caps token without periods or organization vocabulary is a
+# clinical abbreviation (EKG, TIA, ICU), not a facility or company name.
+ORGANIZATION_ABBREVIATION_PATTERN: Final = r"[A-ZÀ-ÖØ-Þ]{1,4}"
 ORGANIZATION_FIELD_PATTERN: Final = (
     r"(?i)\b(?:payer|insurer|insurance|organization|institution|facility)\s*:\s*$"
 )

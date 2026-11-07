@@ -22,6 +22,7 @@ from redactor.utils.constants import (
     FIELD_EMAIL,
     FIELD_IDENTIFIER,
     FIELD_NETWORK,
+    FIELD_ORGANIZATION,
     FIELD_PATIENT_NAME,
     FIELD_PERSON_NAME,
     FIELD_PHONE,
@@ -30,9 +31,13 @@ from redactor.utils.constants import (
     FIELD_WEB,
     FIELD_ZIP,
     IDENTITY_RELATIVE,
+    MRN_NAMESPACE,
+    NAME_ADJACENT_IDENTIFIER_PATTERN,
     SSN_NAMESPACE,
     TEXT_DATE_PATTERN,
     TEXT_EMAIL_PATTERN,
+    TEXT_FACILITY_LABEL_PATTERN,
+    TEXT_FACILITY_PATTERN,
     TEXT_IDENTIFIER_PATTERNS,
     TEXT_IPV4_PATTERN,
     TEXT_NAMED_DATE_PATTERN,
@@ -58,11 +63,14 @@ _FINDING_PATTERNS = tuple(
         (TEXT_STREET_PATTERN, FIELD_ADDRESS),
         (TEXT_RELATIVE_PATTERN, IDENTITY_RELATIVE),
         (TEXT_PROVIDER_PATTERN, FIELD_PROVIDER_NAME),
+        (TEXT_FACILITY_PATTERN, FIELD_ORGANIZATION),
+        (TEXT_FACILITY_LABEL_PATTERN, FIELD_ORGANIZATION),
     )
 )
 _IDENTIFIER_PATTERNS = tuple(
     (re.compile(pattern), namespace) for pattern, namespace in TEXT_IDENTIFIER_PATTERNS
 )
+_NAME_ADJACENT_IDENTIFIER = re.compile(NAME_ADJACENT_IDENTIFIER_PATTERN)
 
 
 def prepare_text_phi(
@@ -223,6 +231,10 @@ def _bind_names(
                 kind=next(iter(roles)) if len(roles) == 1 else FIELD_PERSON_NAME,
             )
         )
+    if mentions:
+        # A model is not needed to keep an unlabeled identifier that travels
+        # with this record's corroborated name in the same free-text value.
+        findings.extend(_name_adjacent_identifiers(text, findings, protected, mentions))
     assessed = tuple(TextRange(start=f.start, end=f.end) for f in findings)
     return PreparedTextAssessment(
         text=text,
@@ -232,6 +244,50 @@ def _bind_names(
         protected=tuple(protected),
         unresolved=_unresolved_ranges(text, (*assessed, *protected)),
     )
+
+
+def _name_adjacent_identifiers(
+    text: str,
+    findings: list[TextFinding],
+    protected: tuple[TextRange, ...],
+    mentions: dict[tuple[int, int], set[str]],
+) -> tuple[TextFinding, ...]:
+    """Bind bare identifier digits to the name that shares their value.
+
+    Residual risk: a 6+ digit quantity sharing a free-text value with the
+    record's patient or provider name is pseudonymized as that person's
+    identifier. This accepted tradeoff closes unlabeled patient-id leaks that
+    neither labelled patterns nor the model reliably catch.
+    """
+    namespace = (
+        MRN_NAMESPACE
+        if any(FIELD_PATIENT_NAME in roles for roles in mentions.values())
+        else "identifier"
+    )
+    located: list[TextFinding] = []
+    for match in _NAME_ADJACENT_IDENTIFIER.finditer(text):
+        start, end = match.span()
+        value = text[start:end]
+        try:
+            parse_date(value)
+        except ValueError:
+            pass
+        else:
+            continue  # A complete compact calendar date is not an identifier.
+        if any(start < found.end and found.start < end for found in findings):
+            continue
+        if any(start < region.end and region.start < end for region in protected):
+            continue
+        located.append(
+            TextFinding(
+                start=start,
+                end=end,
+                original=value,
+                kind=FIELD_IDENTIFIER,
+                namespace=namespace,
+            )
+        )
+    return tuple(located)
 
 
 def _unresolved_ranges(

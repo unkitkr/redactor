@@ -9,6 +9,7 @@ from redactor.utils.constants import (
     ENTITY_AGE,
     ENTITY_DATE,
     ENTITY_LOCATION,
+    ENTITY_ORGANIZATION,
     ENTITY_PERSON,
     ENTITY_TIME,
     NAME_TITLES,
@@ -29,6 +30,8 @@ from redactor.utils.constants import (
     NER_ZIP_LABEL,
     NON_IDENTIFYING_LOCATION_PATTERN,
     NON_IDENTIFYING_ROLE_PATTERN,
+    ORGANIZATION_ABBREVIATION_PATTERN,
+    ORGANIZATION_CUE_PATTERN,
     UNICODE_NORMAL_FORM,
     VERIFIER_MENTION_PREFIX_PATTERN,
     ZIP_CODE_PATTERN,
@@ -42,6 +45,8 @@ _ZIP_CODE = re.compile(ZIP_CODE_PATTERN)
 _EMAIL_CUE = re.compile(NER_EMAIL_CUE_PATTERN)
 _IP_CUE = re.compile(NER_IP_CUE_PATTERN)
 _URL_CUE = re.compile(NER_URL_CUE_PATTERN)
+_ORGANIZATION_CUE = re.compile(ORGANIZATION_CUE_PATTERN)
+_ORGANIZATION_ABBREVIATION = re.compile(ORGANIZATION_ABBREVIATION_PATTERN)
 _TIME_WORD = re.compile(NER_TIME_WORD_PATTERN)
 _DATE_WORD = re.compile(NER_DATE_WORD_PATTERN)
 _TRAILING_VERB = re.compile(NAME_TRAILING_VERB_PATTERN)
@@ -62,8 +67,9 @@ def possible_entity(entity: TextEntity, text: str | None = None) -> bool:
     """An alphabetic label cannot be an IP, phone or numeric time.
 
     Digits, spelled-out numbers and obfuscated contact syntax remain candidates,
-    even when their exact format is unsupported. This does not validate a value
-    or authorize leaving an identifier unedited.
+    even when their exact format is unsupported. A short all-caps organization
+    observation is treated as a clinical abbreviation, not an organization.
+    This does not validate a value or authorize leaving an identifier unedited.
     """
     value = normalize(UNICODE_NORMAL_FORM, entity.text)
     numeric = any(character.isdecimal() for character in value) or bool(
@@ -84,6 +90,13 @@ def possible_entity(entity: TextEntity, text: str | None = None) -> bool:
         return False
     if entity.entity_type == ENTITY_AGE:
         return numeric or bool(_OLDER_AGE_WORD.search(value))
+    if entity.entity_type == ENTITY_ORGANIZATION and (
+        _ORGANIZATION_ABBREVIATION.fullmatch(value)
+        and _ORGANIZATION_CUE.search(value) is None
+    ):
+        # A short unpointed all-caps token is abbreviation-shaped (EKG, TIA),
+        # not an organization name; organization vocabulary still qualifies.
+        return False
     if entity.entity_type == ENTITY_PERSON and (
         _NON_IDENTIFYING_ROLE.fullmatch(value)
         or value.strip().casefold().removesuffix(".") in NAME_TITLES

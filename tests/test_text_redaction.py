@@ -141,7 +141,7 @@ def test_verifier_does_not_exempt_a_sensitive_value_from_partial_overlap() -> No
         ("Elmridge", "Medical Centre"),
     ),
 )
-def test_grounded_facility_span_covers_full_name_without_crossing_lines(
+def test_facility_span_is_deterministic_and_never_crosses_lines(
     tmp_path: Path,
     place: str,
     suffix: str,
@@ -150,49 +150,13 @@ def test_grounded_facility_span_covers_full_name_without_crossing_lines(
     original = f"Signed | {facility} | Glucose 106 mg/dL."
     context = TextContext(context_key="facility-record", maximum_date_shift_days=365)
 
-    def partial_location(text: str) -> tuple[TextEntity, ...]:
-        start = text.index(place)
-        return (
-            TextEntity(
-                start=start, end=start + len(place), text=place, entity_type="location"
-            ),
-        )
+    def unseen_facility(text: str) -> tuple[TextEntity, ...]:
+        assert place not in text and suffix not in text
+        return ()
 
-    findings = find_text_phi(original, partial_location)
+    findings = find_text_phi(original, unseen_facility)
     assert len(findings) == 1 and findings[0].original == facility
     assert findings[0].kind == "organization"
-    for reversed_order in (False, True):
-
-        def split_facility(
-            text: str, reverse: bool = reversed_order
-        ) -> tuple[TextEntity, ...]:
-            first = partial_location(text)[0]
-            start = text.index(suffix)
-            second = TextEntity(
-                start=start,
-                end=start + len(suffix),
-                text=suffix,
-                entity_type="organization",
-            )
-            return (second, first) if reverse else (first, second)
-
-        assert find_text_phi(original, split_facility) == findings
-
-    def extended_facility(text: str) -> tuple[TextEntity, ...]:
-        first = partial_location(text)[0]
-        start = text.index(suffix)
-        return (
-            first,
-            TextEntity(
-                start=start,
-                end=len(text),
-                text=text[start:],
-                entity_type="organization",
-            ),
-        )
-
-    with pytest.raises(ValueError, match="invalid_entity_span_evidence"):
-        find_text_phi(facility + " Alina Calder", extended_facility)
     edits = text_edits(findings, context, bytes(range(32)))
     saved = tmp_path / "facility.txt"
     saved.write_text(apply_text_edits(original, edits))
@@ -212,8 +176,18 @@ def test_grounded_facility_span_covers_full_name_without_crossing_lines(
             free_text=True,
         )
     separated = f"{place}\n{suffix}\nGlucose 106 mg/dL."
+
+    def partial_location(text: str) -> tuple[TextEntity, ...]:
+        start = text.index(place)
+        return (
+            TextEntity(
+                start=start, end=start + len(place), text=place, entity_type="location"
+            ),
+        )
+
     separate = find_text_phi(separated, partial_location)
     assert separate[0].original == place and separate[0].kind == "location"
+    assert all("\n" not in finding.original for finding in separate)
 
 
 def test_title_only_person_predictions_preserve_titles_and_detect_names(
